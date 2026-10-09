@@ -1,0 +1,254 @@
+[
+  {
+    "day": 1,
+    "tasks_ru": "Подготовьте брудер. Проверьте температуру (32-33°C на уровне подстилки). Включите свет 24 часа. Напоите цыплят теплой водой (20-22°C) с глюкозой/витаминами. Через 2 часа насыпьте стартовый комбикорм на лотки/бумагу.",
+    "tasks_uz": "Bruderni tayyorlang. Haroratni tekshiring (to'shak sathida 32-33°C). 24 soatlik yorug'likni yoqing. Jo'jalarga glyukoza/vitaminli iliq suv (20-22°C) bering. 2 soatdan so'ng podnos/qog'ozlarga start yemini seping.",
+    "video_url": "https://www.youtube.com/watch?v=broiler_day_1"
+  },
+  {
+    "day": 2,
+    "tasks_ru": "Контроль температуры (32°C). Проверьте наполненность зобов у 50 цыплят (должно быть 95%+ с мягким кормом и водой). Чистите поилки, обновляйте воду.",
+    "tasks_uz": "Harorat nazorati (32°C). 50 ta jo'janing jig'ildonini tekshiring (95%+ yumshoq yem va suv bilan to'lgan bo'lishi kerak). Sug'orgichlarni tozalang, suvni yangilang.",
+    "video_url": null
+  },
+  {
+    "day": 3,
+    "tasks_ru": "Температура 31-32°C. Влажность 60-70%. Начните приучать к бункерным кормушкам. Осмотрите слабых цыплят. Контролируйте вентиляцию без сквозняков.",
+    "tasks_uz": "Harorat 31-32°C. Namlik 60-70%. Bunkyerli yemdonlarga o'rgatishni boshlang. Kuchsiz jo'jalarni ajrating. Qoralamasiz (skvoznyaksiz) shamollatishni nazorat qiling.",
+    "video_url": null
+  },
+  {
+    "day": 4,
+    "tasks_ru": "Температура 30-31°C. Переход на постоянные кормушки. Контрольное взвешивание выборки цыплят. Запишите расход корма и падёж в дневник.",
+    "tasks_uz": "Harorat 30-31°C. Doimiy yemdonlarga o'tish. Namuna jo'jalarni nazorat taroziga tortish. Kunlik yem sarfi va nobudgarchilikni kundalikka yozing.",
+    "video_url": null
+  },
+  {
+    "day": 5,
+    "tasks_ru": "Температура 30°C. Проверьте подстилку возле поилок, при необходимости подсыпьте сухие опилки. Курс витаминов по схеме ветеринара.",
+    "tasks_uz": "Harorat 30°C. Sug'orgichlar atrofidagi to'shakni tekshiring, zarur bo'lsa quruq qipiq seping. Veterinariya sxemasi bo'yicha vitamin berish.",
+    "video_url": null
+  },
+  {
+    "day": 6,
+    "tasks_ru": "Температура 29-30°C. Подготовка к первой вакцинации (Ньюкасл/Бронхит или Гамборо по региональному календарю). Проверьте чистоту систем поения.",
+    "tasks_uz": "Harorat 29-30°C. Birinchi emlashga tayyorgarlik (Nyukasl/Bronxit yoki Gamboro hududiy taqvim bo'yicha). Suv ta'minoti tizimi tozaligini tekshiring.",
+    "video_url": null
+  },
+  {
+    "day": 7,
+    "tasks_ru": "Конец 1-й недели. Взвешивание цыплят (норма Ross-308/Cobb-500: 180-200 г). Первая плановая вакцинация методом выпаивания. Температура 29°C.",
+    "tasks_uz": "1-hafta yakuni. Jo'jalarni tortish (Ross-308/Cobb-500 normasi: 180-200 g). Ichirish usuli bilan birinchi rejali emlash. Harorat 29°C.",
+    "video_url": "https://www.youtube.com/watch?v=broiler_week_1"
+  },
+  {
+    "day": 8,
+    "tasks_ru": "Температура 28-29°C. Начните расширение зоны содержания цыплят. Введите 1 час темноты в сутки для формирования костяка и иммунитета.",
+    "tasks_uz": "Harorat 28-29°C. Jo'jalar saqlanadigan joyni kengaytirishni boshlang. Suyak va immunitet rivojlanishi uchun kuniga 1 soat qorong'ilik kiriting.",
+    "video_url": null
+  },
+  {
+    "day": 9,
+    "tasks_ru": "Температура 28°C. Проверьте вентиляцию: аммиачный запах не должен ощущаться. Контроль расхода воды (должен быть в 1.8-2 раза больше веса съеденного корма).",
+    "tasks_uz": "Harorat 28°C. Shamollatishni tekshiring: ammiak hidi bo'lmasligi kerak. Suv sarfini nazorat qiling (yeyilgan yem og'irligidan 1.8-2 baravar ko'p bo'lishi kerak).",
+    "video_url": null
+  },
+  {
+    "day": 10,
+    "tasks_ru": "Температура 27-28°C. Проверьте высоту поилок и кормушек — поднимите на уровень спины птицы. Осмотрите помёт на отсутствие кокцидиоза (кровавых следов).",
+    "tasks_uz": "Harorat 27-28°C. Sug'orgich va yemdonlar balandligini qushning orqa qismi balandligiga moslang. Axlatni qon izlari (koksidioz) yo'qligiga tekshiring.",
+    "video_url": null
+  },
+  {
+    "day": 11,
+    "tasks_ru": "Температура 27°C. Увеличение темнового периода до 2 часов. Контроль качества подстилки, рыхление слежавшихся мест.",
+    "tasks_uz": "Harorat 27°C. Qorong'i davrni 2 soatga uzaytiring. To'shak sifatini nazorat qiling, qotib qolgan joylarni yumshating.",
+    "video_url": null
+  },
+  {
+    "day": 12,
+    "tasks_ru": "Температура 26-27°C. Подготовка ко второй вакцинации (болезнь Гамборо). За 2 часа до вакцинации перекройте воду для формирования жажды.",
+    "tasks_uz": "Harorat 26-27°C. Ikkinchi emlashga tayyorgarlik (Gamboro kasalligi). Emlashdan 2 soat oldin chanqash hosil qilish uchun suvni to'xtating.",
+    "video_url": null
+  },
+  {
+    "day": 13,
+    "tasks_ru": "Температура 26°C. План вакцинации Гамборо через воду с нейтрализатором хлора (молочный порошок или спец. таблетка).",
+    "tasks_uz": "Harorat 26°C. Gamboro vaksinasini xlor neytrallovchi (sut kukuni yoki maxsus tabletka) qo'shilgan suv orqali berish.",
+    "video_url": null
+  },
+  {
+    "day": 14,
+    "tasks_ru": "Конец 2-й недели. Взвешивание (норма: 450-480 г). Начало плавного перехода со Стартера на Ростовой комбикорм (75% старт / 25% рост).",
+    "tasks_uz": "2-hafta yakuni. Taroziga tortish (norma: 450-480 g). Start yemdan O'sish (Grover) yemiga bosqichma-bosqich o'tish (75% start / 25% o'sish).",
+    "video_url": "https://www.youtube.com/watch?v=broiler_week_2"
+  },
+  {
+    "day": 15,
+    "tasks_ru": "Температура 25-26°C. Переход корма: 50% Старт / 50% Рост. Проверьте активность стада и однородность поголовья.",
+    "tasks_uz": "Harorat 25-26°C. Yem o'tishi: 50% Start / 50% O'sish. Gala faolligi va bir xil o'sayotganini tekshiring.",
+    "video_url": null
+  },
+  {
+    "day": 16,
+    "tasks_ru": "Температура 25°C. Переход корма: 25% Старт / 75% Рост. Контроль влажности подстилки — удалите мокрые участки.",
+    "tasks_uz": "Harorat 25°C. Yem o'tishi: 25% Start / 75% O'sish. To'shak namligini tekshiring — namlangan joylarni olib tashlang.",
+    "video_url": null
+  },
+  {
+    "day": 17,
+    "tasks_ru": "Температура 24-25°C. Полный переход на 100% Ростовой комбикорм (гранула 2.5-3 мм). Увеличьте вентиляцию по мере роста живой массы.",
+    "tasks_uz": "Harorat 24-25°C. To'liq 100% O'sish (Grover) yemiga o'tish (2.5-3 mm granula). Tirik vazn oshishi bilan shamollatish quvvatini oshiring.",
+    "video_url": null
+  },
+  {
+    "day": 18,
+    "tasks_ru": "Температура 24°C. Темновой режим: 4 часа темноты (для здорового сердца и конечностей). Проверка давления в линии ниппелей.",
+    "tasks_uz": "Harorat 24°C. Qorong'ilik rejimi: 4 soat (yurak va oyoq sog'lig'i uchun). Nippel sug'orgichlardagi bosimni tekshirish.",
+    "video_url": null
+  },
+  {
+    "day": 19,
+    "tasks_ru": "Температура 23-24°C. Профилактика респираторных болезней (эфирные масла или щадящая аэрозольная дезинфекция в присутствии птицы).",
+    "tasks_uz": "Harorat 23-24°C. Nafas yo'llari kasalliklarining oldini olish (efir moylari yoki parrandalar borligida yumshoq aerozol dezinfeksiya).",
+    "video_url": null
+  },
+  {
+    "day": 20,
+    "tasks_ru": "Температура 23°C. Проверьте плотность посадки. Если птичник позволяет, откройте всю оставшуюся площадь помещения.",
+    "tasks_uz": "Harorat 23°C. Zichlikni tekshiring. Agar bino imkon bersa, xonaning qolgan barcha maydonini to'liq oching.",
+    "video_url": null
+  },
+  {
+    "day": 21,
+    "tasks_ru": "Конец 3-й недели. Контрольное взвешивание (норма: 900-1000 г). Ревакцинация против Ньюкасла (по рекомендации ветврача).",
+    "tasks_uz": "3-hafta yakuni. Nazorat tortish (norma: 900-1000 g). Nyukaslga qarshi qayta emlash (veterinar tavsiyasiga ko'ra).",
+    "video_url": "https://www.youtube.com/watch?v=broiler_week_3"
+  },
+  {
+    "day": 22,
+    "tasks_ru": "Температура 22-23°C. Контроль потребления воды. В жаркую погоду охлаждайте поступающую воду (оптимум 16-18°C).",
+    "tasks_uz": "Harorat 22-23°C. Suv ichilishini nazorat qiling. Issiq havoda berilayotgan suvni salqin tuting (optimal 16-18°C).",
+    "video_url": null
+  },
+  {
+    "day": 23,
+    "tasks_ru": "Температура 22°C. Проверка лап птицы на пододерматит (натоптыши). Если влажно под ногами — добавьте известь-пушонку и свежую подстилку.",
+    "tasks_uz": "Harorat 22°C. Oyoq panjalarini pododermatitga tekshiring. Agar to'shak nam bo'lsa — so'ndirilgan ohak va yangi to'shak seping.",
+    "video_url": null
+  },
+  {
+    "day": 24,
+    "tasks_ru": "Температура 21-22°C. Контроль скорости воздуха на уровне птицы: не допускать прямого обдува холодным воздухом.",
+    "tasks_uz": "Harorat 21-22°C. Qushlar sathida havo harakati tezligini nazorat qiling: sovuq havo to'g'ridan-to'g'ri urilishiga yo'l qo'ymang.",
+    "video_url": null
+  },
+  {
+    "day": 25,
+    "tasks_ru": "Температура 21°C. Проверьте конверсию корма (FCR). Очистка ламп и плафонов от птичьей пыли для поддержания светового потока.",
+    "tasks_uz": "Harorat 21°C. Yem konversiyasini (FCR) hisoblang. Yorug'lik tushishini ta'minlash uchun chiroqlarni changdan tozalang.",
+    "video_url": null
+  },
+  {
+    "day": 26,
+    "tasks_ru": "Температура 21°C. Осмотр птиц: проверьте дыхание (хрипы, вытягивание шеи). При признаках болезни обратитесь к ветеринару.",
+    "tasks_uz": "Harorat 21°C. Qushlarni ko'zdan kechiring: nafas olishni tekshiring (xirillash, bo'yin cho'zish). Kasallik belgilarida veterinar chaqiring.",
+    "video_url": null
+  },
+  {
+    "day": 27,
+    "tasks_ru": "Температура 20-21°C. Подготовка к переходу на Финишный комбикорм. Проверьте запасы корма на складе.",
+    "tasks_uz": "Harorat 20-21°C. Finish yemiga o'tishga tayyorgarlik. Omborxonada yem zaxirasini tekshiring.",
+    "video_url": null
+  },
+  {
+    "day": 28,
+    "tasks_ru": "Конец 4-й недели. Взвешивание (норма: 1500-1600 г). Начало перехода с Роста на Финиш (гранула 3.5-4 мм, 70% Рост / 30% Финиш).",
+    "tasks_uz": "4-hafta yakuni. Taroziga tortish (norma: 1500-1600 g). Groverdan Finishga o'tishni boshlash (granula 3.5-4 mm, 70% O'sish / 30% Finish).",
+    "video_url": "https://www.youtube.com/watch?v=broiler_week_4"
+  },
+  {
+    "day": 29,
+    "tasks_ru": "Температура 20°C. Переход корма: 50% Рост / 50% Финиш. Обеспечьте бесперебойную подачу свежей воды.",
+    "tasks_uz": "Harorat 20°C. Yem o'tishi: 50% O'sish / 50% Finish. Toza suvning to'xtovsiz berilishini ta'minlang.",
+    "video_url": null
+  },
+  {
+    "day": 30,
+    "tasks_ru": "Температура 20°C. Переход корма: 25% Рост / 75% Финиш. Проверьте работу аварийных вентиляторов или генератора.",
+    "tasks_uz": "Harorat 20°C. Yem o'tishi: 25% O'sish / 75% Finish. Avariya ventilyatorlari va generatorning ishlashini tekshiring.",
+    "video_url": null
+  },
+  {
+    "day": 31,
+    "tasks_ru": "Температура 19-20°C. 100% Финишный комбикорм. Прекращение выпойки антибиотиков и кокцидиостатиков (период выведения до убоя).",
+    "tasks_uz": "Harorat 19-20°C. 100% Finish yemi. Antibiotik va koksidiostatiklarni ichirishni to'xtatish (so'yishdan oldingi tozalanish davri).",
+    "video_url": null
+  },
+  {
+    "day": 32,
+    "tasks_ru": "Температура 19°C. Контроль перегрева: если на улице жара >30°C, включайте туманообразование или смачивание крыши.",
+    "tasks_uz": "Harorat 19°C. Qizib ketishdan saqlash: tashqarida havo >30°C bo'lsa, tumanlagichlar yoki tomga suv sepishni yoqing.",
+    "video_url": null
+  },
+  {
+    "day": 33,
+    "tasks_ru": "Температура 19°C. Проверьте состояние перьевого покрова и кожных покровов. Не допускайте столпотворения птицы у кормушек.",
+    "tasks_uz": "Harorat 19°C. Pat qoplami va teri holatini tekshiring. Yemdonlar atrofida qushlar tiqilinchini oldini oling.",
+    "video_url": null
+  },
+  {
+    "day": 34,
+    "tasks_ru": "Температура 18-19°C. Поднимите кормушки до уровня груди птицы, чтобы минимизировать рассыпание корма.",
+    "tasks_uz": "Harorat 18-19°C. Yem isrof bo'lishini kamaytirish uchun yemdonlarni qushning ko'krak sathigacha ko'taring.",
+    "video_url": null
+  },
+  {
+    "day": 35,
+    "tasks_ru": "Конец 5-й недели. Контрольное взвешивание (норма: 2100-2300 г). Оценка готовности к первому прореживанию стада (если планируется).",
+    "tasks_uz": "5-hafta yakuni. Nazorat tortish (norma: 2100-2300 g). Podani birinchi siyraklatishga tayyorligini baholang (agar rejalashtirilgan bo'lsa).",
+    "video_url": "https://www.youtube.com/watch?v=broiler_week_5"
+  },
+  {
+    "day": 36,
+    "tasks_ru": "Температура 18-19°C. Контроль влажности воздуха (оптимум 55-65%). Максимальное проветривание в дневное время.",
+    "tasks_uz": "Harorat 18-19°C. Havo namligini nazorat qilish (optimal 55-65%). Kunduzgi vaqtda maksimal shamollatish.",
+    "video_url": null
+  },
+  {
+    "day": 37,
+    "tasks_ru": "Температура 18°C. Проверка чистоты воды. Подготовка тары/ящиков для будущей отгрузки и дезинфекция транспорта.",
+    "tasks_uz": "Harorat 18°C. Suv tozaligini tekshiring. Bo'lajak sotish/tashish uchun yashiklarni tayyorlash va transportni dezinfeksiya qilish.",
+    "video_url": null
+  },
+  {
+    "day": 38,
+    "tasks_ru": "Температура 18°C. Мониторинг аппетита и подвижности. Запись данных по приросту и расходу корма в дневник.",
+    "tasks_uz": "Harorat 18°C. Ishtaha va harakatchanlikni kuzatish. Kundalikka vazn qo'shilishi va yem sarfini qayd etish.",
+    "video_url": null
+  },
+  {
+    "day": 39,
+    "tasks_ru": "Температура 18°C. Проверьте соответствие веса рыночным требованиям покупателей (оптимум 2.5 - 2.8 кг).",
+    "tasks_uz": "Harorat 18°C. Qushlar vazni xaridorlarning bozor talabiga mosligini tekshiring (optimal 2.5 - 2.8 kg).",
+    "video_url": null
+  },
+  {
+    "day": 40,
+    "tasks_ru": "Температура 18°C. Подготовка к завершению цикла: согласуйте график отгрузки с закупщиками или убойным цехом.",
+    "tasks_uz": "Harorat 18°C. Siklni yakunlashga tayyorgarlik: xaridorlar yoki kushxona bilan topshirish vaqtini kelishib oling.",
+    "video_url": null
+  },
+  {
+    "day": 41,
+    "tasks_ru": "Температура 18°C. За 8-10 часов до отлова прекратите подачу корма для опорожнения кишечника. Воду НЕ отключать до самого начала отлова!",
+    "tasks_uz": "Harorat 18°C. Qushlarni ushlashdan 8-10 soat oldin ichaklarni bo'shatish uchun yem berishni to'xtating. Suvni ushlash boshlanguncha UZMANG!",
+    "video_url": null
+  },
+  {
+    "day": 42,
+    "tasks_ru": "Финальный день (42 дня). Отлов при синем/приглушенном свете без травм. Итоговое взвешивание, фиксация FCR и сохранности партии в AgroZen.",
+    "tasks_uz": "Yakuniy kun (42 kun). Shikast yetkazmaslik uchun ko'k/xira chiroqda ushlash. Yakuniy taroziga tortish, AgroZen ilovasida partiyani yakunlash.",
+    "video_url": "https://www.youtube.com/watch?v=broiler_finish"
+  }
+]

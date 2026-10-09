@@ -1,0 +1,16 @@
+{
+  "lesson_number": 2,
+  "title": "Birinchi 3 kun: suv, yem va jig'ildon nazorati",
+  "content": "Dastlabki soatlarda jo'jalarga 20-22°C iliq suv berish o'ta zarur. Suvga glyukoza va vitamin qo'shish yo'l charchog'ini yengishga yordam beradi. Yem suv ichirilgandan 2 soat o'tgach podnoslarga beriladi. Birinchi kunning eng asosiy tekshiruvi — jig'ildon to'laligi: 24 soatdan so'ng 95% jo'janing jig'ildoni yumshoq va yem-suvga to'la bo'lishi shart.",
+  "quiz": {
+    "question": "Birinchi suv ichirilgandan keyin qancha vaqt o'tgach start yemi beriladi?",
+    "options": [
+      "Darhol",
+      "2 soatdan so'ng",
+      "12 soatdan so'ng",
+      "Ikkinchi kuni"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Jo'jalar avval suv muvozanatini tiklashi kerak, shu sababli yem 2 soatdan so'ng beriladi."
+  }
+}

@@ -1,0 +1,70 @@
+name: agrozen
+description: "AgroZen — AI-powered assistant for beginner poultry farmers in Uzbekistan"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Backend
+  supabase_flutter: ^2.8.0
+
+  # State Management
+  flutter_bloc: ^8.1.0
+  equatable: ^2.0.0
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # Localization
+  intl: ^0.20.0
+
+  # Data Serialization
+  json_annotation: ^4.9.0
+  freezed_annotation: ^3.0.0
+
+  # Notifications
+  flutter_local_notifications: ^18.0.0
+
+  # Audio (voice input)
+  record: ^5.1.0
+  permission_handler: ^11.3.0
+
+  # UI Utilities
+  flutter_markdown: ^0.7.0
+  cached_network_image: ^3.4.0
+  share_plus: ^10.0.0
+  google_fonts: ^6.2.0
+
+  # Utilities
+  path_provider: ^2.1.0
+  http: ^1.2.0
+  uuid: ^4.5.0
+  shared_preferences: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  bloc_test: ^9.1.0
+  mocktail: ^1.0.0
+  build_runner: ^2.4.0
+  json_serializable: ^6.8.0
+  freezed: ^3.0.0
+  flutter_lints: ^5.0.0
+
+flutter:
+  generate: true
+  uses-material-design: true
+
+  assets:
+    - knowledge/
+    - knowledge/broilers/ru/
+    - knowledge/broilers/uz/
+    - knowledge/course/ru/
+    - knowledge/course/uz/

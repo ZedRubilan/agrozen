@@ -1,0 +1,16 @@
+{
+  "lesson_number": 4,
+  "title": "Emlash taqvimi va bioxavfsizlik",
+  "content": "Bioxavfsizlik kirishdagi dezkovrik va almashtiriladigan maxsus poyabzaldan boshlanadi. Begona kishilarning parrandaxonaga kirishi qat'iyan man etiladi. Emlash qat'iy reja asosida amalga oshiriladi (Nyukasl, Gamboro, Bronxit). Vaksinalarni ichirishda faqat xlordan xoli suv va stabilizator (yog'siz quruq sut) ishlatiladi.",
+  "quiz": {
+    "question": "Tirik vaksinalarni eritish uchun qanday suvdan foydalanish mutlaqo mumkin emas?",
+    "options": [
+      "Sovuq buloq suvidan",
+      "Xlori neytrallanmagan vodoprovod suvidan",
+      "Distillangan suvdan",
+      "Yog'siz quruq sut qo'shilgan suvdan"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Xlor vaksina tarkibidagi tirik viruslarni darhol o'ldiradi va emlash natija bermaydi."
+  }
+}

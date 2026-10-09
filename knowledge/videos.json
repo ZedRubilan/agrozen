@@ -1,0 +1,51 @@
+[
+  {
+    "day": 1,
+    "title_ru": "Подготовка птичника и прием суточных цыплят",
+    "title_uz": "Binoni tayyorlash va bir kunlik jo'jalarni qabul qilish",
+    "url": "https://www.youtube.com/watch?v=broiler_day_1",
+    "duration": "8:25"
+  },
+  {
+    "day": 7,
+    "title_ru": "Первая неделя: вакцинация и контроль веса",
+    "title_uz": "1-hafta: emlash va vazn nazorati",
+    "url": "https://www.youtube.com/watch?v=broiler_week_1",
+    "duration": "6:40"
+  },
+  {
+    "day": 14,
+    "title_ru": "Переход на ростовой корм и регулировка вентиляции",
+    "title_uz": "O'sish yemiga o'tish va ventilyatsiyani sozlash",
+    "url": "https://www.youtube.com/watch?v=broiler_week_2",
+    "duration": "7:15"
+  },
+  {
+    "day": 21,
+    "title_ru": "Профилактика респираторных болезней и кокцидиоза",
+    "title_uz": "Nafas yo'llari kasalliklari va koksidioz profilaktikasi",
+    "url": "https://www.youtube.com/watch?v=broiler_week_3",
+    "duration": "9:10"
+  },
+  {
+    "day": 28,
+    "title_ru": "Борьба с тепловым стрессом и переход на финишный корм",
+    "title_uz": "Issiqlik stressiga qarshi kurash va finish yemiga o'tish",
+    "url": "https://www.youtube.com/watch?v=broiler_week_4",
+    "duration": "8:50"
+  },
+  {
+    "day": 35,
+    "title_ru": "Финальный откорм и качество подстилки",
+    "title_uz": "Yakuniy semirtirish va to'shak sifati",
+    "url": "https://www.youtube.com/watch?v=broiler_week_5",
+    "duration": "5:30"
+  },
+  {
+    "day": 42,
+    "title_ru": "Подготовка к отлову, прекращение выпойки препаратов и отгрузка",
+    "title_uz": "Ushlashga tayyorgarlik, dorilarni to'xtatish va topshirish",
+    "url": "https://www.youtube.com/watch?v=broiler_finish",
+    "duration": "10:05"
+  }
+]

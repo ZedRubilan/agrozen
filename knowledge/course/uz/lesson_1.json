@@ -1,0 +1,16 @@
+{
+  "lesson_number": 1,
+  "title": "Binoni tayyorlash va dezinfeksiya",
+  "content": "Jo'jalar kelishidan oldin bino eski go'ngdan to'liq tozalanadi, yuqori bosimli suv bilan yuviladi va dezinfeksiya qilinadi. Devorlarni 20% li ohak eritmasi bilan oqlash bakteriyalarni kamaytiradi. Jo'jalar kelishidan 24 soat oldin isitgichlar yoqilib, pol va to'shak harorati 32°C ga yetkaziladi. Quruq to'shak (qipiq) qalinligi kamida 5-7 sm bo'lishi kerak.",
+  "quiz": {
+    "question": "Bir kunlik jo'jalar qabul qilinishida pol/to'shak harorati necha daraja bo'lishi kerak?",
+    "options": [
+      "18-20°C",
+      "24-26°C",
+      "32-33°C",
+      "38-40°C"
+    ],
+    "correct_option_index": 2,
+    "explanation": "Jo'jalar sovqotmasligi uchun to'shak sathidagi harorat 32-33°C bo'lishi shart."
+  }
+}
