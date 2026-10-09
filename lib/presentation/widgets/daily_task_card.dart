@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/models/daily_plan.dart';
+import '../../services/external_actions.dart';
 
 class DailyTaskCard extends StatelessWidget {
   final DailyPlan plan;
@@ -97,17 +98,8 @@ class DailyTaskCard extends StatelessWidget {
               const SizedBox(height: 14),
               OutlinedButton.icon(
                 onPressed: onWatchVideo ??
-                    () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            language == 'ru'
-                                ? 'Видео: ${plan.videoUrl}'
-                                : 'Video: ${plan.videoUrl}',
-                          ),
-                        ),
-                      );
-                    },
+                    () => const ExternalActions()
+                        .openVideo(context, plan.videoUrl!),
                 icon: const Icon(Icons.play_circle_fill, color: Colors.red),
                 label: Text(
                   language == 'ru' ? 'Смотреть видеогид' : "Videoni ko'rish",

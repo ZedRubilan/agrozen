@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrozen/domain/alerts/alert_engine.dart';
-import 'package:agrozen/domain/alerts/alert_models.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
+import 'package:agrozen/services/daily_counters.dart';
 
 class LogMortalityScreen extends StatefulWidget {
   const LogMortalityScreen({super.key});
@@ -28,7 +27,8 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
   }
 
   Future<void> _loadState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled();
+    if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
       _currentCount = prefs.getInt('current_count') ?? 500;
@@ -46,32 +46,27 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
     setState(() => _isSaving = true);
 
     final deaths = int.parse(_controller.text.trim());
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled();
 
-    final prevDeaths = prefs.getInt('today_mortality') ?? 0;
-    final newTodayDeaths = prevDeaths + deaths;
-    final updatedCurrent = (_currentCount - deaths).clamp(0, 999999);
+    // Mortality % must be measured against the flock size BEFORE today's
+    // deaths are removed, otherwise the rate is inflated.
+    final countBeforeToday = prefs.getInt('current_count') ?? _currentCount;
+    final newTodayDeaths = DailyCounters.getMortality(prefs) + deaths;
+    final updatedCurrent = (countBeforeToday - deaths).clamp(0, 999999);
 
-    await prefs.setInt('today_mortality', newTodayDeaths);
+    await DailyCounters.addMortality(prefs, deaths);
     await prefs.setInt('current_count', updatedCurrent);
 
-    // Evaluate alert rule
-    final normsMap = await _knowledgeRepo.getNorms();
-    final norms = NormsData(
-      mortalityThresholdPercent: (normsMap['alert_thresholds']?['daily_mortality_percent'] as num?)?.toDouble() ?? 1.0,
-      weeklyWeightTargets: {7: 180, 14: 500, 21: 900, 28: 1400, 35: 1900, 42: 2400},
-      weightDeviationPercent: 15.0,
-      dailyFeedPerBird: {7: 25, 14: 55, 21: 85, 28: 120, 35: 155, 42: 180},
-      temperatureTargets: {1: 34, 3: 33, 7: 32, 14: 29, 21: 27, 28: 24, 35: 22, 42: 20},
-    );
+    // Evaluate alert rule against the vet-verified norms.
+    final norms = await _knowledgeRepo.getParsedNorms();
     final engine = AlertEngine(norms);
-    final alert = engine.checkMortality(deaths: newTodayDeaths, currentCount: updatedCurrent);
+    final alert = engine.checkMortality(
+      deaths: newTodayDeaths,
+      currentCount: countBeforeToday,
+    );
 
+    if (!mounted) return;
     setState(() => _isSaving = false);
-
-    if (!mounted) return;
-
-    if (!mounted) return;
 
     if (alert != null) {
       final district = prefs.getString('farmer_district') ?? 'Toshkent';
@@ -87,10 +82,10 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
           title: Text(isRu ? 'Внимание: Высокий падёж!' : "Diqqat: Yuqori nobodlik!"),
           content: Text(
             isRu
-                ? 'Падёж превышает суточную норму (${alert.actualValue.toStringAsFixed(1)}% > 1%).\n\n'
+                ? 'Падёж превышает суточную норму (${alert.actualValue.toStringAsFixed(1)}% > ${alert.threshold.toStringAsFixed(1)}%).\n\n'
                   'Срочно свяжитесь с ветеринаром:\n'
                   '${vet?['name'] ?? 'Ветеринар'}\nТел: ${vet?['phone'] ?? '+998 90 123 45 67'}'
-                : "Nobodlik sutkalik me'yordan oshib ketdi (${alert.actualValue.toStringAsFixed(1)}% > 1%).\n\n"
+                : "Nobodlik sutkalik me'yordan oshib ketdi (${alert.actualValue.toStringAsFixed(1)}% > ${alert.threshold.toStringAsFixed(1)}%).\n\n"
                   "Zudlik bilan veterinarga murojaat qiling:\n"
                   "${vet?['name'] ?? 'Veterinar'}\nTel: ${vet?['phone'] ?? '+998 90 123 45 67'}",
           ),

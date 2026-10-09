@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import '../../domain/alerts/alert_models.dart';
 import '../models/daily_plan.dart';
 
 class KnowledgeRepository {
@@ -10,6 +11,7 @@ class KnowledgeRepository {
 
   static List<DailyPlan>? _dailyPlansCache;
   static Map<String, dynamic>? _normsCache;
+  static NormsData? _parsedNormsCache;
   static List<Map<String, dynamic>>? _vetsCache;
   static List<Map<String, dynamic>>? _videosCache;
 
@@ -19,6 +21,22 @@ class KnowledgeRepository {
     'vaccination.md',
     'ventilation.md',
   ];
+
+  /// Loads and parses `knowledge/norms.json` into [NormsData].
+  ///
+  /// This is the SINGLE source of truth for alert thresholds, weight targets and
+  /// temperature targets. Screens must use this instead of hardcoding norms,
+  /// otherwise the deterministic alert engine drifts away from the
+  /// vet-verified data.
+  Future<NormsData> getParsedNorms() async {
+    final cached = _parsedNormsCache;
+    if (cached != null) return cached;
+
+    final raw = await getNorms();
+    final parsed = NormsData.fromJson(raw);
+    _parsedNormsCache = parsed;
+    return parsed;
+  }
 
   /// Get daily plan for a specific cycle day (1 to 42)
   Future<DailyPlan?> getDailyPlan(int day) async {
@@ -124,20 +142,23 @@ class KnowledgeRepository {
     },
   };
 
+  /// Offline fallback used only when `knowledge/vets.json` cannot be read.
+  /// MUST stay in sync with `knowledge/vets.json` — a wrong phone number here
+  /// would send a farmer in an emergency to the wrong clinic.
   static const List<Map<String, dynamic>> _defaultVets = [
     {'district': 'Toshkent', 'name': 'Dr. Rustam Karimov', 'phone': '+998901234501'},
     {'district': 'Samarqand', 'name': 'Dr. Jamshid Ergashev', 'phone': '+998933334502'},
     {'district': 'Buxoro', 'name': 'Dr. Alisher Narzullayev', 'phone': '+998914004503'},
     {'district': 'Andijon', 'name': 'Dr. Nodirbek Usmonov', 'phone': '+998902004504'},
-    {"district": "Farg'ona", 'name': 'Dr. Mansur Qodirov', 'phone': '+998911504505'},
+    {'district': "Farg'ona", 'name': 'Dr. Mansur Qodirov', 'phone': '+998911504505'},
     {'district': 'Namangan', 'name': 'Dr. Salohiddin Mirzayev', 'phone': '+998932114506'},
     {'district': 'Qashqadaryo', 'name': 'Dr. Baxtiyor Normurodov', 'phone': '+998973104507'},
-    {'district': 'Surxondaryo', 'name': 'Dr. Otabek Jo\'rayev', 'phone': '+998991204508'},
-    {'district': 'Jizzax', 'name': 'Dr. Sanjar Rahimov', 'phone': '+998941004509'},
-    {'district': 'Sirdaryo', 'name': 'Dr. Ilhom Yoqubov', 'phone': '+998901114510'},
-    {'district': 'Xorazm', 'name': 'Dr. Maqsud Matyoqubov', 'phone': '+998912224511'},
-    {'district': 'Navoiy', 'name': 'Dr. Sherzod Xolmatov', 'phone': '+998934444512'},
-    {"district": "Qoraqalpog'iston", 'name': 'Dr. Azamat Seytov', 'phone': '+998905554513'},
+    {'district': 'Surxondaryo', 'name': 'Dr. Ilhom Xoliqov', 'phone': '+998994404508'},
+    {'district': 'Jizzax', 'name': 'Dr. Otabek Sobirov', 'phone': '+998905504509'},
+    {'district': 'Sirdaryo', 'name': 'Dr. Farrux Yusupov', 'phone': '+998916604510'},
+    {'district': 'Xorazm', 'name': 'Dr. Sherzod Matyoqubov', 'phone': '+998937704511'},
+    {'district': 'Navoiy', 'name': "Dr. G'ayrat Hamroyev", 'phone': '+998792204512'},
+    {'district': "Qoraqalpog'iston", 'name': 'Dr. Azamat Seytov', 'phone': '+998612204513'},
   ];
 
   /// Get veterinarians for a specific district (e.g. 'Toshkent', 'Samarqand')
@@ -145,15 +166,23 @@ class KnowledgeRepository {
     try {
       final allVets = await getAllVets();
       final normalizedQuery = district.trim().toLowerCase();
+      if (normalizedQuery.isEmpty) {
+        // Never guess: an empty query must not resolve to a random vet.
+        return const [];
+      }
       final filtered = allVets.where((vet) {
         final vetDistrict = (vet['district'] as String? ?? '').toLowerCase();
         final vetName = (vet['name'] as String? ?? '').toLowerCase();
+        if (vetDistrict.isEmpty) return false;
         return vetDistrict.contains(normalizedQuery) ||
             normalizedQuery.contains(vetDistrict) ||
             vetName.contains(normalizedQuery);
       }).toList();
 
-      return filtered.isNotEmpty ? filtered : allVets;
+      // No match at all -> empty, NOT the whole directory. Callers show a
+      // generic "call your district vet service" fallback instead of a wrong
+      // region's phone number when no match exists.
+      return filtered;
     } catch (_) {
       return _defaultVets;
     }

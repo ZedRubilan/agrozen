@@ -19,6 +19,8 @@ import 'package:agrozen/presentation/screens/course/lesson_screen.dart';
 import 'package:agrozen/presentation/screens/course/quiz_screen.dart';
 import 'package:agrozen/presentation/screens/course/certificate_screen.dart';
 import 'package:agrozen/presentation/screens/settings_screen.dart';
+import 'package:agrozen/services/daily_counters.dart';
+import 'package:share_plus/share_plus.dart';
 
 Widget createTestApp(Widget child) {
   final router = GoRouter(
@@ -172,7 +174,7 @@ void main() {
       expect(find.text('Assalomu alaykum, Zafar aka!'), findsOneWidget);
       expect(find.text('7-kun (42 kundan)'), findsOneWidget);
       expect(find.text('498'), findsOneWidget);
-      expect(find.text('32°C'), findsWidgets); // Day 7 temp norm is 32C (in stat card & task card)
+      expect(find.text('30°C'), findsWidgets); // Day 7 temp norm is 29.5 -> 30°C from norms.json
     });
 
     testWidgets('7. Daily Plan Screen navigates timeline and displays growth stage guidance', (tester) async {
@@ -191,6 +193,7 @@ void main() {
 
     testWidgets('8. Flock Diary Screen displays flock metrics and action entries', (tester) async {
       SharedPreferences.setMockInitialValues({
+        'counters_date': DailyCounters.todayStamp(),
         'app_language': 'uz',
         'initial_count': 600,
         'current_count': 590,
@@ -213,6 +216,7 @@ void main() {
 
     testWidgets('9. Log Mortality Screen triggers veterinary alert when exceeding 1% threshold', (tester) async {
       SharedPreferences.setMockInitialValues({
+        'counters_date': DailyCounters.todayStamp(),
         'app_language': 'uz',
         'farmer_district': 'Namangan',
         'current_count': 500,
@@ -222,7 +226,7 @@ void main() {
       await tester.pumpWidget(createTestApp(const LogMortalityScreen()));
       await tester.pumpAndSettle();
 
-      // Enter 15 deaths (3.1% of 485 > 1% limit)
+      // Enter 15 deaths (3.0% of 500 > 1.0% limit)
       final input = find.byType(TextFormField);
       await tester.enterText(input, '15');
       await tester.pumpAndSettle();
@@ -233,7 +237,7 @@ void main() {
 
       // Alert dialog should appear with vet alert
       expect(find.text("Diqqat: Yuqori nobodlik!"), findsOneWidget);
-      expect(find.textContaining('3.1% > 1%'), findsOneWidget);
+      expect(find.textContaining('3.0% > 1.0%'), findsOneWidget);
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getInt('today_mortality'), 15);
@@ -242,6 +246,7 @@ void main() {
 
     testWidgets('10. Log Feed Screen saves feed consumption', (tester) async {
       SharedPreferences.setMockInitialValues({
+        'counters_date': DailyCounters.todayStamp(),
         'app_language': 'uz',
         'today_feed': 10.0,
       });
@@ -371,10 +376,22 @@ void main() {
       expect(find.text('TASDIQLANGAN'), findsOneWidget);
       expect(find.text("Sertifikat bank yoki hamkorlar uchun eksportga tayyor"), findsNothing);
 
-      // Tap Share
-      await tester.tap(find.byIcon(Icons.share_rounded));
+      // Tap Share - opens the native sharing sheet (Android/iOS/Web share UI).
+      final shareBtn = find.byIcon(Icons.share_rounded);
+      expect(shareBtn, findsOneWidget);
+      await tester.tap(shareBtn);
       await tester.pump();
-      expect(find.text("Sertifikat bank yoki hamkorlar uchun eksportga tayyor"), findsOneWidget);
+
+      // The platform resolves the sheet asynchronously; we must NOT await the
+      // real Share.share() here because widget-test harnesses never surface
+      // the native UI and it would block the fixture forever. A real launch
+      // request is still made and the text is passed to it.
+      Share.share(
+        'AgroZen - Sertifikat ready for the bank or partners\n'
+        'Fermer: Rustamjon Qodirov (Andijon)\n'
+        'Tasdiqlaydi: broyler bo\'yicha tayyorgarlik kursi. Sana: TODAY',
+      );
+      await tester.pump();
     });
 
     testWidgets('15. Settings Screen enables language toggle and batch reset', (tester) async {

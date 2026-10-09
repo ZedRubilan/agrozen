@@ -7,8 +7,10 @@ build/
 .dart_tool/
 .pub-cache/
 .pub/
-*.g.dart
-*.freezed.dart
+
+# NOTE: generated sources (*.g.dart, lib/l10n/generated/) are intentionally
+# COMMITTED. They are required to compile the app and to run the test suite on
+# a fresh clone without a build_runner step. Do not re-add them here.
 
 # IDE
 .idea/
@@ -63,7 +65,7 @@ coverage/
 *.lcov
 
 # Generated
-lib/l10n/generated/
+# lib/l10n/generated/ is intentionally committed (see note above).
 
 # Original docs (not part of app source)
 *.docx

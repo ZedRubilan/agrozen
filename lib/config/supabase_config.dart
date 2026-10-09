@@ -10,6 +10,14 @@ class SupabaseConfig {
     defaultValue: 'your-anon-key',
   );
 
+  /// True when real credentials were supplied at build time.
+  /// Without them the app runs offline and never touches the network.
+  static bool get isConfigured =>
+      url.isNotEmpty &&
+      anonKey.isNotEmpty &&
+      url != 'https://your-project.supabase.co' &&
+      anonKey != 'your-anon-key';
+
   static SupabaseClient get client => Supabase.instance.client;
 
   static Future<void> initialize() async {

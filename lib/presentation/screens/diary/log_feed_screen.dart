@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:agrozen/services/daily_counters.dart';
 
 class LogFeedScreen extends StatefulWidget {
   const LogFeedScreen({super.key});
@@ -22,7 +22,8 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
   }
 
   Future<void> _loadState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled();
+    if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
     });
@@ -39,13 +40,12 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
     setState(() => _isSaving = true);
 
     final feedKg = double.parse(_controller.text.trim());
-    final prefs = await SharedPreferences.getInstance();
-    final prevFeed = prefs.getDouble('today_feed') ?? 0.0;
-    await prefs.setDouble('today_feed', prevFeed + feedKg);
-
-    setState(() => _isSaving = false);
+    final prefs = await DailyCounters.rolled();
+    await DailyCounters.addFeed(prefs, feedKg);
 
     if (!mounted) return;
+    setState(() => _isSaving = false);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(_lang == 'ru' ? 'Расход корма сохранён' : 'Yem sarfi saqlandi'),

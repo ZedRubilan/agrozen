@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/daily_plan.dart';
 import '../../data/repositories/knowledge_repository.dart';
+import '../../domain/alerts/alert_models.dart';
 import '../../domain/scheduler/day_calculator.dart';
 import '../widgets/daily_task_card.dart';
 
@@ -18,6 +19,7 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
   int _currentBatchDay = 1;
   int _selectedDay = 1;
   String _lang = 'uz';
+  NormsData? _norms;
   bool _isLoading = true;
 
   @override
@@ -43,10 +45,20 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
       _allPlans = [];
     }
 
+    try {
+      _norms = await _repo.getParsedNorms();
+    } catch (_) {
+      _norms = null;
+    }
+
+    if (!mounted) return;
     setState(() => _isLoading = false);
   }
 
+  /// Target temperature from the vet-verified `knowledge/norms.json`.
   int _getTemperatureForDay(int day) {
+    final target = _norms?.temperatureTargetForDay(day);
+    if (target != null) return target.round();
     if (day <= 2) return 34;
     if (day <= 4) return 33;
     if (day <= 7) return 32;

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../config/constants.dart';
+import '../../../services/daily_counters.dart';
+import '../../../services/notification_service.dart';
 
 class DisclaimerScreen extends StatefulWidget {
   const DisclaimerScreen({super.key});
@@ -26,9 +29,34 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
   }
 
   Future<void> _acceptAndFinish() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled(
+      maxDailyQuestions: AppConstants.maxDailyQuestions,
+    );
     await prefs.setBool('disclaimer_accepted', true);
     await prefs.setBool('is_onboarded', true);
+
+    // Arm the 07:00 daily plan reminder right here, so a farmer who passed
+    // onboarding is covered from the very first morning.
+    try {
+      final notifications = NotificationService();
+      await notifications.initialize();
+      final granted = await notifications.requestPermissions();
+      if (granted) {
+        final lang = prefs.getString('app_language') ?? 'uz';
+        await notifications.scheduleDailyMorningNotification(
+          title: lang == 'ru' ? 'AgroZen: план на сегодня' : 'AgroZen: bugungi reja',
+          body: lang == 'ru'
+              ? 'Откройте план дня: температура, корм, вода и задачи для вашей партии.'
+              : "Kunlik rejani oching: harorat, yem, suv va partiyangiz vazifalari.",
+        );
+        await prefs.setBool('daily_reminder_set', true);
+      } else {
+        await prefs.setBool('daily_reminder_set', false);
+      }
+    } catch (_) {
+      // Reminders are best-effort. Never block onboarding on them.
+    }
+
     if (!mounted) return;
     context.go('/home');
   }

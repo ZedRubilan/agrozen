@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/alerts/alert_models.dart';
+import '../../services/external_actions.dart';
 
 class AlertCard extends StatelessWidget {
   final String message;
@@ -100,7 +101,13 @@ class AlertCard extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: onCallVet ??
-                      () {
+                      () async {
+                        final phone = vetPhone;
+                        if (phone != null && phone.isNotEmpty) {
+                          await const ExternalActions()
+                              .callPhone(context, phone);
+                          return;
+                        }
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(

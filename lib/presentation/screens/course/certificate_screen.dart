@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CertificateScreen extends StatefulWidget {
@@ -143,16 +144,29 @@ class _CertificateScreenState extends State<CertificateScreen> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isRu
-                                ? 'Сертификат готов к экспорту для банка или партнёров'
-                                : "Sertifikat bank yoki hamkorlar uchun eksportga tayyor",
+                    onPressed: () async {
+                      final text = isRu
+                          ? 'AgroZen — Сертификат готовности\n'
+                              'Фермер: $_farmerName ($_district)\n'
+                              'Подтверждает прохождение вводного курса по бройлерам. Дата: $dateStr'
+                          : "AgroZen — Tayyorgarlik sertifikati\n"
+                              "Fermer: $_farmerName ($_district)\n"
+                              "Broyler yetishtirish bo'yicha tayyorgarlik kursi yakunlandi. Sana: $dateStr";
+                      try {
+                        await Share.share(text);
+                      } catch (_) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isRu
+                                  ? 'Не удалось открыть окно отправки.'
+                                  : "Ulashish oynasini ochib bo'lmadi.",
+                            ),
+                            backgroundColor: Colors.red,
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                     icon: const Icon(Icons.share_rounded),
                     label: Text(

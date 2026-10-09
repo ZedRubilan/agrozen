@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config/theme.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'presentation/screens/splash_screen.dart';
@@ -56,8 +57,33 @@ final GoRouter _router = GoRouter(
   ],
 );
 
-class AgroZenApp extends StatelessWidget {
-  const AgroZenApp({super.key});
+class AgroZenApp extends StatefulWidget {
+  final String initialLanguage;
+
+  const AgroZenApp({super.key, this.initialLanguage = 'uz'});
+
+  @override
+  State<AgroZenApp> createState() => _AgroZenAppState();
+}
+
+class _AgroZenAppState extends State<AgroZenApp> {
+  late Locale _locale;
+
+  @override
+  void initState() {
+    super.initState();
+    _locale = _localeFor(widget.initialLanguage);
+  }
+
+  static Locale _localeFor(String language) =>
+      Locale(language == 'ru' ? 'ru' : 'uz');
+
+  /// Called by the settings screen after the farmer switches language.
+  Future<void> setLanguage(String language) async {
+    setState(() => _locale = _localeFor(language));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language', language == 'ru' ? 'ru' : 'uz');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +94,7 @@ class AgroZenApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
       routerConfig: _router,
+      locale: _locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -76,5 +103,16 @@ class AgroZenApp extends StatelessWidget {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
     );
+  }
+}
+
+/// Lets any screen switch the app language after the farmer picks a new one in
+/// Settings, without threading a callback through every route.
+mixin AppLanguageController<T extends StatefulWidget> on State<T> {
+  void changeAppLanguage(String language) {
+    final appState = context.findAncestorStateOfType<State<AgroZenApp>>();
+    if (appState is _AgroZenAppState) {
+      appState.setLanguage(language);
+    }
   }
 }

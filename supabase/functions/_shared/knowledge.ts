@@ -908,7 +908,7 @@ export function retrieveRelevantKnowledge(
   if (mentionsNorms) {
     topics.push('norms.json');
     contextParts.push(
-      '### Ross-308 / Cobb-500 Me''yorlar jadvali (Weekly Norms):\n' +
+      '### Ross-308 / Cobb-500 normolari jadvali (Weekly Norms):\n' +
       JSON.stringify(NORMS_DATA.weekly_norms, null, 2)
     );
   }

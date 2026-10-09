@@ -1,6 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Network access for Supabase + the AI edge functions. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Voice input for the AI assistant (record package). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Daily plan reminders (flutter_local_notifications). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Launch the phone dialer when the farmer calls a veterinarian. -->
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
+        </intent>
+    </queries>
+
     <application
-        android:label="agrozen"
+        android:label="AgroZen"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

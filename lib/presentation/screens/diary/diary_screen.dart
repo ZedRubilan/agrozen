@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrozen/domain/alerts/alert_engine.dart';
 import 'package:agrozen/domain/alerts/alert_models.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
 import 'package:agrozen/presentation/widgets/alert_card.dart';
+import 'package:agrozen/services/daily_counters.dart';
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({super.key});
@@ -34,12 +34,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
   Future<void> _loadDiary() async {
     setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled();
     _lang = prefs.getString('app_language') ?? 'uz';
     _initialCount = prefs.getInt('initial_count') ?? 500;
     _currentCount = prefs.getInt('current_count') ?? _initialCount;
-    _todayMortality = prefs.getInt('today_mortality') ?? 0;
-    _todayFeed = prefs.getDouble('today_feed') ?? 0.0;
+    _todayMortality = DailyCounters.getMortality(prefs);
+    _todayFeed = DailyCounters.getFeed(prefs);
     _lastWeight = prefs.getDouble('last_weight') ?? 0.0;
 
     final district = prefs.getString('farmer_district') ?? 'Toshkent';
@@ -48,25 +48,22 @@ class _DiaryScreenState extends State<DiaryScreen> {
       _vet = vets.first;
     }
 
-    // Evaluate alert
+    // Evaluate the alert against the vet-verified norms.
     if (_todayMortality > 0) {
-      final normsMap = await _knowledgeRepo.getNorms();
-      final norms = NormsData(
-        mortalityThresholdPercent: (normsMap['alert_thresholds']?['daily_mortality_percent'] as num?)?.toDouble() ?? 1.0,
-        weeklyWeightTargets: {7: 180, 14: 500, 21: 900, 28: 1400, 35: 1900, 42: 2400},
-        weightDeviationPercent: 15.0,
-        dailyFeedPerBird: {7: 25, 14: 55, 21: 85, 28: 120, 35: 155, 42: 180},
-        temperatureTargets: {1: 34, 3: 33, 7: 32, 14: 29, 21: 27, 28: 24, 35: 22, 42: 20},
-      );
+      final norms = await _knowledgeRepo.getParsedNorms();
       final engine = AlertEngine(norms);
       _activeAlert = engine.checkMortality(
         deaths: _todayMortality,
         currentCount: _currentCount,
       );
+    } else {
+      _activeAlert = null;
     }
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrozen/domain/alerts/alert_engine.dart';
-import 'package:agrozen/domain/alerts/alert_models.dart';
 import 'package:agrozen/domain/scheduler/day_calculator.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
+import 'package:agrozen/services/daily_counters.dart';
 
 class LogWeightScreen extends StatefulWidget {
   const LogWeightScreen({super.key});
@@ -29,7 +28,8 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
   }
 
   Future<void> _loadState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled();
+    if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
       final arrivalStr = prefs.getString('arrival_date');
@@ -50,24 +50,16 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
     setState(() => _isSaving = true);
 
     final weightGrams = double.parse(_controller.text.trim());
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled();
     await prefs.setDouble('last_weight', weightGrams);
 
-    // Evaluate weight alert rule
-    await _knowledgeRepo.getNorms();
-    const norms = NormsData(
-      mortalityThresholdPercent: 1.0,
-      weeklyWeightTargets: {7: 180, 14: 500, 21: 900, 28: 1400, 35: 1900, 42: 2400},
-      weightDeviationPercent: 15.0,
-      dailyFeedPerBird: {7: 25, 14: 55, 21: 85, 28: 120, 35: 155, 42: 180},
-      temperatureTargets: {1: 34, 3: 33, 7: 32, 14: 29, 21: 27, 28: 24, 35: 22, 42: 20},
-    );
+    // Evaluate the weight rule against the vet-verified per-day norms.
+    final norms = await _knowledgeRepo.getParsedNorms();
     final engine = AlertEngine(norms);
     final alert = engine.checkWeight(weightGrams: weightGrams, batchDay: _batchDay);
 
-    setState(() => _isSaving = false);
-
     if (!mounted) return;
+    setState(() => _isSaving = false);
 
     if (alert != null) {
       final district = prefs.getString('farmer_district') ?? 'Toshkent';

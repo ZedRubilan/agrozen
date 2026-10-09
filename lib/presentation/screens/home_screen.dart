@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/daily_plan.dart';
 import '../../data/repositories/knowledge_repository.dart';
 import '../../domain/scheduler/day_calculator.dart';
@@ -9,6 +8,7 @@ import '../../domain/alerts/alert_models.dart';
 import '../widgets/daily_task_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/alert_card.dart';
+import '../../services/daily_counters.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   DailyPlan? _todayPlan;
   Map<String, dynamic>? _todayVet;
   AlertResult? _activeAlert;
+  NormsData? _norms;
   bool _isLoading = true;
 
   final KnowledgeRepository _knowledgeRepo = KnowledgeRepository();
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled();
 
     _farmerName = prefs.getString('farmer_name') ?? 'Fermer';
     _district = prefs.getString('farmer_district') ?? 'Toshkent';
@@ -63,28 +64,34 @@ class _HomeScreenState extends State<HomeScreen> {
       _todayVet = vets.first;
     }
 
-    // Check alert logic on mortality if any was recorded
-    final recordedMortality = prefs.getInt('today_mortality') ?? 0;
+    // Check the deterministic alert rule against the vet-verified norms.
+    final recordedMortality = DailyCounters.getMortality(prefs);
     if (recordedMortality > 0) {
-      final normsMap = await _knowledgeRepo.getNorms();
-      final norms = NormsData(
-        mortalityThresholdPercent: (normsMap['alert_thresholds']?['daily_mortality_percent'] as num?)?.toDouble() ?? 1.0,
-        weeklyWeightTargets: {7: 180, 14: 500, 21: 900, 28: 1400, 35: 1900, 42: 2400},
-        weightDeviationPercent: 15.0,
-        dailyFeedPerBird: {7: 25, 14: 55, 21: 85, 28: 120, 35: 155, 42: 180},
-        temperatureTargets: {1: 34, 3: 33, 7: 32, 14: 29, 21: 27, 28: 24, 35: 22, 42: 20},
-      );
+      final norms = await _knowledgeRepo.getParsedNorms();
+      _norms = norms;
       final alertEngine = AlertEngine(norms);
       _activeAlert = alertEngine.checkMortality(
         deaths: recordedMortality,
         currentCount: _currentCount,
       );
+    } else {
+      _norms = await _knowledgeRepo.getParsedNorms();
+      _activeAlert = null;
     }
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
   }
 
+  /// Target temperature for a batch day, taken from the vet-verified
+  /// `knowledge/norms.json` rather than a hardcoded table.
   int _getTemperatureForDay(int day) {
+    final target = _norms?.temperatureTargetForDay(day);
+    if (target != null) return target.round();
+    return _fallbackTemperatureForDay(day);
+  }
+
+  static int _fallbackTemperatureForDay(int day) {
     if (day <= 2) return 34;
     if (day <= 4) return 33;
     if (day <= 7) return 32;

@@ -313,6 +313,14 @@ void main() {
       expect(toshkentVets.first['name'], 'Dr. Karimov');
     });
 
+    test('getVetByDistrict returns empty instead of a wrong-region vet', () async {
+      final noMatch = await repo.getVetByDistrict('Atlantida');
+      expect(noMatch, isEmpty);
+
+      final emptyQuery = await repo.getVetByDistrict('   ');
+      expect(emptyQuery, isEmpty);
+    });
+
     test('getVideoForDay returns video URL from plan or videos', () async {
       final video = await repo.getVideoForDay(1);
       expect(video, 'https://youtube.com/day1');

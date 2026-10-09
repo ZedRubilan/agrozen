@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:agrozen/config/constants.dart';
+import 'package:agrozen/config/supabase_config.dart';
+import 'package:agrozen/data/providers/ai_provider.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
 import 'package:agrozen/presentation/widgets/voice_input_button.dart';
+import 'package:agrozen/services/daily_counters.dart';
+import 'package:agrozen/services/local_rag.dart';
+import 'package:agrozen/services/voice_service.dart';
 
 class ChatMessage {
   final String text;
@@ -35,6 +40,13 @@ class _AskScreenState extends State<AskScreen> {
   bool _isLoading = false;
   bool _isRecording = false;
 
+  /// Returned by the recorder when capture starts; null when the user never
+  /// actually began (e.g. immediate permission denial UX).
+  String? _recordingPath;
+  VoiceService? _voiceService;
+
+  VoiceService get _voice => _voiceService ??= VoiceService();
+
   @override
   void initState() {
     super.initState();
@@ -42,10 +54,16 @@ class _AskScreenState extends State<AskScreen> {
   }
 
   Future<void> _loadState() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await DailyCounters.rolled(
+      maxDailyQuestions: AppConstants.maxDailyQuestions,
+    );
+    if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
-      _remainingQuestions = prefs.getInt('remaining_questions') ?? 30;
+      _remainingQuestions = DailyCounters.getRemainingQuestions(
+        prefs,
+        maxDailyQuestions: AppConstants.maxDailyQuestions,
+      );
     });
 
     // Add initial welcome message
@@ -63,10 +81,102 @@ class _AskScreenState extends State<AskScreen> {
     );
   }
 
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : null,
+      ),
+    );
+  }
+
+  /// Begins microphone capture. Permission outcome is surfaced; nothing is
+  /// sent anywhere yet.
+  Future<void> _startVoiceRecording() async {
+    final isRu = _lang == 'ru';
+    try {
+      final path = await _voice.startRecording();
+      _recordingPath = path;
+      if (!mounted) return;
+      setState(() => _isRecording = true);
+      _showSnack(isRu ? 'Говорите... (Запись голоса)' : 'Gapiring... (Ovoz yozilmoqda)');
+    } on VoiceUnavailable catch (e) {
+      if (!mounted) return;
+      if (e.reason == VoiceUnavailableReason.permissionDenied) {
+        _showSnack(
+          isRu
+              ? 'Нет доступа к микрофону. Разрешите доступ в настройках телефона и попробуйте ещё раз.'
+              : "Mikrofonga ruxsat berilmagan. Telefon sozlamalaridan ruxsat bering va qayta urining.",
+          isError: true,
+        );
+      } else {
+        _showSnack(
+          isRu ? 'Запись недоступна. Напишите вопрос текстом.' : 'Yozib olish imkonsiz. Savolni matn bilan yozing.',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  /// Stops capture, transcribes through the backend, and asks the transcript.
+  /// NEVER fabricates text: on any failure the farmer is told to type.
+  Future<void> _stopVoiceRecording() async {
+    final isRu = _lang == 'ru';
+    setState(() => _isRecording = false);
+
+    final path = _recordingPath;
+    _recordingPath = null;
+
+    String? stoppedPath;
+    try {
+      stoppedPath = await _voice.stopRecording();
+    } catch (_) {
+      stoppedPath = null;
+    }
+
+    final audioPath = stoppedPath ?? path;
+    if (audioPath == null) {
+      _showSnack(
+        isRu ? 'Запись не удалась. Напишите вопрос текстом.' : 'Yozuv amalga oshmadi. Savolni matn bilan yozing.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final transcript = await _voice.transcribe(audioPath, language: _lang);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _sendMessage(transcript);
+    } on VoiceUnavailable catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      switch (e.reason) {
+        case VoiceUnavailableReason.notConfigured:
+          _showSnack(
+            isRu
+                ? 'Голосовой ввод ещё не подключён к серверу. Пожалуйста, напишите вопрос текстом.'
+                : "Ovozli kiritish hali serverga ulanmagan. Iltimos, savolni matn bilan yozing.",
+            isError: true,
+          );
+        case VoiceUnavailableReason.noAudio:
+        case VoiceUnavailableReason.transcribeFailed:
+        case VoiceUnavailableReason.permissionDenied:
+          _showSnack(
+            isRu ? 'Не удалось распознать речь. Напишите вопрос текстом.' : "Nutqni aniqlab bo'lmadi. Savolni matn bilan yozing.",
+            isError: true,
+          );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _voiceService?.dispose();
     super.dispose();
   }
 
@@ -96,50 +206,77 @@ class _AskScreenState extends State<AskScreen> {
       _remainingQuestions--;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('remaining_questions', _remainingQuestions);
+    final prefs = await DailyCounters.rolled(
+      maxDailyQuestions: AppConstants.maxDailyQuestions,
+    );
+    await DailyCounters.setRemainingQuestions(
+      prefs,
+      _remainingQuestions,
+    );
 
     _scrollToBottom();
 
-    // RAG AI response generation from verified knowledge base
+    // RAG: server-side Gemini when configured, offline knowledge base
+    // otherwise. Never invents — if nothing matches, we say so.
     final isRu = _lang == 'ru';
-    final query = text.toLowerCase();
-    String answer = '';
-    String source = '';
+    late final String answer;
+    late final String source;
 
-    if (query.contains('harorat') || query.contains('issiq') || query.contains('температур')) {
-      await _knowledgeRepo.getTopicContent(_lang, 'temperature');
-      source = isRu ? 'Температура и влажность' : 'Harorat va namlik';
-      answer = isRu
-          ? 'В первые 1-3 дня цыплятам требуется 33-34°C. К 7 дню снижайте до 32°C, к 14 дню до 29°C, к 21 дню до 27°C. Избегайте сквозняков и следите за поведением птицы.'
-          : "Dastlabki 1-3 kunlarda jo'jalarga 33-34°C kerak. 7-kunga kelib 32°C, 14-kunga 29°C, 21-kunga 27°C ga tushiriladi. Shamol urishidan saqlang va jo'jalar tarqalishini kuzating.";
-    } else if (query.contains('yem') || query.contains('ovqat') || query.contains('корм')) {
-      await _knowledgeRepo.getTopicContent(_lang, 'feed');
-      source = isRu ? 'Фазы кормления' : 'Oziqlantirish bosqichlari';
-      answer = isRu
-          ? 'Кормление делится на 3 фазы: 1) Старт (1-10 дни) — мелкая крупка, высокое содержание белка (22-23%). 2) Рост (11-24 дни) — крупка/гранула (20-21% белка). 3) Финиш (25-42 дни) — гранулы для набора массы.'
-          : "Oziqlantirish 3 bosqichdan iborat: 1) Start (1-10 kunlar) — mayda krupka, yuqori oqsil (22-23%). 2) O'sish (11-24 kunlar) — o'rtacha granula (20-21% oqsil). 3) Finish (25-42 kunlar) — yirik granula, vazn olish uchun.";
-    } else if (query.contains('kasal') || query.contains('emlash') || query.contains('dori') || query.contains('вакцин') || query.contains('болезн')) {
-      await _knowledgeRepo.getTopicContent(_lang, 'vaccination');
+    final rag = LocalRag(_knowledgeRepo);
+
+    if (rag.wantsMedicine(text)) {
+      // Safety rule #2: never prescribe drugs or dosages, always refer.
+      answer = rag.medicineRefusal(_lang);
       source = isRu ? 'Ветеринарные правила' : 'Veterinariya qoidalari';
+    } else if (rag.looksLikeEmergency(text)) {
+      // Emergency phrasing gets the safety script + a vet, not a generic answer.
       answer = isRu
-          ? 'AgroZen не назначает лекарства и антибиотики самостоятельно. Основные вакцинации: Ньюкасл (1 и 14 дни), Гамборо (7 и 21 дни). При любых симптомах болезни немедленно звоните районному ветеринару!'
-          : "AgroZen mustaqil ravishda dori yoki antibiotik belgilamaydi. Asosiy emlashlar: Nyukasl (1 va 14-kunlar), Gamboro (7 va 21-kunlar). Kasallik belgilarida darhol tumaningiz veterinariga murojaat qiling!";
-    } else if (query.contains('shamol') || query.contains('havo') || query.contains('вентиляц')) {
-      await _knowledgeRepo.getTopicContent(_lang, 'ventilation');
-      source = isRu ? 'Вентиляция и микроклимат' : 'Shamollatish va mikroiqlim';
-      answer = isRu
-          ? 'Вентиляция жизненно необходима для удаления аммиака и углекислого газа. Минимальный воздухообмен — 0.7 м³/ч на 1 кг живого веса в холодное время, до 4-5 м³/ч летом.'
-          : "Shamollatish ammiak va karbonat angidridni chiqarish uchun o'ta muhim. Minimal havo almashinuvi — 1 kg tirik vaznga sovuqda 0.7 m³/soat, yozda 4-5 m³/soatgacha.";
+          ? 'Похоже на экстренную ситуацию. Не ждите и не лечите птицу самостоятельно:\n\n'
+              '1. Изолируйте заболевших птиц от здоровых.\n'
+              '2. Прекратите вывоз и продажу птицы.\n'
+              '3. Немедленно позвоните ветеринару вашего района — контакты на экране Дневника.\n\n'
+              'AgroZen не ставит диагнозы и не назначает лекарства.'
+          : "Shoshilinch holatga o'xshaydi. Kutmang va parrandani o'zingiz davolamang:\n\n"
+              "1. Kasal parrandani sog'lomlaridan ajrating.\n"
+              "2. Parrandani tashqariga chiqarishni to'xtating.\n"
+              "3. Darhol tumaningiz veterinariiga qo'ng'iroq qiling — kontaktlar Kundalik ekranida.\n\n"
+              "AgroZen tashxis qo'ymaydi va dori buyurmadi.";
+      source = isRu ? 'Экстренная помощь' : 'Favqulodda yordam';
     } else {
-      source = isRu ? 'Справочник AgroZen' : "AgroZen qo'llanmasi";
-      answer = isRu
-          ? 'Пожалуйста, уточните ваш вопрос по бройлерам. Я могу помочь с нормами температуры, графиком кормления, вакцинацией и уходом по дням.'
-          : "Iltimos, broylerlar bo'yicha savolingizni aniqlashtiring. Men harorat me'yorlari, yem jadvali, emlash va kunlik parvarish bo'yicha yordam bera olaman.";
+      RagResult? ragResult;
+      try {
+        ragResult = await rag.answer(question: text, language: _lang);
+      } catch (_) {
+        ragResult = null;
+      }
+
+      if (ragResult != null) {
+        answer = ragResult.answer;
+        source = ragResult.sources.join(', ');
+      } else if (SupabaseConfig.isConfigured) {
+        // Cloud model only when there is no local hit AND the backend exists.
+        try {
+          final ai = GeminiAiProvider();
+          final response = await ai.askQuestion(
+            question: text,
+            language: _lang,
+            relevantTopicContents: const [],
+            topicNames: const [],
+          );
+          answer = response.answer;
+          source = response.sourcesUsed.join(', ');
+        } catch (_) {
+          answer = _noAnswerMessage(isRu);
+          source = isRu ? 'АгроЗен: нет данных' : "AgroZen: ma'lumot yo'q";
+        }
+      } else {
+        // Honest "I don't know" per the safety rule.
+        answer = _noAnswerMessage(isRu);
+        source = isRu ? 'АгроЗен: нет данных' : "AgroZen: ma'lumot yo'q";
+      }
     }
 
-    await Future.delayed(const Duration(milliseconds: 600));
-
+    if (!mounted) return;
     setState(() {
       _messages.add(
         ChatMessage(
@@ -153,6 +290,12 @@ class _AskScreenState extends State<AskScreen> {
 
     _scrollToBottom();
   }
+
+  static String _noAnswerMessage(bool isRu) => isRu
+      ? 'Я не нашёл ответа на этот вопрос в проверенной базе знаний. '
+          'Пожалуйста, обратитесь к ветеринару вашего района — я не буду придумывать.'
+      : "Bu savol bo'yicha tekshirilgan bazada javob topa olmadim. "
+          "Iltimos, tumaningiz veterinariiga murojaat qiling — men o'ylab topmayman.";
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -238,21 +381,8 @@ class _AskScreenState extends State<AskScreen> {
                   VoiceInputButton(
                     isRecording: _isRecording,
                     language: _lang,
-                    onStartRecording: () {
-                      setState(() => _isRecording = true);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(isRu ? 'Говорите... (Запись голоса)' : 'Gapiring... (Ovoz yozilmoqda)'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    onStopRecording: () {
-                      setState(() => _isRecording = false);
-                      // Transcribe mock speech to text
-                      final sampleQuery = isRu ? 'Какая температура нужна цыплятам?' : "Jo'jalarga qanday harorat kerak?";
-                      _sendMessage(sampleQuery);
-                    },
+                    onStartRecording: _startVoiceRecording,
+                    onStopRecording: _stopVoiceRecording,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -324,12 +454,15 @@ class _AskScreenState extends State<AskScreen> {
                     color: msg.isUser ? Colors.white70 : Colors.green.shade800,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    'Manba: ${msg.source}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: msg.isUser ? Colors.white70 : Colors.green.shade800,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      'Manba: ${msg.source}',
+                      softWrap: true,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: msg.isUser ? Colors.white70 : Colors.green.shade800,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],

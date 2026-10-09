@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../app.dart';
+import '../../services/daily_counters.dart';
 import '../widgets/language_selector.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -10,7 +12,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with AppLanguageController<SettingsScreen> {
   String _lang = 'uz';
   String _name = 'Fermer';
   String _district = 'Toshkent';
@@ -35,9 +38,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _changeLanguage(String newLang) async {
+    final normalized = newLang == 'ru' ? 'ru' : 'uz';
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_language', newLang);
-    setState(() => _lang = newLang);
+    await prefs.setString('app_language', normalized);
+    if (!mounted) return;
+    setState(() => _lang = normalized);
+    // Rebuild the whole app so every screen (not just Settings) follows.
+    changeAppLanguage(normalized);
   }
 
   Future<void> _resetBatch() async {
@@ -68,9 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirm == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('arrival_date');
-      await prefs.remove('today_mortality');
-      await prefs.remove('today_feed');
-      await prefs.remove('last_weight');
+      await DailyCounters.resetAll(prefs);
       if (!mounted) return;
       context.go('/onboarding/batch');
     }
