@@ -38,6 +38,14 @@ class LanguageSelector extends StatelessWidget {
             isSelected: currentLanguage == 'ru',
             theme: theme,
           ),
+          const SizedBox(width: 4),
+          _buildOption(
+            context,
+            localeCode: 'en',
+            label: 'English',
+            isSelected: currentLanguage == 'en',
+            theme: theme,
+          ),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/localization/app_strings.dart';
 
 class CertificateScreen extends StatefulWidget {
   const CertificateScreen({super.key});
@@ -34,12 +35,18 @@ class _CertificateScreenState extends State<CertificateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isRu = _lang == 'ru';
     final dateStr = DateFormat('dd.MM.yyyy').format(DateTime.now());
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Сертификат готовности' : 'Tayyorgarlik sertifikati'),
+        title: Text(
+          AppStrings.tr(
+            lang: _lang,
+            uz: 'Tayyorgarlik sertifikati',
+            ru: 'Сертификат готовности',
+            en: 'Readiness Certificate',
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -68,9 +75,9 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         const Icon(Icons.workspace_premium_rounded, size: 64, color: Color(0xFFD4AF37)),
                         const SizedBox(height: 12),
                         const Text(
-                          'SERTIFIKAT / СЕРТИФИКАТ',
+                          'SERTIFIKAT / CERTIFICATE',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 19,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2.0,
                             color: Color(0xFF8B6508),
@@ -78,12 +85,17 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'AgroZen AI Ta\'lim Dasturi',
+                          'AgroZen AI Training Program',
                           style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                         const Divider(height: 32, thickness: 1.5, color: Color(0xFFD4AF37)),
                         Text(
-                          isRu ? 'Настоящим подтверждается, что' : 'Ushbu sertifikat tasdiqlaydiki,',
+                          AppStrings.tr(
+                            lang: _lang,
+                            uz: 'Ushbu sertifikat tasdiqlaydiki,',
+                            ru: 'Настоящим подтверждается, что',
+                            en: 'This certificate confirms that',
+                          ),
                           style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
                         ),
                         const SizedBox(height: 12),
@@ -103,9 +115,12 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          isRu
-                              ? 'успешно освоил(а) вводный курс по технологии выращивания цыплят-бройлеров, биобезопасности и стандартам содержания.'
-                              : "broyler jo'jalarini yetishtirish texnologiyasi, biologik xavfsizlik va parvarishlash me'yorlari bo'yicha tayyorgarlik kursini muvaffaqiyatli yakunladi.",
+                          AppStrings.tr(
+                            lang: _lang,
+                            uz: "broyler jo'jalarini yetishtirish texnologiyasi, biologik xavfsizlik va parvarishlash me'yorlari bo'yicha tayyorgarlik kursini muvaffaqiyatli yakunladi.",
+                            ru: 'успешно освоил(а) вводный курс по технологии выращивания цыплят-бройлеров, биобезопасности и стандартам содержания.',
+                            en: 'has successfully completed the introductory training on broiler flock management, biosecurity protocols, and welfare standards.',
+                          ),
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 13, height: 1.5),
                         ),
@@ -116,7 +131,15 @@ class _CertificateScreenState extends State<CertificateScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Sana / Дата:', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                Text(
+                                  AppStrings.tr(
+                                    lang: _lang,
+                                    uz: 'Sana / Sana:',
+                                    ru: 'Дата:',
+                                    en: 'Date:',
+                                  ),
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                ),
                                 Text(dateStr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               ],
                             ),
@@ -145,13 +168,18 @@ class _CertificateScreenState extends State<CertificateScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      final text = isRu
-                          ? 'AgroZen — Сертификат готовности\n'
-                              'Фермер: $_farmerName ($_district)\n'
-                              'Подтверждает прохождение вводного курса по бройлерам. Дата: $dateStr'
-                          : "AgroZen — Tayyorgarlik sertifikati\n"
-                              "Fermer: $_farmerName ($_district)\n"
-                              "Broyler yetishtirish bo'yicha tayyorgarlik kursi yakunlandi. Sana: $dateStr";
+                      final text = AppStrings.tr(
+                        lang: _lang,
+                        uz: "AgroZen — Tayyorgarlik sertifikati\n"
+                            "Fermer: $_farmerName ($_district)\n"
+                            "Broyler yetishtirish bo'yicha tayyorgarlik kursi yakunlandi. Sana: $dateStr",
+                        ru: 'AgroZen — Сертификат готовности\n'
+                            'Фермер: $_farmerName ($_district)\n'
+                            'Подтверждает прохождение вводного курса по бройлерам. Дата: $dateStr',
+                        en: 'AgroZen — Readiness Certificate\n'
+                            'Farmer: $_farmerName ($_district)\n'
+                            'Completed broiler farming readiness training. Date: $dateStr',
+                      );
                       try {
                         await Share.share(text);
                       } catch (_) {
@@ -159,9 +187,12 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              isRu
-                                  ? 'Не удалось открыть окно отправки.'
-                                  : "Ulashish oynasini ochib bo'lmadi.",
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: "Ulashish oynasini ochib bo'lmadi.",
+                                ru: 'Не удалось открыть окно отправки.',
+                                en: 'Could not open share dialog.',
+                              ),
                             ),
                             backgroundColor: Colors.red,
                           ),
@@ -170,7 +201,12 @@ class _CertificateScreenState extends State<CertificateScreen> {
                     },
                     icon: const Icon(Icons.share_rounded),
                     label: Text(
-                      isRu ? 'Поделиться / Сохранить сертификат' : 'Ulashish / Saqlash',
+                      AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Ulashish / Saqlash',
+                        ru: 'Поделиться / Сохранить сертификат',
+                        en: 'Share / Save Certificate',
+                      ),
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(

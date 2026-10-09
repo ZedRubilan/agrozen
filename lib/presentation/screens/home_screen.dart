@@ -8,7 +8,9 @@ import '../../domain/alerts/alert_models.dart';
 import '../widgets/daily_task_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/alert_card.dart';
+import '../widgets/weather_climate_card.dart';
 import '../../services/daily_counters.dart';
+import '../../core/localization/app_strings.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -143,27 +145,27 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home),
-            label: isRu ? 'Главная' : 'Asosiy',
+            label: AppStrings.tr(lang: _lang, uz: 'Asosiy', ru: 'Главная', en: 'Home'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.menu_book_outlined),
             selectedIcon: const Icon(Icons.menu_book),
-            label: isRu ? 'Дневник' : 'Kundalik',
+            label: AppStrings.tr(lang: _lang, uz: 'Kundalik', ru: 'Дневник', en: 'Diary'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.smart_toy_outlined),
             selectedIcon: const Icon(Icons.smart_toy),
-            label: isRu ? 'ИИ Чат' : 'Savol-javob',
+            label: AppStrings.tr(lang: _lang, uz: 'Savol-javob', ru: 'ИИ Чат', en: 'AI Chat'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.school_outlined),
             selectedIcon: const Icon(Icons.school),
-            label: isRu ? 'Курс' : 'Kurs',
+            label: AppStrings.tr(lang: _lang, uz: 'Kurs', ru: 'Курс', en: 'Course'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.person_outline),
             selectedIcon: const Icon(Icons.person),
-            label: isRu ? 'Профиль' : 'Sozlamalar',
+            label: AppStrings.tr(lang: _lang, uz: 'Sozlamalar', ru: 'Профиль', en: 'Settings'),
           ),
         ],
       ),
@@ -202,9 +204,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isRu
-                                ? 'Здравствуйте, $_farmerName!'
-                                : 'Assalomu alaykum, $_farmerName!',
+                            AppStrings.tr(
+                              lang: _lang,
+                              uz: 'Assalomu alaykum, $_farmerName!',
+                              ru: 'Здравствуйте, $_farmerName!',
+                              en: 'Welcome, $_farmerName!',
+                            ),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -213,9 +218,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            isRu
-                                ? 'Регион: $_district | Партия: $_currentCount голов'
-                                : 'Hudud: $_district | Partiya: $_currentCount bosh',
+                            AppStrings.tr(
+                              lang: _lang,
+                              uz: 'Hudud: $_district | Partiya: $_currentCount bosh',
+                              ru: 'Регион: $_district | Партия: $_currentCount голов',
+                              en: 'Region: $_district | Flock: $_currentCount birds',
+                            ),
                             style: const TextStyle(color: Colors.white70, fontSize: 13),
                           ),
                           const SizedBox(height: 14),
@@ -224,9 +232,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                isRu
-                                    ? '$_batchDay-й день из 42'
-                                    : '$_batchDay-kun (42 kundan)',
+                                AppStrings.tr(
+                                  lang: _lang,
+                                  uz: '$_batchDay-kun (42 kundan)',
+                                  ru: '$_batchDay-й день из 42',
+                                  en: 'Day $_batchDay of 42',
+                                ),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -255,7 +266,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
+
+                    // Real-time Regional Weather & Microclimate Guidance
+                    WeatherClimateCard(
+                      district: _district,
+                      batchDay: _batchDay,
+                      targetHouseTemp: targetTemp.toDouble(),
+                      language: _lang,
+                    ),
+                    const SizedBox(height: 14),
 
                     // Active Alert Card if any
                     if (_activeAlert != null)
@@ -272,9 +292,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: StatCard(
                             icon: Icons.thermostat_outlined,
-                            title: isRu ? 'Норма тепла' : "Me'yor harorat",
+                            title: AppStrings.tr(
+                              lang: _lang,
+                              uz: "Me'yor harorat",
+                              ru: 'Норма тепла',
+                              en: 'Target Temp',
+                            ),
                             value: '$targetTemp°C',
-                            subtitle: isRu ? 'В птичнике' : 'Xonada',
+                            subtitle: AppStrings.tr(
+                              lang: _lang,
+                              uz: 'Xonada',
+                              ru: 'В птичнике',
+                              en: 'In house',
+                            ),
                             iconColor: Colors.deepOrange,
                             onTap: () => context.push('/daily-plan'),
                           ),
@@ -283,9 +313,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: StatCard(
                             icon: Icons.pets_outlined,
-                            title: isRu ? 'Поголовье' : 'Parrandalar',
+                            title: AppStrings.tr(
+                              lang: _lang,
+                              uz: 'Parrandalar',
+                              ru: 'Поголовье',
+                              en: 'Flock Size',
+                            ),
                             value: '$_currentCount',
-                            subtitle: isRu ? 'из $_initialCount' : '$_initialCount tadan',
+                            subtitle: AppStrings.tr(
+                              lang: _lang,
+                              uz: '$_initialCount tadan',
+                              ru: 'из $_initialCount',
+                              en: 'of $_initialCount',
+                            ),
                             iconColor: Colors.blue.shade700,
                             onTap: () => context.push('/diary'),
                           ),
@@ -304,9 +344,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                isRu
-                                    ? 'Открываем видеогид: ${_todayPlan!.videoUrl ?? "https://youtube.com"}'
-                                    : "Videogid ochilmoqda: ${_todayPlan!.videoUrl ?? "https://youtube.com"}",
+                                AppStrings.tr(
+                                  lang: _lang,
+                                  uz: "Videogid ochilmoqda: ${_todayPlan!.videoUrl ?? "https://youtube.com"}",
+                                  ru: 'Открываем видеогид: ${_todayPlan!.videoUrl ?? "https://youtube.com"}',
+                                  en: 'Opening video guide: ${_todayPlan!.videoUrl ?? "https://youtube.com"}',
+                                ),
                               ),
                             ),
                           );
@@ -316,7 +359,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Quick Action Buttons Grid
                     Text(
-                      isRu ? 'Быстрые действия' : 'Tezkor amallar',
+                      AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Tezkor amallar',
+                        ru: 'Быстрые действия',
+                        en: 'Quick Actions',
+                      ),
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
@@ -330,25 +378,45 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         _buildActionTile(
                           icon: Icons.edit_calendar_rounded,
-                          label: isRu ? 'Записать падёж' : 'Nobodlik yozish',
+                          label: AppStrings.tr(
+                            lang: _lang,
+                            uz: 'Nobodlik yozish',
+                            ru: 'Записать падёж',
+                            en: 'Log Mortality',
+                          ),
                           color: Colors.red.shade700,
                           onTap: () => context.push('/diary/mortality'),
                         ),
                         _buildActionTile(
                           icon: Icons.grain_rounded,
-                          label: isRu ? 'Записать корм' : 'Yem yozish',
+                          label: AppStrings.tr(
+                            lang: _lang,
+                            uz: 'Yem yozish',
+                            ru: 'Записать корм',
+                            en: 'Log Feed',
+                          ),
                           color: Colors.amber.shade900,
                           onTap: () => context.push('/diary/feed'),
                         ),
                         _buildActionTile(
                           icon: Icons.scale_rounded,
-                          label: isRu ? 'Записать вес' : "Og'irlik yozish",
+                          label: AppStrings.tr(
+                            lang: _lang,
+                            uz: "Og'irlik yozish",
+                            ru: 'Записать вес',
+                            en: 'Log Weight',
+                          ),
                           color: Colors.teal.shade700,
                           onTap: () => context.push('/diary/weight'),
                         ),
                         _buildActionTile(
                           icon: Icons.smart_toy_rounded,
-                          label: isRu ? 'Спросить ИИ' : "Savol berish",
+                          label: AppStrings.tr(
+                            lang: _lang,
+                            uz: 'Savol berish',
+                            ru: 'Спросить ИИ',
+                            en: 'Ask AI',
+                          ),
                           color: theme.colorScheme.primary,
                           onTap: () => context.push('/ask'),
                         ),

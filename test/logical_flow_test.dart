@@ -73,16 +73,17 @@ void main() {
 
       await tester.pumpWidget(createTestApp(const LanguageScreen()));
 
-      expect(find.text("Tilni tanlang\nВыберите язык"), findsOneWidget);
+      expect(find.text("Tilni tanlang\nВыберите язык\nSelect Language"), findsOneWidget);
       expect(find.text("O'zbekcha"), findsOneWidget);
       expect(find.text("Русский"), findsOneWidget);
+      expect(find.text("English"), findsOneWidget);
 
       // Select Russian
       await tester.tap(find.text("Русский"));
       await tester.pumpAndSettle();
 
       // Tap Proceed
-      await tester.tap(find.text("Davom etish / Далее"));
+      await tester.tap(find.text("Davom etish / Далее / Continue"));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();

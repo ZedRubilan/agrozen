@@ -91,7 +91,9 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                isRu ? 'Важное предупреждение' : 'Muhim ogohlantirish',
+                isRu
+                    ? 'Важное предупреждение'
+                    : (_lang == 'en' ? 'Important Disclaimer' : 'Muhim ogohlantirish'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
@@ -114,10 +116,15 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
                                 '2. При любых признаках заболеваний, резком падеже птицы или вялости — незамедлительно свяжитесь с ветеринаром вашего района через кнопку в приложении.\n\n'
                                 '3. AgroZen никогда не назначает антибиотики, вакцины и лекарственные препараты самостоятельно. Все лечебные дозировки определяет только специалист.\n\n'
                                 '4. Все данные и нормы основаны на стандартах Ross-308 / Cobb-500 и опыте птицеводов Узбекистана.'
-                              : "1. AgroZen — parrandachilar uchun ma'lumot beruvchi sun'iy intellekt yordamchisi bo'lib, professional veterinar shifokor o'rnini BOSMAYDI.\n\n"
-                                "2. Har qanday kasallik alomatlari, to'satdan yuz bergan nobodlik yoki lohaslikda — darhol ilovadagi tugma orqali tumaningiz veterinari bilan bog'laning.\n\n"
-                                "3. AgroZen mustaqil ravishda antibiotiklar, vaksinalar yoki dorilarni tayinlamaydi. Barcha davolash me'yorlari faqat mutaxassis tomonidan belgilanadi.\n\n"
-                                "4. Barcha ko'rsatkichlar Ross-308 / Cobb-500 standartlari va O'zbekiston parrandachilik amaliyotiga asoslangan.",
+                              : (_lang == 'en'
+                                  ? '1. AgroZen is an advisory AI assistant for poultry farming, but it DOES NOT replace a licensed veterinary specialist.\n\n'
+                                    '2. If you notice signs of disease, sharp mortality spikes, or lethargy — contact your regional veterinarian immediately via the in-app call button.\n\n'
+                                    '3. AgroZen never prescribes antibiotics, vaccines, or drug dosages autonomously. All medical treatments must be prescribed by a licensed specialist.\n\n'
+                                    '4. All parameters and growth standards are based on Ross-308 / Cobb-500 standards and Uzbekistan poultry experience.'
+                                  : "1. AgroZen — parrandachilar uchun ma'lumot beruvchi sun'iy intellekt yordamchisi bo'lib, professional veterinar shifokor o'rnini BOSMAYDI.\n\n"
+                                    "2. Har qanday kasallik alomatlari, to'satdan yuz bergan nobodlik yoki lohaslikda — darhol ilovadagi tugma orqali tumaningiz veterinari bilan bog'laning.\n\n"
+                                    "3. AgroZen mustaqil ravishda antibiotiklar, vaksinalar yoki dorilarni tayinlamaydi. Barcha davolash me'yorlari faqat mutaxassis tomonidan belgilanadi.\n\n"
+                                    "4. Barcha ko'rsatkichlar Ross-308 / Cobb-500 standartlari va O'zbekiston parrandachilik amaliyotiga asoslangan."),
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.6,
@@ -139,7 +146,9 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(
-                  isRu ? 'Я согласен, начать работу' : 'Tushundim va roziman',
+                  isRu
+                      ? 'Я согласен, начать работу'
+                      : (_lang == 'en' ? 'I Understand & Agree' : 'Tushundim va roziman'),
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),

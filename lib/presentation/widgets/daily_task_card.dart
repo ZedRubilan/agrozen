@@ -43,7 +43,9 @@ class DailyTaskCard extends StatelessWidget {
                       Icon(Icons.calendar_today, size: 16, color: theme.colorScheme.primary),
                       const SizedBox(width: 6),
                       Text(
-                        language == 'ru' ? '${plan.day}-й день' : '${plan.day}-kun',
+                        language == 'en'
+                            ? 'Day ${plan.day}'
+                            : (language == 'ru' ? '${plan.day}-й день' : '${plan.day}-kun'),
                         style: TextStyle(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.bold,
@@ -79,7 +81,9 @@ class DailyTaskCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              language == 'ru' ? 'Задачи на сегодня:' : 'Bugungi vazifalar:',
+              language == 'en'
+                  ? "Today's Tasks:"
+                  : (language == 'ru' ? 'Задачи на сегодня:' : 'Bugungi vazifalar:'),
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
@@ -102,7 +106,9 @@ class DailyTaskCard extends StatelessWidget {
                         .openVideo(context, plan.videoUrl!),
                 icon: const Icon(Icons.play_circle_fill, color: Colors.red),
                 label: Text(
-                  language == 'ru' ? 'Смотреть видеогид' : "Videoni ko'rish",
+                  language == 'en'
+                      ? 'Watch Video Guide'
+                      : (language == 'ru' ? 'Смотреть видеогид' : "Videoni ko'rish"),
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 style: OutlinedButton.styleFrom(

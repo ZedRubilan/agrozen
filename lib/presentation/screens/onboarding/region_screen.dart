@@ -39,6 +39,7 @@ class _RegionScreenState extends State<RegionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isRu = _lang == 'ru';
+    final isEn = _lang == 'en';
 
     final filtered = AppConstants.districts.where((d) {
       return d.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -46,7 +47,7 @@ class _RegionScreenState extends State<RegionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Выбор региона' : 'Viloyatni tanlang'),
+        title: Text(isRu ? 'Выбор региона' : (isEn ? 'Select Region' : 'Viloyatni tanlang')),
       ),
       body: SafeArea(
         child: Padding(
@@ -57,20 +58,20 @@ class _RegionScreenState extends State<RegionScreen> {
               Text(
                 isRu
                     ? 'Где расположена ваша ферма?'
-                    : 'Parrandaxonangiz qaysi hududda joylashgan?',
+                    : (isEn ? 'Where is your poultry farm located?' : 'Parrandaxonangiz qaysi hududda joylashgan?'),
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
                 isRu
                     ? 'Это необходимо для связи с местными ветеринарами'
-                    : "Bu mahalliy veterinar shifokorlar bilan bog'lanish uchun zarur",
+                    : (isEn ? 'Required for regional veterinarian connection & localized weather' : "Bu mahalliy veterinar shifokorlar bilan bog'lanish uchun zarur"),
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 16),
               TextField(
                 decoration: InputDecoration(
-                  hintText: isRu ? 'Поиск региона...' : 'Qidirish...',
+                  hintText: isRu ? 'Поиск региона...' : (isEn ? 'Search region...' : 'Qidirish...'),
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
@@ -120,7 +121,7 @@ class _RegionScreenState extends State<RegionScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(
-                  isRu ? 'Далее' : 'Keyingisi',
+                  isRu ? 'Далее' : (isEn ? 'Next' : 'Keyingisi'),
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),

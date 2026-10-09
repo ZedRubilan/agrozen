@@ -4,6 +4,7 @@ import '../../data/models/daily_plan.dart';
 import '../../data/repositories/knowledge_repository.dart';
 import '../../domain/alerts/alert_models.dart';
 import '../../domain/scheduler/day_calculator.dart';
+import '../../core/localization/app_strings.dart';
 import '../widgets/daily_task_card.dart';
 
 class DailyPlanScreen extends StatefulWidget {
@@ -72,7 +73,6 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isRu = _lang == 'ru';
 
     final selectedPlan = _allPlans.firstWhere(
       (p) => p.day == _selectedDay,
@@ -85,7 +85,14 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'План по дням (1–42)' : 'Kunlik reja (1–42)'),
+        title: Text(
+          AppStrings.tr(
+            lang: _lang,
+            uz: 'Kunlik reja (1–42)',
+            ru: 'План по дням (1–42)',
+            en: 'Daily Plan (1–42)',
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -107,6 +114,10 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                       final dayNum = index + 1;
                       final isSelected = dayNum == _selectedDay;
                       final isToday = dayNum == _currentBatchDay;
+
+                      final dayLabel = _lang == 'en'
+                          ? 'D.$dayNum'
+                          : (_lang == 'ru' ? 'Д.$dayNum' : '$dayNum-k');
 
                       return GestureDetector(
                         onTap: () => setState(() => _selectedDay = dayNum),
@@ -130,7 +141,7 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                isRu ? 'Д.$dayNum' : '$dayNum-k',
+                                dayLabel,
                                 style: TextStyle(
                                   color: isSelected ? Colors.white : Colors.black87,
                                   fontWeight: FontWeight.bold,
@@ -146,6 +157,7 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                                     color: isSelected ? Colors.white : theme.colorScheme.primary,
                                     shape: BoxShape.circle,
                                   ),
+                                  child: Container(),
                                 ),
                             ],
                           ),
@@ -176,7 +188,12 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                                 const Icon(Icons.check_circle, color: Colors.green, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  isRu ? 'Это ваш текущий день партии!' : 'Bu sizning bugungi partiya kuningiz!',
+                                  AppStrings.tr(
+                                    lang: _lang,
+                                    uz: 'Bu sizning bugungi partiya kuningiz!',
+                                    ru: 'Это ваш текущий день партии!',
+                                    en: 'This is your current batch day!',
+                                  ),
                                   style: TextStyle(
                                     color: Colors.green.shade900,
                                     fontWeight: FontWeight.w600,
@@ -202,12 +219,17 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  isRu ? 'Рекомендации по периоду' : 'Bosqich bo\'yicha tavsiyalar',
+                                  AppStrings.tr(
+                                    lang: _lang,
+                                    uz: "Bosqich bo'yicha tavsiyalar",
+                                    ru: 'Рекомендации по периоду',
+                                    en: 'Growth Stage Recommendations',
+                                  ),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  _getStageRecommendation(_selectedDay, isRu),
+                                  _getStageRecommendation(_selectedDay, _lang),
                                   style: TextStyle(fontSize: 13, height: 1.5, color: Colors.grey.shade800),
                                 ),
                               ],
@@ -223,19 +245,28 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
     );
   }
 
-  String _getStageRecommendation(int day, bool isRu) {
+  String _getStageRecommendation(int day, String lang) {
     if (day <= 7) {
-      return isRu
-          ? 'Стартовый период (1-7 дни): критически важно поддерживать температуру 32-34°C и следить, чтобы все цыплята пили воду в первые 2 часа.'
-          : "Boshlang'ich davr (1-7 kunlar): 32-34°C haroratni ushlab turish va barcha jo'jalar dastlabki 2 soatda suv ichganiga ishonch hosil qilish o'ta muhim.";
+      return AppStrings.tr(
+        lang: lang,
+        uz: "Boshlang'ich davr (1-7 kunlar): 32-34°C haroratni ushlab turish va barcha jo'jalar dastlabki 2 soatda suv ichganiga ishonch hosil qilish o'ta muhim.",
+        ru: 'Стартовый период (1-7 дни): критически важно поддерживать температуру 32-34°C и следить, чтобы все цыплята пили воду в первые 2 часа.',
+        en: 'Starter phase (Days 1-7): Maintaining brooding temperature at 32-34°C and ensuring 100% chick water intake within the first 2 hours is critical.',
+      );
     } else if (day <= 21) {
-      return isRu
-          ? 'Период активного роста (8-21 дни): плавный переход на корм "Рост", постепенное снижение температуры до 27°C, усиление вентиляции.'
-          : "'O'sish davri (8-21 kunlar): 'O'sish' yemiga asta-sekin o'tish, haroratni bosqichma-bosqich 27°C ga tushirish va shamollatishni kuchaytirish.";
+      return AppStrings.tr(
+        lang: lang,
+        uz: "'O'sish davri (8-21 kunlar): 'O'sish' yemiga asta-sekin o'tish, haroratni bosqichma-bosqich 27°C ga tushirish va shamollatishni kuchaytirish.",
+        ru: 'Период активного роста (8-21 дни): плавный переход на корм "Рост", постепенное снижение температуры до 27°C, усиление вентиляции.',
+        en: 'Grower phase (Days 8-21): Transition gradually to Grower feed, gradually reduce target temp to 27°C, and ramp up ventilation capacity.',
+      );
     } else {
-      return isRu
-          ? 'Финишный период (22-42 дни): корм "Финиш", максимальный контроль привеса, защита от перегрева летом, подготовка к забою.'
-          : "'Finish davri (22-42 kunlar): 'Finish' yemi, vazn o'sishini qattiq nazorat qilish, yozda qizib ketishdan asrash va so'yishga tayyorgarlik.";
+      return AppStrings.tr(
+        lang: lang,
+        uz: "'Finish davri (22-42 kunlar): 'Finish' yemi, vazn o'sishini qattiq nazorat qilish, yozda qizib ketishdan asrash va so'yishga tayyorgarlik.",
+        ru: 'Финишный период (22-42 дни): корм "Финиш", максимальный контроль привеса, защита от перегрева летом, подготовка к забою.',
+        en: 'Finisher phase (Days 22-42): Finisher feed, strict monitoring of weight gain and FCR, heat stress mitigation, and harvest scheduling.',
+      );
     }
   }
 }

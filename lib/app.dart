@@ -75,14 +75,18 @@ class _AgroZenAppState extends State<AgroZenApp> {
     _locale = _localeFor(widget.initialLanguage);
   }
 
-  static Locale _localeFor(String language) =>
-      Locale(language == 'ru' ? 'ru' : 'uz');
+  static Locale _localeFor(String language) {
+    final lang = language.toLowerCase();
+    if (lang == 'en') return const Locale('en');
+    if (lang == 'ru') return const Locale('ru');
+    return const Locale('uz');
+  }
 
   /// Called by the settings screen after the farmer switches language.
   Future<void> setLanguage(String language) async {
     setState(() => _locale = _localeFor(language));
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_language', language == 'ru' ? 'ru' : 'uz');
+    await prefs.setString('app_language', language);
   }
 
   @override
@@ -101,7 +105,11 @@ class _AgroZenAppState extends State<AgroZenApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: AppLocalizations.supportedLocales,
+      supportedLocales: const [
+        Locale('uz'),
+        Locale('ru'),
+        Locale('en'),
+      ],
     );
   }
 }

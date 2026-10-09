@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:agrozen/core/localization/app_strings.dart';
 import 'package:agrozen/domain/alerts/alert_engine.dart';
 import 'package:agrozen/domain/alerts/alert_models.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
@@ -68,11 +69,17 @@ class _DiaryScreenState extends State<DiaryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isRu = _lang == 'ru';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Дневник партии' : 'Partiya kundaligi'),
+        title: Text(
+          AppStrings.tr(
+            lang: _lang,
+            uz: 'Partiya kundaligi',
+            ru: 'Дневник партии',
+            en: 'Flock Diary',
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -97,19 +104,19 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         children: [
                           _buildSummaryItem(
                             icon: Icons.pets,
-                            label: isRu ? 'Живых' : 'Tirik',
+                            label: AppStrings.tr(lang: _lang, uz: 'Tirik', ru: 'Живых', en: 'Alive'),
                             value: '$_currentCount',
                             color: Colors.green.shade800,
                           ),
                           _buildSummaryItem(
                             icon: Icons.remove_circle_outline,
-                            label: isRu ? 'Падёж сегодня' : 'Nobodlik',
+                            label: AppStrings.tr(lang: _lang, uz: 'Nobodlik', ru: 'Падёж сегодня', en: 'Mortality'),
                             value: '$_todayMortality',
                             color: Colors.red.shade700,
                           ),
                           _buildSummaryItem(
                             icon: Icons.scale,
-                            label: isRu ? 'Вес (ср.)' : "O'rtacha vazn",
+                            label: AppStrings.tr(lang: _lang, uz: "O'rtacha vazn", ru: 'Вес (ср.)', en: 'Avg Weight'),
                             value: _lastWeight > 0 ? '${_lastWeight.toInt()} г' : '-',
                             color: Colors.teal.shade800,
                           ),
@@ -128,7 +135,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
                     // Log action buttons
                     Text(
-                      isRu ? 'Новая запись' : 'Yangi yozuv kiritish',
+                      AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Yangi yozuv kiritish',
+                        ru: 'Новая запись',
+                        en: 'Log New Entry',
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 12),
@@ -136,10 +148,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     _buildEntryCard(
                       icon: Icons.heart_broken_rounded,
                       color: Colors.red.shade700,
-                      title: isRu ? 'Записать падёж' : 'Nobodlik yozish',
-                      subtitle: isRu
-                          ? 'Укажите количество погибших птиц за сутки'
-                          : 'Bugun nobud bo\'lgan parrandalar soni',
+                      title: AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Nobodlik yozish',
+                        ru: 'Записать падёж',
+                        en: 'Log Mortality',
+                      ),
+                      subtitle: AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Bugun nobud bo\'lgan parrandalar soni',
+                        ru: 'Укажите количество погибших птиц за сутки',
+                        en: 'Daily mortality count',
+                      ),
                       onTap: () async {
                         await context.push('/diary/mortality');
                         _loadDiary();
@@ -150,10 +170,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     _buildEntryCard(
                       icon: Icons.grain_rounded,
                       color: Colors.amber.shade900,
-                      title: isRu ? 'Записать расход корма' : 'Yem sarfini yozish',
-                      subtitle: isRu
-                          ? 'Укажите израсходованный комбикорм (кг)'
-                          : 'Bugun berilgan yem miqdori (kg)',
+                      title: AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Yem sarfini yozish',
+                        ru: 'Записать расход корма',
+                        en: 'Log Feed Intake',
+                      ),
+                      subtitle: AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Bugun berilgan yem miqdori (kg)',
+                        ru: 'Укажите израсходованный комбикорм (кг)',
+                        en: 'Daily feed consumption in kg',
+                      ),
                       onTap: () async {
                         await context.push('/diary/feed');
                         _loadDiary();
@@ -164,10 +192,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     _buildEntryCard(
                       icon: Icons.scale_rounded,
                       color: Colors.teal.shade700,
-                      title: isRu ? 'Записать контрольный вес' : 'Nazorat vaznini yozish',
-                      subtitle: isRu
-                          ? 'Средний вес одной птицы при взвешивании (грамм)'
-                          : 'Parrandaning o\'rtacha vazni (gramm)',
+                      title: AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Nazorat vaznini yozish',
+                        ru: 'Записать контрольный вес',
+                        en: 'Log Sample Weight',
+                      ),
+                      subtitle: AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Parrandaning o\'rtacha vazni (gramm)',
+                        ru: 'Средний вес одной птицы при взвешивании (грамм)',
+                        en: 'Sample bird average weight in grams',
+                      ),
                       onTap: () async {
                         await context.push('/diary/weight');
                         _loadDiary();
@@ -176,7 +212,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
                     const SizedBox(height: 24),
                     Text(
-                      isRu ? 'Сегодняшние показатели' : 'Bugungi qaydlar',
+                      AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Bugungi qaydlar',
+                        ru: 'Сегодняшние показатели',
+                        en: "Today's Summary",
+                      ),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 10),
@@ -186,25 +227,46 @@ class _DiaryScreenState extends State<DiaryScreen> {
                         children: [
                           ListTile(
                             leading: const Icon(Icons.remove_circle, color: Colors.red),
-                            title: Text(isRu ? 'Падёж за сутки' : 'Sutkalik nobodlik'),
+                            title: Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Sutkalik nobodlik',
+                                ru: 'Падёж за сутки',
+                                en: 'Daily Mortality',
+                              ),
+                            ),
                             trailing: Text(
-                              '$_todayMortality ${isRu ? 'голов' : 'bosh'}',
+                              '$_todayMortality ${AppStrings.tr(lang: _lang, uz: 'bosh', ru: 'голов', en: 'birds')}',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                           const Divider(height: 1),
                           ListTile(
                             leading: const Icon(Icons.grain, color: Colors.amber),
-                            title: Text(isRu ? 'Корм за сутки' : 'Sutkalik yem'),
+                            title: Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Sutkalik yem',
+                                ru: 'Корм за сутки',
+                                en: 'Daily Feed',
+                              ),
+                            ),
                             trailing: Text(
-                              '${_todayFeed.toStringAsFixed(1)} кг',
+                              '${_todayFeed.toStringAsFixed(1)} kg',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                           const Divider(height: 1),
                           ListTile(
                             leading: const Icon(Icons.scale, color: Colors.teal),
-                            title: Text(isRu ? 'Последний замер веса' : "So'nggi o'lchangan vazn"),
+                            title: Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: "So'nggi o'lchangan vazn",
+                                ru: 'Последний замер веса',
+                                en: 'Latest Sample Weight',
+                              ),
+                            ),
                             trailing: Text(
                               _lastWeight > 0 ? '${_lastWeight.toStringAsFixed(0)} г' : '-',
                               style: const TextStyle(fontWeight: FontWeight.bold),

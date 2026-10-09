@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/localization/app_strings.dart';
 
 class CourseListScreen extends StatefulWidget {
   const CourseListScreen({super.key});
@@ -19,36 +20,46 @@ class _CourseListScreenState extends State<CourseListScreen> {
       'num': '1',
       'title_uz': "Jo'jalar kelishidan oldin xonani tayyorlash",
       'title_ru': 'Подготовка помещения до завоза цыплят',
+      'title_en': 'Pre-Placement Barn Preparation',
       'desc_uz': 'Dezinfeksiya, to\'shama, isitish tizimini sozlash',
       'desc_ru': 'Дезинфекция, подстилка, настройка обогрева',
+      'desc_en': 'Disinfection, bedding, and heating setup',
     },
     {
       'num': '2',
       'title_uz': 'Dastlabki 3 kun: hal qiluvchi davr',
       'title_ru': 'Первые 3 дня: решающий период',
+      'title_en': 'First 3 Days: The Critical Phase',
       'desc_uz': 'Suv va yemga o\'rgatish, harorat monitoringi',
       'desc_ru': 'Приучение к воде и корму, контроль температуры',
+      'desc_en': 'Water and feed training, thermal monitoring',
     },
     {
       'num': '3',
       'title_uz': 'Harorat va shamollatish boshqaruvi',
       'title_ru': 'Управление температурой и вентиляцией',
+      'title_en': 'Temperature and Ventilation Control',
       'desc_uz': 'Ammiakni yo\'qotish va qizib ketishdan saqlash',
       'desc_ru': 'Удаление аммиака и защита от перегрева',
+      'desc_en': 'Ammonia exhaust and heat stress prevention',
     },
     {
       'num': '4',
       'title_uz': "To'g'ri oziqlantirish fazalari",
       'title_ru': 'Фазы правильного кормления',
+      'title_en': 'Proper Feeding Phases',
       'desc_uz': 'Start, O\'sish va Finish yemlari me\'yorlari',
       'desc_ru': 'Нормы кормов Старт, Рост и Финиш',
+      'desc_en': 'Starter, Grower, and Finisher feed norms',
     },
     {
       'num': '5',
       'title_uz': 'Kasalliklar va veterinar bilan ishlash',
       'title_ru': 'Болезни и работа с ветеринаром',
+      'title_en': 'Diseases and Working with Veterinarians',
       'desc_uz': 'Asosiy alomatlar va favqulodda harakatlar',
       'desc_ru': 'Главные симптомы и экстренные действия',
+      'desc_en': 'Primary symptoms and emergency response',
     },
   ];
 
@@ -70,12 +81,18 @@ class _CourseListScreenState extends State<CourseListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isRu = _lang == 'ru';
     final allCompleted = _completedLessons.length >= _lessons.length;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Курс до кредита' : 'Kreditdan oldingi kurs'),
+        title: Text(
+          AppStrings.tr(
+            lang: _lang,
+            uz: 'Kreditdan oldingi kurs',
+            ru: 'Курс до кредита',
+            en: 'Pre-Credit Course',
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -104,7 +121,12 @@ class _CourseListScreenState extends State<CourseListScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                isRu ? 'Обучение птицевода' : 'Parrandachilik kursi',
+                                AppStrings.tr(
+                                  lang: _lang,
+                                  uz: 'Parrandachilik kursi',
+                                  ru: 'Обучение птицевода',
+                                  en: 'Poultry Farmer Training',
+                                ),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -116,16 +138,22 @@ class _CourseListScreenState extends State<CourseListScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          isRu
-                              ? 'Пройдите 5 мини-уроков с тестами и получите официальный сертификат о готовности к партии.'
-                              : "5 ta qisqa dars va testni yakunlang hamda partiyaga tayyorgarlik sertifikatiga ega bo'ling.",
+                          AppStrings.tr(
+                            lang: _lang,
+                            uz: "5 ta qisqa dars va testni yakunlang hamda partiyaga tayyorgarlik sertifikatiga ega bo'ling.",
+                            ru: 'Пройдите 5 мини-уроков с тестами и получите официальный сертификат о готовности к партии.',
+                            en: 'Complete 5 mini-lessons and quizzes to earn your official pre-credit flock readiness certificate.',
+                          ),
                           style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          isRu
-                              ? 'Пройдено: ${_completedLessons.length} из ${_lessons.length}'
-                              : "Tugallandi: ${_completedLessons.length} / ${_lessons.length}",
+                          AppStrings.tr(
+                            lang: _lang,
+                            uz: "Tugallandi: ${_completedLessons.length} / ${_lessons.length}",
+                            ru: 'Пройдено: ${_completedLessons.length} из ${_lessons.length}',
+                            en: 'Completed: ${_completedLessons.length} of ${_lessons.length}',
+                          ),
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -146,14 +174,24 @@ class _CourseListScreenState extends State<CourseListScreen> {
                         ),
                         icon: const Icon(Icons.workspace_premium_rounded),
                         label: Text(
-                          isRu ? 'Посмотреть мой сертификат' : "Sertifikatimni ko'rish",
+                          AppStrings.tr(
+                            lang: _lang,
+                            uz: "Sertifikatimni ko'rish",
+                            ru: 'Посмотреть мой сертификат',
+                            en: 'View My Certificate',
+                          ),
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
 
                   Text(
-                    isRu ? 'Уроки курса' : 'Darslar ro\'yxati',
+                    AppStrings.tr(
+                      lang: _lang,
+                      uz: 'Darslar ro\'yxati',
+                      ru: 'Уроки курса',
+                      en: 'Course Lessons',
+                    ),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
@@ -167,6 +205,14 @@ class _CourseListScreenState extends State<CourseListScreen> {
                       final item = _lessons[index];
                       final num = int.parse(item['num']!);
                       final isPassed = _completedLessons.contains(num);
+
+                      final lessonTitle = _lang == 'en'
+                          ? (item['title_en'] ?? item['title_uz']!)
+                          : (_lang == 'ru' ? item['title_ru']! : item['title_uz']!);
+
+                      final lessonDesc = _lang == 'en'
+                          ? (item['desc_en'] ?? item['desc_uz']!)
+                          : (_lang == 'ru' ? item['desc_ru']! : item['desc_uz']!);
 
                       return Card(
                         elevation: 1,
@@ -186,11 +232,11 @@ class _CourseListScreenState extends State<CourseListScreen> {
                                   ),
                           ),
                           title: Text(
-                            isRu ? item['title_ru']! : item['title_uz']!,
+                            lessonTitle,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           subtitle: Text(
-                            isRu ? item['desc_ru']! : item['desc_uz']!,
+                            lessonDesc,
                             style: const TextStyle(fontSize: 12),
                           ),
                           trailing: const Icon(Icons.arrow_forward_ios, size: 16),

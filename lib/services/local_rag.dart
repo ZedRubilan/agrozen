@@ -99,57 +99,72 @@ class LocalRag {
     'temperature': {
       'ru': 'Температура и влажность',
       'uz': 'Harorat va namlik',
+      'en': 'Temperature and Humidity',
     },
     '03_temperature': {
       'ru': 'Температура и влажность',
       'uz': 'Harorat va namlik',
+      'en': 'Temperature and Humidity',
     },
     'feed': {
       'ru': 'Фазы кормления',
       'uz': 'Oziqlantirish bosqichlari',
+      'en': 'Feeding Phases',
     },
     '05_feeding': {
       'ru': 'Фазы кормления',
       'uz': 'Oziqlantirish bosqichlari',
+      'en': 'Feeding Phases',
     },
     'vaccination': {
       'ru': 'Ветеринарные правила',
       'uz': 'Veterinariya qoidalari',
+      'en': 'Veterinary Rules',
     },
     '07_vaccination': {
       'ru': 'Вакцинация',
       'uz': 'Emlash',
+      'en': 'Vaccination',
     },
     'ventilation': {
       'ru': 'Вентиляция и микроклимат',
       'uz': 'Shamollatish va mikroiqlim',
+      'en': 'Ventilation & Microclimate',
     },
     '04_ventilation': {
       'ru': 'Вентиляция и микроклимат',
       'uz': 'Shamollatish va mikroiqlim',
+      'en': 'Ventilation & Microclimate',
     },
-    '06_water': {'ru': 'Вода и поилки', 'uz': 'Suv va suv berish'},
+    '06_water': {
+      'ru': 'Вода и поилки',
+      'uz': 'Suv va suv berish',
+      'en': 'Water & Drinkers',
+    },
     '01_preparation': {
       'ru': 'Подготовка помещения до завоза',
       'uz': 'Xonani tayyorlash',
+      'en': 'Barn Preparation Prior to Arrival',
     },
     '02_first_days': {
       'ru': 'Приём цыплят и первые 3 дня',
       'uz': "Jo'jalarni qabul qilish va birinchi kunlar",
+      'en': 'Chick Placement & First 3 Days',
     },
     '08_diseases': {
       'ru': 'Признаки болезни — когда нужен ветеринар',
       'uz': 'Kasallik belgilari — qachon veterinar kerak',
+      'en': 'Disease Signs & Veterinary Referral',
     },
   };
 
   /// Returns the display title for a knowledge file, falling back to the raw
   /// file name if the topic has no title entry.
   static String titleFor(String topic, String language) {
-    final isRu = language.toLowerCase() == 'ru';
+    final lang = language.toLowerCase();
     final byTopic = _titles[topic];
     if (byTopic == null) return topic;
-    return isRu ? byTopic['ru'] ?? topic : byTopic['uz'] ?? topic;
+    return byTopic[lang] ?? byTopic['uz'] ?? topic;
   }
 
   /// Scores articles for [question] and returns the top [max] matches.
@@ -221,10 +236,12 @@ class LocalRag {
     }
     if (snippets.isEmpty) return null;
 
-    final isRu = language.toLowerCase() == 'ru';
-    final intro = isRu
-        ? 'Из проверенной базы знаний AgroZen:'
-        : "AgroZen tekshirilgan bilimlar bazasidan:";
+    final lang = language.toLowerCase();
+    final intro = lang == 'en'
+        ? 'From the verified AgroZen knowledge base:'
+        : lang == 'ru'
+            ? 'Из проверенной базы знаний AgroZen:'
+            : "AgroZen tekshirilgan bilimlar bazasidan:";
 
     return RagResult(
       answer: '$intro\n\n${snippets.join('\n\n---\n\n')}',
@@ -245,7 +262,8 @@ class LocalRag {
   static const List<String> _medicalKeywords = [
     'dori', 'антибиот', 'antibiot', 'doz', 'доз', 'tashxis', 'диагноз',
     'davol', 'леч', 'tablet', 'таблет', 'prick', 'колот', 'привив',
-    'сироп', 'suspens', 'порош', 'kukun',
+    'сироп', 'suspens', 'порош', 'kukun', 'medicine', 'drug', 'dose',
+    'treatment', 'cure',
   ];
 
   /// The farmer is asking for treatment. We must refuse and refer.
@@ -256,16 +274,23 @@ class LocalRag {
 
   /// The mandatory non-prescriptive refusal, in the farmer's language.
   String medicineRefusal(String language) {
-    final isRu = language.toLowerCase() == 'ru';
-    return isRu
-        ? 'AgroZen не назначает лекарства и антибиотики самостоятельно. '
-            'Дозировки и схемы лечения определяет только ветеринар. '
-            'Опишите симптомы специалисту — при любых признаках болезни '
-            'немедленно обратитесь к ветеринару вашего района.'
-        : "AgroZen mustaqil ravishda dori yoki antibiotik belgilamaydi. "
-            "Dozalarni va davolash tartibini faqat veterinar belgilaydi. "
-            "Alomatlarni mutaxassisga ayting: kasallik belgilarida darhol "
-            "tumaningiz veterinariga murojaat qiling.";
+    final lang = language.toLowerCase();
+    if (lang == 'en') {
+      return 'AgroZen does not prescribe medication or antibiotics independently. '
+          'Dosages and treatment protocols must only be determined by a veterinarian. '
+          'Describe symptoms to a certified specialist: for any signs of illness, '
+          'immediately contact your district veterinarian.';
+    }
+    if (lang == 'ru') {
+      return 'AgroZen не назначает лекарства и антибиотики самостоятельно. '
+          'Дозировки и схемы лечения определяет только ветеринар. '
+          'Опишите симптомы специалисту — при любых признаках болезни '
+          'немедленно обратитесь к ветеринару вашего района.';
+    }
+    return "AgroZen mustaqil ravishda dori yoki antibiotik belgilamaydi. "
+        "Dozalarni va davolash tartibini faqat veterinar belgilaydi. "
+        "Alomatlarni mutaxassisga ayting: kasallik belgilarida darhol "
+        "tumaningiz veterinariga murojaat qiling.";
   }
 
   String _bestParagraph(String content, String question) {

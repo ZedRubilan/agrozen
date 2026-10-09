@@ -38,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _changeLanguage(String newLang) async {
-    final normalized = newLang == 'ru' ? 'ru' : 'uz';
+    final normalized = newLang == 'ru' ? 'ru' : (newLang == 'en' ? 'en' : 'uz');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_language', normalized);
     if (!mounted) return;
@@ -49,24 +49,29 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Future<void> _resetBatch() async {
     final isRu = _lang == 'ru';
+    final isEn = _lang == 'en';
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isRu ? 'Начать новую партию?' : 'Yangi partiya boshlash?'),
+        title: Text(isRu
+            ? 'Начать новую партию?'
+            : (isEn ? 'Start New Flock?' : 'Yangi partiya boshlash?')),
         content: Text(
           isRu
               ? 'Все текущие данные будут сброшены для запуска нового 42-дневного цикла.'
-              : "Yangi 42 kunlik sikl boshlash uchun joriy ma'lumotlar qayta sozlanadi.",
+              : (isEn
+                  ? 'All current cycle metrics will be reset to begin a new 42-day flock.'
+                  : "Yangi 42 kunlik sikl boshlash uchun joriy ma'lumotlar qayta sozlanadi."),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(isRu ? 'Отмена' : 'Bekor qilish'),
+            child: Text(isRu ? 'Отмена' : (isEn ? 'Cancel' : 'Bekor qilish')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: Text(isRu ? 'Да, начать' : 'Ha, boshlash'),
+            child: Text(isRu ? 'Да, начать' : (isEn ? 'Yes, Reset' : 'Ha, boshlash')),
           ),
         ],
       ),
@@ -84,10 +89,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     final isRu = _lang == 'ru';
+    final isEn = _lang == 'en';
+
+    final birdsSuffix = isRu ? 'голов' : (isEn ? 'birds' : 'bosh');
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Настройки' : 'Sozlamalar'),
+        title: Text(isRu ? 'Настройки' : (isEn ? 'Settings' : 'Sozlamalar')),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -117,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '$_district | $_currentCount ${isRu ? 'голов' : 'bosh'}',
+                                '$_district | $_currentCount $birdsSuffix',
                                 style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                               ),
                             ],
@@ -134,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   child: ListTile(
                     leading: const Icon(Icons.language_rounded),
-                    title: Text(isRu ? 'Язык интерфейса' : 'Ilova tili'),
+                    title: Text(isRu ? 'Язык интерфейса' : (isEn ? 'App Language' : 'Ilova tili')),
                     trailing: LanguageSelector(
                       currentLanguage: _lang,
                       onLanguageChanged: _changeLanguage,
@@ -148,9 +156,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   child: ListTile(
                     leading: const Icon(Icons.restart_alt_rounded, color: Colors.orange),
-                    title: Text(isRu ? 'Начать новую партию' : 'Yangi partiya boshlash'),
+                    title: Text(isRu ? 'Начать новую партию' : (isEn ? 'Start New Flock' : 'Yangi partiya boshlash')),
                     subtitle: Text(
-                      isRu ? 'Сбросить дату завоза и счетчики' : "Keltirilgan sana va hisoblagichlarni yangilash",
+                      isRu
+                          ? 'Сбросить дату завоза и счетчики'
+                          : (isEn ? 'Reset chick arrival date and counters' : "Keltirilgan sana va hisoblagichlarni yangilash"),
                       style: const TextStyle(fontSize: 12),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -171,14 +181,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                           children: [
                             Icon(Icons.info_outline, size: 20),
                             SizedBox(width: 8),
-                            Text('AgroZen MVP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text('AgroZen', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
                           isRu
-                              ? 'Версия 1.0.0\nРазработано специально для птицеводов Узбекистана в рамках программы поддержки агростартапов.'
-                              : "Versiya 1.0.0\nO'zbekiston parrandachilari uchun maxsus ishlab chiqilgan sun'iy intellekt yordamchisi.",
+                              ? 'Версия 1.0.0\nРазработано специально для птицеводов Узбекистана: ИИ-консультации, журнал партии, нормы Ross-308 и связь с ветеринарами.'
+                              : (isEn
+                                  ? 'Version 1.0.0\nBuilt for poultry farmers in Uzbekistan: AI advising, flock diary, Ross-308 standards, and regional vet access.'
+                                  : "Versiya 1.0.0\nO'zbekiston parrandachilari uchun maxsus ishlab chiqilgan sun'iy intellekt yordamchisi."),
                           style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.4),
                         ),
                       ],

@@ -66,11 +66,12 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isRu = _lang == 'ru';
+    final isEn = _lang == 'en';
     final dateFormat = DateFormat('dd.MM.yyyy');
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Параметры партии' : 'Partiya ma\'lumotlari'),
+        title: Text(isRu ? 'Параметры партии' : (isEn ? 'Flock Setup' : 'Partiya ma\'lumotlari')),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -81,14 +82,18 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  isRu ? 'Новая партия бройлеров' : 'Yangi broyler partiyasi',
+                  isRu
+                      ? 'Новая партия бройлеров'
+                      : (isEn ? 'New Broiler Batch' : 'Yangi broyler partiyasi'),
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   isRu
                       ? 'Укажите дату завоза и количество цыплят для расчета ежедневного плана'
-                      : "Kunlik reja va me'yorlarni hisoblash uchun jo'jalar kelgan sana va sonini kiriting",
+                      : (isEn
+                          ? 'Enter chick arrival date and flock count to calculate the daily care plan'
+                          : "Kunlik reja va me'yorlarni hisoblash uchun jo'jalar kelgan sana va sonini kiriting"),
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 24),
@@ -96,12 +101,17 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: isRu ? 'Ваше имя / Название фермы' : 'Ismingiz / Ferma nomi',
+                    labelText: isRu
+                        ? 'Ваше имя / Название фермы'
+                        : (isEn ? 'Your Name / Farm Name' : 'Ismingiz / Ferma nomi'),
                     prefixIcon: const Icon(Icons.person_outline),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? (isRu ? 'Введите имя' : 'Ismni kiriting') : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? (isRu
+                          ? 'Введите имя'
+                          : (isEn ? 'Please enter name' : 'Ismni kiriting'))
+                      : null,
                 ),
                 const SizedBox(height: 18),
                 // Arrival Date Picker Card
@@ -123,7 +133,9 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isRu ? 'Дата завоза цыплят' : 'Jo\'jalar kelgan sana',
+                                isRu
+                                    ? 'Дата завоза цыплят'
+                                    : (isEn ? 'Chick Arrival Date' : 'Jo\'jalar kelgan sana'),
                                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                               ),
                               const SizedBox(height: 4),
@@ -135,7 +147,7 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                           ),
                         ),
                         Text(
-                          isRu ? 'Изменить' : 'Tanlash',
+                          isRu ? 'Изменить' : (isEn ? 'Change' : 'Tanlash'),
                           style: TextStyle(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -151,18 +163,24 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                   controller: _countController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: isRu ? 'Количество цыплят (голов)' : 'Jo\'jalar soni (bosh)',
+                    labelText: isRu
+                        ? 'Количество цыплят (голов)'
+                        : (isEn ? 'Number of chicks (heads)' : 'Jo\'jalar soni (bosh)'),
                     hintText: '500',
                     prefixIcon: const Icon(Icons.numbers),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
-                      return isRu ? 'Введите количество' : 'Sonini kiriting';
+                      return isRu
+                          ? 'Введите количество'
+                          : (isEn ? 'Please enter count' : 'Sonini kiriting');
                     }
                     final n = int.tryParse(v.trim());
                     if (n == null || n <= 0) {
-                      return isRu ? 'Введите число больше 0' : '0 dan katta son kiriting';
+                      return isRu
+                          ? 'Введите число больше 0'
+                          : (isEn ? 'Must be greater than 0' : '0 dan katta son kiriting');
                     }
                     return null;
                   },
@@ -177,7 +195,7 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text(
-                    isRu ? 'Далее' : 'Keyingisi',
+                    isRu ? 'Далее' : (isEn ? 'Next' : 'Keyingisi'),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
