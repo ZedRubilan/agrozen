@@ -112,7 +112,7 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
       );
     }
 
-    if (mounted) context.pop();
+    if (mounted && context.canPop()) context.pop();
   }
 
   @override

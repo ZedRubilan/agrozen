@@ -52,7 +52,9 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
         backgroundColor: Colors.green,
       ),
     );
-    context.pop();
+    if (context.canPop()) {
+      context.pop();
+    }
   }
 
   @override

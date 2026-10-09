@@ -107,7 +107,7 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
       );
     }
 
-    if (mounted) context.pop();
+    if (mounted && context.canPop()) context.pop();
   }
 
   @override
