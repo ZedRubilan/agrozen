@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/localization/app_strings.dart';
+import '../../widgets/tactile_button.dart';
 
 class CourseListScreen extends StatefulWidget {
   const CourseListScreen({super.key});
@@ -110,15 +111,29 @@ class _CourseListScreenState extends State<CourseListScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.teal.shade900.withAlpha(60),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.school, color: Colors.white, size: 28),
-                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(40),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.school_rounded, color: Colors.white, size: 26),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 AppStrings.tr(
@@ -136,7 +151,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Text(
                           AppStrings.tr(
                             lang: _lang,
@@ -146,15 +161,34 @@ class _CourseListScreenState extends State<CourseListScreen> {
                           ),
                           style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          AppStrings.tr(
-                            lang: _lang,
-                            uz: "Tugallandi: ${_completedLessons.length} / ${_lessons.length}",
-                            ru: 'Пройдено: ${_completedLessons.length} из ${_lessons.length}',
-                            en: 'Completed: ${_completedLessons.length} of ${_lessons.length}',
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: "Tugallandi: ${_completedLessons.length} / ${_lessons.length}",
+                                ru: 'Пройдено: ${_completedLessons.length} из ${_lessons.length}',
+                                en: 'Completed: ${_completedLessons.length} of ${_lessons.length}',
+                              ),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            Text(
+                              '${((_completedLessons.length / _lessons.length) * 100).toInt()}%',
+                              style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: _lessons.isEmpty ? 0 : (_completedLessons.length / _lessons.length),
+                            minHeight: 8,
+                            backgroundColor: Colors.white24,
+                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.amberAccent),
                           ),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -164,23 +198,28 @@ class _CourseListScreenState extends State<CourseListScreen> {
                   if (allCompleted)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                      child: ElevatedButton.icon(
+                      child: TactileButton(
+                        height: 54,
+                        depth: 3,
+                        borderRadius: 16,
+                        backgroundColor: Colors.amber.shade800,
+                        shadowColor: const Color(0xFF6D3800),
                         onPressed: () => context.push('/certificate'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber.shade800,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.workspace_premium_rounded),
-                        label: Text(
-                          AppStrings.tr(
-                            lang: _lang,
-                            uz: "Sertifikatimni ko'rish",
-                            ru: 'Посмотреть мой сертификат',
-                            en: 'View My Certificate',
-                          ),
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 22),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: "Sertifikatimni ko'rish",
+                                ru: 'Посмотреть мой сертификат',
+                                en: 'View My Certificate',
+                              ),
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -214,36 +253,52 @@ class _CourseListScreenState extends State<CourseListScreen> {
                           ? (item['desc_en'] ?? item['desc_uz']!)
                           : (_lang == 'ru' ? item['desc_ru']! : item['desc_uz']!);
 
-                      return Card(
-                        elevation: 1,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: isPassed ? Colors.green.shade100 : theme.colorScheme.primary.withAlpha(20),
-                            child: isPassed
-                                ? const Icon(Icons.check, color: Colors.green)
-                                : Text(
-                                    '$num',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.primary,
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isPassed ? const Color(0xFF2D7A4C).withAlpha(90) : Colors.grey.shade200,
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(8),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            leading: CircleAvatar(
+                              backgroundColor: isPassed ? const Color(0xFFEAF5ED) : theme.colorScheme.primary.withAlpha(20),
+                              child: isPassed
+                                  ? const Icon(Icons.check_rounded, color: Color(0xFF2D7A4C))
+                                  : Text(
+                                      '$num',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.primary,
+                                      ),
                                     ),
-                                  ),
+                            ),
+                            title: Text(
+                              lessonTitle,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              lessonDesc,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                            onTap: () async {
+                              await context.push('/course/$num');
+                              _loadState();
+                            },
                           ),
-                          title: Text(
-                            lessonTitle,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          subtitle: Text(
-                            lessonDesc,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                          onTap: () async {
-                            await context.push('/course/$num');
-                            _loadState();
-                          },
                         ),
                       );
                     },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/constants.dart';
+import '../../widgets/tactile_button.dart';
 
 class RegionScreen extends StatefulWidget {
   const RegionScreen({super.key});
@@ -73,8 +74,8 @@ class _RegionScreenState extends State<RegionScreen> {
                 decoration: InputDecoration(
                   hintText: isRu ? 'Поиск региона...' : (isEn ? 'Search region...' : 'Qidirish...'),
                   prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 ),
                 onChanged: (val) => setState(() => _searchQuery = val),
               ),
@@ -82,47 +83,58 @@ class _RegionScreenState extends State<RegionScreen> {
               Expanded(
                 child: ListView.separated(
                   itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
                   itemBuilder: (context, index) {
                     final district = filtered[index];
                     final isSelected = district == _selectedDistrict;
 
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      selected: isSelected,
-                      selectedTileColor: theme.colorScheme.primary.withAlpha(20),
-                      leading: Icon(
-                        Icons.location_on_outlined,
-                        color: isSelected ? theme.colorScheme.primary : Colors.grey,
-                      ),
-                      title: Text(
-                        district,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? theme.colorScheme.primary : Colors.black87,
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFFEAF5ED) : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected ? theme.colorScheme.primary : Colors.grey.shade200,
+                          width: isSelected ? 2 : 1.2,
                         ),
                       ),
-                      trailing: isSelected
-                          ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-                          : null,
-                      onTap: () => setState(() => _selectedDistrict = district),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          leading: Icon(
+                            Icons.location_on_rounded,
+                            color: isSelected ? theme.colorScheme.primary : Colors.grey.shade500,
+                          ),
+                          title: Text(
+                            district,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                              color: isSelected ? const Color(0xFF1B5E20) : Colors.black87,
+                              fontSize: 15,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
+                              : null,
+                          onTap: () => setState(() => _selectedDistrict = district),
+                        ),
+                      ),
                     );
                   },
                 ),
               ),
               const SizedBox(height: 12),
-              ElevatedButton(
+              TactileButton(
+                height: 52,
+                depth: 3,
+                borderRadius: 16,
+                backgroundColor: theme.colorScheme.primary,
+                shadowColor: const Color(0xFF1B5E20),
                 onPressed: _proceed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
                 child: Text(
                   isRu ? 'Далее' : (isEn ? 'Next' : 'Keyingisi'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 8),

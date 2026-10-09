@@ -157,7 +157,7 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 6),
       elevation: 2,
       shadowColor: Colors.black.withAlpha(20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -228,42 +228,47 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
                 border: Border.all(color: Colors.grey.shade200),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildMetricItem(
-                    label: AppStrings.tr(
-                      lang: lang,
-                      uz: 'Bino me\'yori',
-                      ru: 'Норма птичника',
-                      en: 'House Target',
+                  Expanded(
+                    child: _buildMetricItem(
+                      label: AppStrings.tr(
+                        lang: lang,
+                        uz: 'Bino me\'yori',
+                        ru: 'Норма птичника',
+                        en: 'House Target',
+                      ),
+                      value: '${widget.targetHouseTemp.toStringAsFixed(1)}°C',
+                      icon: Icons.thermostat_rounded,
+                      color: theme.colorScheme.primary,
                     ),
-                    value: '${widget.targetHouseTemp.toStringAsFixed(1)}°C',
-                    icon: Icons.thermostat_rounded,
-                    color: theme.colorScheme.primary,
                   ),
                   Container(height: 28, width: 1, color: Colors.grey.shade300),
-                  _buildMetricItem(
-                    label: AppStrings.tr(
-                      lang: lang,
-                      uz: 'Tashqi harorat',
-                      ru: 'На улице',
-                      en: 'Outdoor Temp',
+                  Expanded(
+                    child: _buildMetricItem(
+                      label: AppStrings.tr(
+                        lang: lang,
+                        uz: 'Tashqi harorat',
+                        ru: 'На улице',
+                        en: 'Outdoor Temp',
+                      ),
+                      value: '${weather.temperature.toStringAsFixed(1)}°C',
+                      icon: Icons.wb_sunny_outlined,
+                      color: Colors.orange.shade700,
                     ),
-                    value: '${weather.temperature.toStringAsFixed(1)}°C',
-                    icon: Icons.wb_sunny_outlined,
-                    color: Colors.orange.shade700,
                   ),
                   Container(height: 28, width: 1, color: Colors.grey.shade300),
-                  _buildMetricItem(
-                    label: AppStrings.tr(
-                      lang: lang,
-                      uz: 'Tashqi namlik',
-                      ru: 'Влажность',
-                      en: 'Outdoor RH',
+                  Expanded(
+                    child: _buildMetricItem(
+                      label: AppStrings.tr(
+                        lang: lang,
+                        uz: 'Tashqi namlik',
+                        ru: 'Влажность',
+                        en: 'Outdoor RH',
+                      ),
+                      value: '${weather.humidity.toStringAsFixed(0)}%',
+                      icon: Icons.water_drop_outlined,
+                      color: Colors.blue.shade700,
                     ),
-                    value: '${weather.humidity.toStringAsFixed(0)}%',
-                    icon: Icons.water_drop_outlined,
-                    color: Colors.blue.shade700,
                   ),
                 ],
               ),
@@ -317,9 +322,9 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
               _buildDetailItem(
                 title: AppStrings.tr(
                   lang: lang,
-                  uz: '💨 Shamollatish ko\'rsatmasi',
-                  ru: '💨 Вентиляция',
-                  en: '💨 Ventilation Directive',
+                  uz: "Shamollatish ko'rsatmasi",
+                  ru: 'Вентиляция',
+                  en: 'Ventilation Directive',
                 ),
                 content: advice.ventilationAdvice,
                 color: Colors.blueGrey,
@@ -328,9 +333,9 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
               _buildDetailItem(
                 title: AppStrings.tr(
                   lang: lang,
-                  uz: '💧 Suv va ozuqa rejimi',
-                  ru: '💧 Вода и корм',
-                  en: '💧 Water & Feeding',
+                  uz: 'Suv va ozuqa rejimi',
+                  ru: 'Вода и корм',
+                  en: 'Water & Feeding',
                 ),
                 content: advice.waterFeedAdvice,
                 color: Colors.teal,
@@ -403,6 +408,9 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
         ),
         Text(
           label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
         ),
       ],

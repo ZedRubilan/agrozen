@@ -219,6 +219,7 @@ class LocalRag {
   Future<RagResult?> answer({
     required String question,
     required String language,
+    dynamic context,
   }) async {
     final matches = await _retrieve(question, language, 2);
     if (matches.isEmpty) return null;
@@ -243,8 +244,32 @@ class LocalRag {
             ? 'Из проверенной базы знаний AgroZen:'
             : "AgroZen tekshirilgan bilimlar bazasidan:";
 
+    String contextualNote = '';
+    if (context != null) {
+      final matchedTopics = matches.map((m) => m.topic).toSet();
+      if (matchedTopics.contains('temperature') || matchedTopics.contains('03_temperature')) {
+        final bDay = context.batchDay;
+        final tTemp = context.targetTemperatureC.toStringAsFixed(0);
+        contextualNote = lang == 'en'
+            ? "• Live Farm Target (Day $bDay): Target house temperature is $tTemp°C.\n\n"
+            : (lang == 'ru'
+                ? "• Показатель для вашей партии ($bDay-й день): Целевая температура птичника — $tTemp°C.\n\n"
+                : "• Sizning partiyangiz uchun ($bDay-kun): Xonadagi me'yoriy harorat aynan $tTemp°C bo'lishi kerak.\n\n");
+      } else if (matchedTopics.contains('feed') || matchedTopics.contains('05_feeding')) {
+        final bDay = context.batchDay;
+        final cCount = context.currentCount;
+        final recKg = context.recommendedFlockFeedKg.toStringAsFixed(1);
+        final perBird = context.targetDailyFeedPerBirdG.toStringAsFixed(0);
+        contextualNote = lang == 'en'
+            ? "• Live Farm Target (Day $bDay): For $cCount birds, recommended feed today is ~$recKg kg ($perBird g/bird).\n\n"
+            : (lang == 'ru'
+                ? "• Расчёт для вашей партии ($bDay-й день): Для $cCount птиц норма корма на сегодня — ~$recKg кг ($perBird г/голову).\n\n"
+                : "• Sizning partiyangiz uchun ($bDay-kun): $cCount ta jo'jangizga bugungi yem tavsiyasi — ~$recKg kg ($perBird g/bosh).\n\n");
+      }
+    }
+
     return RagResult(
-      answer: '$intro\n\n${snippets.join('\n\n---\n\n')}',
+      answer: '$intro\n\n$contextualNote${snippets.join('\n\n---\n\n')}',
       sources: sources,
     );
   }

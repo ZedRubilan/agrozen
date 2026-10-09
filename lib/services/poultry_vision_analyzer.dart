@@ -91,19 +91,19 @@ class PoultryVisionAnalyzer {
         ),
         analysisText: AppStrings.tr(
           lang: lang,
-          uz: '🔍 **Tahlil natijasi: Koktsidioz / Ichak yallig\'lanishi xavfi.**\n\n'
+          uz: '**Tahlil natijasi: Koktsidioz / Ichak yallig\'lanishi xavfi.**\n\n'
               'Axlatdagi qon izlari va to\'q apelsin shilliq moddalar ingichka yoki ko\'richak koktsidiozining alomati bo\'lishi mumkin.\n\n'
               '**Darhol ko\'riladigan choralar:**\n'
               '1. Kasal va lanj jo\'jalarni darhol alohida qafasga ajrating.\n'
               '2. To\'shama namligini tekshiring: barcha nam va ivigan qismlarni zudlik bilan chiqarib tashlang va quruq qipiq seping (koktsidiyalar namlikda tez ko\'payadi).\n'
               '3. Tuman veterinariiga darhol xabar bering — laboratoriya tekshiruvisiz o\'zboshimchalik bilan antibiotik bermang!',
-          ru: '🔍 **Результат анализа: Риск кокцидиоза / воспаления кишечника.**\n\n'
+          ru: '**Результат анализа: Риск кокцидиоза / воспаления кишечника.**\n\n'
               'Следы крови и оранжевой слизи в помёте являются частым признаком кокцидиоза.\n\n'
               '**Неотложные действия:**\n'
               '1. Немедленно изолируйте вялых птиц от общего стада.\n'
               '2. Проверьте подстилку: удалите сырые участки и посыпьте сухими стружками (ооцисты кокцидий размножаются во влаге).\n'
               '3. Срочно вызовите ветеринарного врача района — не применяйте антибиотики наугад без подтверждения диагноза!',
-          en: '🔍 **Analysis Result: Suspected Coccidiosis / Enteritis.**\n\n'
+          en: '**Analysis Result: Suspected Coccidiosis / Enteritis.**\n\n'
               'Blood traces and orange mucus in droppings are classic signs of intestinal coccidiosis.\n\n'
               '**Immediate Action Steps:**\n'
               '1. Immediately isolate lethargic birds from the flock.\n'
@@ -137,19 +137,19 @@ class PoultryVisionAnalyzer {
         ),
         analysisText: AppStrings.tr(
           lang: lang,
-          uz: '🔍 **Tahlil natijasi: Oq ichburug\' / Pulloroz xavfi.**\n\n'
+          uz: '**Tahlil natijasi: Oq ichburug\' / Pulloroz xavfi.**\n\n'
               'Jo\'jalar orqa qismidagi oq yopishqoq qatlam va holsizlik bakterial infeksiya yoki sovuq qotish natijasida kelib chiqishi mumkin.\n\n'
               '**Tavsiyalar:**\n'
               '1. Bino haroratini tekshiring — jo\'jalar sovuq qotmasligi kerak.\n'
               '2. Ichimlik suvi haroratini 18-20°C darajada saqlang, xiralashgan suvlarni yangilang.\n'
               '3. Tuman veterinari ko\'rigidan o\'tkazib, maxsus proba topshiring.',
-          ru: '🔍 **Результат анализа: Белый понос / Риск пуллороза.**\n\n'
+          ru: '**Результат анализа: Белый понос / Риск пуллороза.**\n\n'
               'Белый мелообразный помёт, склеивающий пух вокруг клоаки, указывает на инфекцию или сильное переохлаждение.\n\n'
               '**Рекомендации:**\n'
               '1. Проверьте температуру в зоне обогрева — цыплята не должны мерзнуть.\n'
               '2. Температура поилок должна быть не ниже 18-20°C.\n'
               '3. Вызовите ветеринарного врача для бактериологического посева.',
-          en: '🔍 **Analysis Result: White Diarrhea / Pullorum Risk.**\n\n'
+          en: '**Analysis Result: White Diarrhea / Pullorum Risk.**\n\n'
               'Chalky white pasting around the vent points to bacterial infection or severe chick chilling.\n\n'
               '**Recommendations:**\n'
               '1. Verify brooder temperature — prevent floor chills.\n'
@@ -180,19 +180,19 @@ class PoultryVisionAnalyzer {
         ),
         analysisText: AppStrings.tr(
           lang: lang,
-          uz: '🔍 **Tahlil natijasi: Issiq urish (Termik stress).**\n\n'
+          uz: '**Tahlil natijasi: Issiq urish (Termik stress).**\n\n'
               'Jo\'jalarning og\'zini ochib tez-tez nafas olishi va qanotlarini yoyishi binoda harorat yoki namlik me\'yordan yuqoriligini bildiradi.\n\n'
               '**Darhol ko\'riladigan choralar:**\n'
               '1. Tunnel ventilyatorlarini to\'liq quvvatda yoqing (qushlar ustida 1.5-2 m/s shamol tezligi hosil qiling).\n'
               '2. Kunning issiq vaqtida ozuqa taqsimlashni vaqtincha to\'xtating.\n'
               '3. Ichimlik suviga S vitamini yoki elektrolitlar qo\'shing va suv harorati 16-18°C dan oshmasligini ta\'minlang.',
-          ru: '🔍 **Результат анализа: Тепловой стресс.**\n\n'
+          ru: '**Результат анализа: Тепловой стресс.**\n\n'
               'Дыхание с открытым клювом и расправленные крылья — признак перегрева бройлеров.\n\n'
               '**Неотложные меры:**\n'
               '1. Включите вентиляторы на максимум (скорость ветра 1.5-2.0 м/с над птицей).\n'
               '2. В пик жары прекратите раздачу корма (переваривание повышает температуру тела).\n'
               '3. Добавьте в воду электролиты и витамин С. Обеспечьте температуру воды не выше 18°C.',
-          en: '🔍 **Analysis Result: Severe Heat Stress.**\n\n'
+          en: '**Analysis Result: Severe Heat Stress.**\n\n'
               'Open-beak panting and drooping wings demonstrate acute hyperthermia in broilers.\n\n'
               '**Immediate Action Steps:**\n'
               '1. Maximize tunnel ventilation (achieve 1.5-2.0 m/s air speed across birds).\n'
@@ -221,19 +221,19 @@ class PoultryVisionAnalyzer {
         ),
         analysisText: AppStrings.tr(
           lang: lang,
-          uz: '🔍 **Tahlil natijasi: To\'shama namlanishi / Pododermatit xavfi.**\n\n'
+          uz: '**Tahlil natijasi: To\'shama namlanishi / Pododermatit xavfi.**\n\n'
               'Nam to\'shama ammiak gazi ajralishini keskin oshiradi, bu esa jo\'jalarning ko\'zlari va nafas yo\'llarini zararlaydi hamda panjalarida yara hosil qiladi.\n\n'
               '**Tavsiyalar:**\n'
               '1. Nippel sug\'orish tizimida oqish bor-yo\'qligini tekshiring.\n'
               '2. To\'shamadagi nam joylarni chiqarib, o\'rniga quruq qipiq soling va shamollatishni kuchaytiring.\n'
               '3. To\'shama namligi 25-30% atrofida bo\'lishini nazorat qiling.',
-          ru: '🔍 **Результат анализа: Сырая подстилка и пододерматит.**\n\n'
+          ru: '**Результат анализа: Сырая подстилка и пододерматит.**\n\n'
               'Сырая подстилка выделяет едкий аммиак, вызывая ожоги лап (пододерматит) и повреждая глаза и дыхательные пути.\n\n'
               '**Рекомендации:**\n'
               '1. Проверьте ниппельные поилки на предмет протечек.\n'
               '2. Выгребите влажные комки и засыпьте свежие сухие опилки.\n'
               '3. Увеличьте вентиляцию для просушки пола.',
-          en: '🔍 **Analysis Result: Damp Bedding & Ammonia Hazard.**\n\n'
+          en: '**Analysis Result: Damp Bedding & Ammonia Hazard.**\n\n'
               'Excessive litter moisture generates caustic ammonia fumes, damaging eyes, lungs, and footpads.\n\n'
               '**Recommendations:**\n'
               '1. Inspect nipple drinking lines for leaks or excessive water pressure.\n'
@@ -254,19 +254,19 @@ class PoultryVisionAnalyzer {
       ),
       analysisText: AppStrings.tr(
         lang: lang,
-        uz: '🔍 **Vizual tahlil xulosasi:**\n\n'
+        uz: '**Vizual tahlil xulosasi:**\n\n'
             'Parrandalar umumiy faolligi, to\'shama holati va mikroiqlim ko\'rsatkichlarini doimiy nazorat qiling:\n'
             '• **To\'planish:** Jo\'jalar bir joyga uyulib olsa — xona sovuq yoki skvoznyak bor.\n'
             '• **Yoyilib yotish va hansirash:** Xonada issiq yoki havo yetishmayapti.\n'
             '• **Teng taqsimlanish:** Qushlar xona bo\'ylab bir tekis yursa — mikroklimat ideal.\n\n'
             'Shubhali belgilar (pat hurpayishi, holsizlik, qonli axlat) bo\'lsa, tuman veterinariiga murojaat qiling.',
-        ru: '🔍 **Результаты визуального осмотра:**\n\n'
+        ru: '**Результаты визуального осмотра:**\n\n'
             'Контролируйте поведение птицы для оценки микроклимата в птичнике:\n'
             '• **Сбивание в кучи:** В птичнике холодно или присутствуют сквозняки на уровне пола.\n'
             '• **Одышка и вялость:** Слишком высокая температура или недостаток кислорода.\n'
             '• **Равномерное распределение:** Идеальный микроклимат, птицы активны и хорошо питаются.\n\n'
             'При опасных симптомах сразу обращайтесь к районному ветеринару.',
-        en: '🔍 **Visual Flock Assessment:**\n\n'
+        en: '**Visual Flock Assessment:**\n\n'
             'Evaluate chick distribution across the barn floor to determine comfort:\n'
             '• **Huddling tightly:** Floor chill or cold air drafts at bird level.\n'
             '• **Panting & wing spreading:** High temperatures or inadequate fresh airflow.\n'

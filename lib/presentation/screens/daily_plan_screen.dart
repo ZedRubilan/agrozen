@@ -150,14 +150,13 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                               ),
                               if (isToday)
                                 Container(
-                                  margin: const EdgeInsets.only(top: 2),
-                                  width: 4,
-                                  height: 4,
+                                  margin: const EdgeInsets.only(top: 3),
+                                  width: 5,
+                                  height: 5,
                                   decoration: BoxDecoration(
                                     color: isSelected ? Colors.white : theme.colorScheme.primary,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Container(),
                                 ),
                             ],
                           ),
@@ -256,14 +255,14 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
     } else if (day <= 21) {
       return AppStrings.tr(
         lang: lang,
-        uz: "'O'sish davri (8-21 kunlar): 'O'sish' yemiga asta-sekin o'tish, haroratni bosqichma-bosqich 27°C ga tushirish va shamollatishni kuchaytirish.",
+        uz: "O'sish davri (8-21 kunlar): O'sish yemiga asta-sekin o'tish, haroratni bosqichma-bosqich 27°C ga tushirish va shamollatishni kuchaytirish.",
         ru: 'Период активного роста (8-21 дни): плавный переход на корм "Рост", постепенное снижение температуры до 27°C, усиление вентиляции.',
         en: 'Grower phase (Days 8-21): Transition gradually to Grower feed, gradually reduce target temp to 27°C, and ramp up ventilation capacity.',
       );
     } else {
       return AppStrings.tr(
         lang: lang,
-        uz: "'Finish davri (22-42 kunlar): 'Finish' yemi, vazn o'sishini qattiq nazorat qilish, yozda qizib ketishdan asrash va so'yishga tayyorgarlik.",
+        uz: "Finish davri (22-42 kunlar): Finish yemi, vazn o'sishini qattiq nazorat qilish, yozda qizib ketishdan asrash va so'yishga tayyorgarlik.",
         ru: 'Финишный период (22-42 дни): корм "Финиш", максимальный контроль привеса, защита от перегрева летом, подготовка к забою.',
         en: 'Finisher phase (Days 22-42): Finisher feed, strict monitoring of weight gain and FCR, heat stress mitigation, and harvest scheduling.',
       );

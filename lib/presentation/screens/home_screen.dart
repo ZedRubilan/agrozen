@@ -9,6 +9,9 @@ import '../widgets/daily_task_card.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/alert_card.dart';
 import '../widgets/weather_climate_card.dart';
+import '../widgets/loan_profit_tracker_card.dart';
+import '../widgets/flock_pathway_card.dart';
+import '../widgets/tactile_button.dart';
 import '../../services/daily_counters.dart';
 import '../../core/localization/app_strings.dart';
 
@@ -117,13 +120,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withAlpha(30),
+                color: Colors.white.withAlpha(51),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.egg_alt_rounded, color: theme.colorScheme.primary, size: 20),
+              child: const Icon(Icons.egg_alt_rounded, color: Colors.amber, size: 20),
             ),
             const SizedBox(width: 10),
-            const Text('AgroZen', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('AgroZen', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.2)),
           ],
         ),
         actions: [
@@ -133,41 +136,103 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (idx) {
-          if (idx == 1) context.push('/diary');
-          if (idx == 2) context.push('/ask');
-          if (idx == 3) context.push('/course');
-          if (idx == 4) context.push('/settings');
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: AppStrings.tr(lang: _lang, uz: 'Asosiy', ru: 'Главная', en: 'Home'),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(10),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                icon: Icons.home_rounded,
+                label: AppStrings.tr(lang: _lang, uz: 'Asosiy', ru: 'Главная', en: 'Home'),
+                isSelected: true,
+                onTap: () {},
+              ),
+              _buildNavItem(
+                icon: Icons.menu_book_rounded,
+                label: AppStrings.tr(lang: _lang, uz: 'Kundalik', ru: 'Дневник', en: 'Diary'),
+                isSelected: false,
+                onTap: () => context.push('/diary'),
+              ),
+
+              // Big Appealing Center Floating Ovoz Button
+              GestureDetector(
+                onTap: () => context.push('/ask?mode=field'),
+                child: Transform.translate(
+                  offset: const Offset(0, -10),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2D7A4C), Color(0xFF1B5E20)],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF1B5E20).withAlpha(150),
+                              offset: const Offset(0, 6),
+                              blurRadius: 12,
+                            ),
+                            BoxShadow(
+                              color: const Color(0xFF2D7A4C).withAlpha(60),
+                              offset: const Offset(0, -1),
+                              blurRadius: 4,
+                            ),
+                          ],
+                          border: Border.all(color: const Color(0xFFF8F9F5), width: 3.5),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.mic_rounded, color: Colors.white, size: 32),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        AppStrings.tr(lang: _lang, uz: 'OVOZ', ru: 'ГОЛОС', en: 'VOICE'),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1B5E20),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              _buildNavItem(
+                icon: Icons.school_rounded,
+                label: AppStrings.tr(lang: _lang, uz: 'Kurs', ru: 'Курс', en: 'Course'),
+                isSelected: false,
+                onTap: () => context.push('/course'),
+              ),
+              _buildNavItem(
+                icon: Icons.person_rounded,
+                label: AppStrings.tr(lang: _lang, uz: 'Profil', ru: 'Профиль', en: 'Profile'),
+                isSelected: false,
+                onTap: () => context.push('/settings'),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.menu_book_outlined),
-            selectedIcon: const Icon(Icons.menu_book),
-            label: AppStrings.tr(lang: _lang, uz: 'Kundalik', ru: 'Дневник', en: 'Diary'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.smart_toy_outlined),
-            selectedIcon: const Icon(Icons.smart_toy),
-            label: AppStrings.tr(lang: _lang, uz: 'Savol-javob', ru: 'ИИ Чат', en: 'AI Chat'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.school_outlined),
-            selectedIcon: const Icon(Icons.school),
-            label: AppStrings.tr(lang: _lang, uz: 'Kurs', ru: 'Курс', en: 'Course'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: AppStrings.tr(lang: _lang, uz: 'Sozlamalar', ru: 'Профиль', en: 'Settings'),
-          ),
-        ],
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -268,6 +333,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 14),
 
+                    // 42-Day Milestone Pathway Roadmap (Duolingo-style)
+                    FlockPathwayCard(
+                      batchDay: _batchDay,
+                      language: _lang,
+                      onOpenPlan: () => context.push('/daily-plan'),
+                    ),
+                    const SizedBox(height: 14),
+
                     // Real-time Regional Weather & Microclimate Guidance
                     WeatherClimateCard(
                       district: _district,
@@ -285,6 +358,89 @@ class _HomeScreenState extends State<HomeScreen> {
                         vetName: _todayVet?['name'] as String?,
                         vetPhone: _todayVet?['phone'] as String?,
                       ),
+                    const SizedBox(height: 10),
+
+                    // Bank Loan Payoff & Profit Tracker
+                    LoanProfitTrackerCard(
+                      currentCount: _currentCount,
+                      initialCount: _initialCount,
+                      batchDay: _batchDay,
+                      language: _lang,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Hands-Free Field Mode Hero Button (Designed for dirty hands)
+                    TactileButton(
+                      height: 72,
+                      backgroundColor: theme.colorScheme.primary,
+                      shadowColor: const Color(0xFF1B5E20),
+                      borderRadius: 22,
+                      depth: 4.5,
+                      onPressed: () => context.push('/ask?mode=field'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(50),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withAlpha(120), width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha(30),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(Icons.mic_rounded, color: Colors.white, size: 28),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AppStrings.tr(
+                                      lang: _lang,
+                                      uz: "DALA REJIMI: OVOZLI YORDAMCHI",
+                                      ru: "РЕЖИМ ПОЛЯ: СПРОСИТЬ ГОЛОСОМ",
+                                      en: "FIELD MODE: VOICE AI ASSISTANT",
+                                    ),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    AppStrings.tr(
+                                      lang: _lang,
+                                      uz: "Qo'llar kirlanganda: 1-bosish va gapiring",
+                                      ru: "Грязные руки: 1 нажатие и говорите",
+                                      en: "Dirty hands: 1 tap & speak",
+                                    ),
+                                    style: TextStyle(
+                                      color: Colors.white.withAlpha(220),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
                     // Quick Stats Row
                     Row(
@@ -457,6 +613,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -470,26 +627,77 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withAlpha(50), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(25),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final color = isSelected ? const Color(0xFF1B5E20) : const Color(0xFF6B7280);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );

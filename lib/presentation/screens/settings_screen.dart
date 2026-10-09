@@ -103,98 +103,183 @@ class _SettingsScreenState extends State<SettingsScreen>
               padding: const EdgeInsets.all(16.0),
               children: [
                 // Profile Section
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(25),
-                          child: Icon(Icons.person, size: 32, color: Theme.of(context).colorScheme.primary),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(8),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(25),
+                        child: Icon(Icons.person_rounded, size: 32, color: Theme.of(context).colorScheme.primary),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _name,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$_district | $_currentCount $birdsSuffix',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _name,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '$_district | $_currentCount $birdsSuffix',
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Language Setting
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  child: ListTile(
-                    leading: const Icon(Icons.language_rounded),
-                    title: Text(isRu ? 'Язык интерфейса' : (isEn ? 'App Language' : 'Ilova tili')),
-                    trailing: LanguageSelector(
-                      currentLanguage: _lang,
-                      onLanguageChanged: _changeLanguage,
-                    ),
+                // Language Setting Section
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(8),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.language_rounded, color: Theme.of(context).colorScheme.primary, size: 22),
+                          const SizedBox(width: 10),
+                          Text(
+                            isRu ? 'Язык приложения' : (isEn ? 'App Language' : 'Ilova tili'),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Center(
+                        child: LanguageSelector(
+                          currentLanguage: _lang,
+                          onLanguageChanged: _changeLanguage,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 // Reset batch
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  child: ListTile(
-                    leading: const Icon(Icons.restart_alt_rounded, color: Colors.orange),
-                    title: Text(isRu ? 'Начать новую партию' : (isEn ? 'Start New Flock' : 'Yangi partiya boshlash')),
-                    subtitle: Text(
-                      isRu
-                          ? 'Сбросить дату завоза и счетчики'
-                          : (isEn ? 'Reset chick arrival date and counters' : "Keltirilgan sana va hisoblagichlarni yangilash"),
-                      style: const TextStyle(fontSize: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.orange.shade200, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(6),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.restart_alt_rounded, color: Colors.orange, size: 22),
+                      ),
+                      title: Text(
+                        isRu ? 'Начать новую партию' : (isEn ? 'Start New Flock' : 'Yangi partiya boshlash'),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        isRu
+                            ? 'Сбросить дату завоза и счетчики'
+                            : (isEn ? 'Reset chick arrival date and counters' : "Keltirilgan sana va hisoblagichlarni yangilash"),
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                      onTap: _resetBatch,
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: _resetBatch,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 // About section
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.info_outline, size: 20),
-                            SizedBox(width: 8),
-                            Text('AgroZen', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isRu
-                              ? 'Версия 1.0.0\nРазработано специально для птицеводов Узбекистана: ИИ-консультации, журнал партии, нормы Ross-308 и связь с ветеринарами.'
-                              : (isEn
-                                  ? 'Version 1.0.0\nBuilt for poultry farmers in Uzbekistan: AI advising, flock diary, Ross-308 standards, and regional vet access.'
-                                  : "Versiya 1.0.0\nO'zbekiston parrandachilari uchun maxsus ishlab chiqilgan sun'iy intellekt yordamchisi."),
-                          style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.4),
-                        ),
-                      ],
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(18.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(6),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.eco_rounded, size: 22, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 8),
+                          const Text('AgroZen', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withAlpha(20),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'v1.0.0',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        isRu
+                            ? 'Разработано специально для птицеводов Узбекистана к StudEXPO-2026: ИИ-консультации, журнал партии, нормы Ross-308 и связь с ветеринарами.'
+                            : (isEn
+                                ? 'Built for poultry farmers in Uzbekistan for StudEXPO-2026: AI advising, flock diary, Ross-308 standards, and regional vet access.'
+                                : "O'zbekiston parrandachilari uchun StudEXPO-2026 tanloviga maxsus ishlab chiqilgan sun'iy intellekt yordamchisi: Ross-308 me'yorlari, kredit tahlili va veterinar aloqasi."),
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.45),
+                      ),
+                    ],
                   ),
                 ),
               ],

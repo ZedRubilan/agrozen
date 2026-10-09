@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:agrozen/presentation/widgets/tactile_button.dart';
 import 'package:agrozen/services/daily_counters.dart';
 
 class LogFeedScreen extends StatefulWidget {
@@ -57,6 +58,35 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
     }
   }
 
+  void _addQuick(double delta) {
+    final current = double.tryParse(_controller.text.trim()) ?? 0.0;
+    final next = current + delta;
+    _controller.text = next % 1 == 0 ? next.toInt().toString() : next.toStringAsFixed(1);
+  }
+
+  Widget _buildQuickChip(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.amber.shade50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.amber.shade300, width: 1.5),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.brown.shade800,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isRu = _lang == 'ru';
@@ -66,7 +96,7 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
         title: Text(isRu ? 'Расход корма' : 'Yem sarfi'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
@@ -93,8 +123,8 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                     labelText: isRu ? 'Расход корма (кг)' : 'Yem miqdori (kg)',
                     hintText: '25.0',
                     prefixIcon: const Icon(Icons.grain, color: Colors.amber),
-                    suffixText: 'кг',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    suffixText: isRu ? 'кг' : 'kg',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
@@ -107,13 +137,23 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildQuickChip('+5 kg', () => _addQuick(5)),
+                    _buildQuickChip('+10 kg', () => _addQuick(10)),
+                    _buildQuickChip('+25 kg', () => _addQuick(25)),
+                    _buildQuickChip('+50 kg', () => _addQuick(50)),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.amber.shade200),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.shade300),
                   ),
                   child: Row(
                     children: [
@@ -124,26 +164,29 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                           isRu
                               ? 'Кормите птицу строго по фазам (Старт -> Рост -> Финиш) и не допускайте порчи корма.'
                               : "Parrandalarni qat'iy bosqichlar bo'yicha boqing (Start -> O'sish -> Finish) va yem buzilishiga yo'l qo'ymang.",
-                          style: TextStyle(color: Colors.brown.shade800, fontSize: 13),
+                          style: TextStyle(color: Colors.brown.shade800, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Spacer(),
-                ElevatedButton(
+                const SizedBox(height: 36),
+                TactileButton(
+                  height: 52,
+                  depth: 3,
+                  borderRadius: 16,
+                  backgroundColor: Colors.amber.shade900,
+                  shadowColor: const Color(0xFF6D3800),
                   onPressed: _isSaving ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber.shade900,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
                   child: _isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
                       : Text(
                           isRu ? 'Сохранить запись' : 'Qaydni saqlash',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                 ),
               ],

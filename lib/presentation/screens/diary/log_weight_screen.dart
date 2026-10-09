@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:agrozen/domain/alerts/alert_engine.dart';
 import 'package:agrozen/domain/scheduler/day_calculator.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
+import 'package:agrozen/presentation/widgets/tactile_button.dart';
 import 'package:agrozen/services/daily_counters.dart';
 
 class LogWeightScreen extends StatefulWidget {
@@ -102,6 +103,35 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
     if (mounted && context.canPop()) context.pop();
   }
 
+  void _addQuick(double delta) {
+    final current = double.tryParse(_controller.text.trim()) ?? 0.0;
+    final next = current + delta;
+    _controller.text = next % 1 == 0 ? next.toInt().toString() : next.toStringAsFixed(1);
+  }
+
+  Widget _buildQuickChip(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.teal.shade50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.teal.shade300, width: 1.5),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.teal.shade900,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isRu = _lang == 'ru';
@@ -111,7 +141,8 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
         title: Text(isRu ? 'Контрольный вес' : 'Nazorat vazni'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
@@ -139,7 +170,7 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                     hintText: '450',
                     prefixIcon: const Icon(Icons.scale, color: Colors.teal),
                     suffixText: isRu ? 'г' : 'g',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
@@ -152,12 +183,22 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildQuickChip(isRu ? '+50 г' : '+50 g', () => _addQuick(50)),
+                    _buildQuickChip(isRu ? '+100 г' : '+100 g', () => _addQuick(100)),
+                    _buildQuickChip(isRu ? '+250 г' : '+250 g', () => _addQuick(250)),
+                    _buildQuickChip(isRu ? '+500 г' : '+500 g', () => _addQuick(500)),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.teal.shade50,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.teal.shade200),
                   ),
                   child: Row(
@@ -169,26 +210,29 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                           isRu
                               ? 'Ориентиры: 7 день ~180г, 14 день ~500г, 21 день ~900г, 28 день ~1400г, 42 день ~2400г.'
                               : "Mo'ljallar: 7-kun ~180g, 14-kun ~500g, 21-kun ~900g, 28-kun ~1400g, 42-kun ~2400g.",
-                          style: TextStyle(color: Colors.teal.shade900, fontSize: 13),
+                          style: TextStyle(color: Colors.teal.shade900, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Spacer(),
-                ElevatedButton(
+                const SizedBox(height: 36),
+                TactileButton(
+                  height: 52,
+                  depth: 3,
+                  borderRadius: 16,
+                  backgroundColor: Colors.teal.shade700,
+                  shadowColor: const Color(0xFF004D40),
                   onPressed: _isSaving ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
                   child: _isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
                       : Text(
                           isRu ? 'Сохранить запись' : 'Qaydni saqlash',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                 ),
               ],

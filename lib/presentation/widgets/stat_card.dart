@@ -24,6 +24,7 @@ class StatCard extends StatelessWidget {
     final color = iconColor ?? theme.colorScheme.primary;
 
     return Card(
+      margin: EdgeInsets.zero,
       elevation: 1.5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: InkWell(

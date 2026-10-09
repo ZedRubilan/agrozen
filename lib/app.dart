@@ -36,7 +36,13 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/diary/mortality', builder: (context, state) => const LogMortalityScreen()),
     GoRoute(path: '/diary/feed', builder: (context, state) => const LogFeedScreen()),
     GoRoute(path: '/diary/weight', builder: (context, state) => const LogWeightScreen()),
-    GoRoute(path: '/ask', builder: (context, state) => const AskScreen()),
+    GoRoute(
+      path: '/ask',
+      builder: (context, state) {
+        final mode = state.uri.queryParameters['mode'];
+        return AskScreen(startInFieldMode: mode == 'field');
+      },
+    ),
     GoRoute(path: '/course', builder: (context, state) => const CourseListScreen()),
     GoRoute(
       path: '/course/:lessonId',
@@ -110,6 +116,19 @@ class _AgroZenAppState extends State<AgroZenApp> {
         Locale('ru'),
         Locale('en'),
       ],
+      builder: (context, child) {
+        return Container(
+          color: const Color(0xFFE8EFE9),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: ClipRRect(
+                child: child ?? const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

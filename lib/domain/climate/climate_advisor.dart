@@ -92,37 +92,37 @@ class ClimateAdvisor {
       case ClimateRiskLevel.heatWarning:
         return AppStrings.tr(
           lang: lang,
-          uz: '⚠️ Issiq urish xavfi',
-          ru: '⚠️ Риск теплового стресса',
-          en: '⚠️ Heat Stress Warning',
+          uz: 'Issiq urish xavfi',
+          ru: 'Риск теплового стресса',
+          en: 'Heat Stress Warning',
         );
       case ClimateRiskLevel.coldWarning:
         return AppStrings.tr(
           lang: lang,
-          uz: '❄️ Sovuq havo xavfi',
-          ru: '❄️ Риск переохлаждения',
-          en: '❄️ Cold Stress Risk',
+          uz: 'Sovuq havo xavfi',
+          ru: 'Риск переохлаждения',
+          en: 'Cold Stress Risk',
         );
       case ClimateRiskLevel.highHumidityRisk:
         return AppStrings.tr(
           lang: lang,
-          uz: '💧 Yuqori namlik (Ammiak xavfi)',
-          ru: '💧 Высокая влажность (Риск аммиака)',
-          en: '💧 High Humidity (Ammonia Risk)',
+          uz: 'Yuqori namlik (Ammiak xavfi)',
+          ru: 'Высокая влажность (Риск аммиака)',
+          en: 'High Humidity (Ammonia Risk)',
         );
       case ClimateRiskLevel.dryAirRisk:
         return AppStrings.tr(
           lang: lang,
-          uz: '🌵 Quruq havo (Chang xavfi)',
-          ru: '🌵 Сухой воздух (Пыль в птичнике)',
-          en: '🌵 Dry Air (Dust Risk)',
+          uz: 'Quruq havo (Chang xavfi)',
+          ru: 'Сухой воздух (Пыль в птичнике)',
+          en: 'Dry Air (Dust Risk)',
         );
       case ClimateRiskLevel.optimal:
         return AppStrings.tr(
           lang: lang,
-          uz: '✅ Qulay mikroklimat',
-          ru: '✅ Оптимальный микроклимат',
-          en: '✅ Optimal Microclimate',
+          uz: 'Qulay mikroklimat',
+          ru: 'Оптимальный микроклимат',
+          en: 'Optimal Microclimate',
         );
     }
   }

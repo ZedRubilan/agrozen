@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:agrozen/domain/alerts/alert_engine.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
+import 'package:agrozen/presentation/widgets/tactile_button.dart';
 import 'package:agrozen/services/daily_counters.dart';
 
 class LogMortalityScreen extends StatefulWidget {
@@ -110,6 +111,35 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
     if (mounted && context.canPop()) context.pop();
   }
 
+  void _addQuick(int delta) {
+    final current = int.tryParse(_controller.text.trim()) ?? 0;
+    final next = (current + delta).clamp(0, _currentCount);
+    _controller.text = next.toString();
+  }
+
+  Widget _buildQuickChip(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.red.shade200, width: 1.5),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.red.shade800,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isRu = _lang == 'ru';
@@ -119,7 +149,7 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
         title: Text(isRu ? 'Запись падежа' : 'Nobodlik qaydi'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
@@ -146,7 +176,7 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
                     labelText: isRu ? 'Количество погибших (голов)' : 'Nobud bo\'lganlar soni (bosh)',
                     hintText: '0',
                     prefixIcon: const Icon(Icons.heart_broken_outlined, color: Colors.red),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
@@ -162,12 +192,24 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                // Quick Increment Chips for dirty hands
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildQuickChip('+1', () => _addQuick(1)),
+                    _buildQuickChip('+2', () => _addQuick(2)),
+                    _buildQuickChip('+5', () => _addQuick(5)),
+                    _buildQuickChip('+10', () => _addQuick(10)),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.shade200),
                   ),
                   child: Row(
                     children: [
@@ -178,26 +220,29 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
                           isRu
                               ? 'Норма естественного отхода: не более 1% за сутки.'
                               : "Tabiiy nobodlik me'yori: sutkasiga 1% dan oshmasligi kerak.",
-                          style: TextStyle(color: Colors.blue.shade900, fontSize: 13),
+                          style: TextStyle(color: Colors.blue.shade900, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Spacer(),
-                ElevatedButton(
+                const SizedBox(height: 36),
+                TactileButton(
+                  height: 52,
+                  depth: 3,
+                  borderRadius: 16,
+                  backgroundColor: Colors.red.shade700,
+                  shadowColor: Colors.red.shade900,
                   onPressed: _isSaving ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
                   child: _isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
                       : Text(
                           isRu ? 'Сохранить запись' : 'Qaydni saqlash',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                 ),
               ],

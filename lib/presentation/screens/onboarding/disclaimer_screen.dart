@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/constants.dart';
 import '../../../services/daily_counters.dart';
 import '../../../services/notification_service.dart';
+import '../../widgets/tactile_button.dart';
 
 class DisclaimerScreen extends StatefulWidget {
   const DisclaimerScreen({super.key});
@@ -137,19 +138,18 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
+              TactileButton(
+                height: 52,
+                depth: 3,
+                borderRadius: 16,
+                backgroundColor: theme.colorScheme.primary,
+                shadowColor: const Color(0xFF1B5E20),
                 onPressed: _acceptAndFinish,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
                 child: Text(
                   isRu
                       ? 'Я согласен, начать работу'
                       : (_lang == 'en' ? 'I Understand & Agree' : 'Tushundim va roziman'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 8),

@@ -47,7 +47,7 @@ void main() {
       expect(AppConstants.districts, contains('Toshkent'));
     });
 
-    test('AppTheme defines primary and secondary farming palette', () {
+    testWidgets('AppTheme defines primary and secondary farming palette', (tester) async {
       final theme = AppTheme.lightTheme;
       expect(theme.colorScheme.primary, AppTheme.primaryGreen);
       expect(theme.colorScheme.secondary, AppTheme.secondaryBrown);

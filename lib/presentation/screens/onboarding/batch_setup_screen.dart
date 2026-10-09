@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/tactile_button.dart';
 
 class BatchSetupScreen extends StatefulWidget {
   const BatchSetupScreen({super.key});
@@ -186,17 +187,16 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
+                TactileButton(
+                  height: 52,
+                  depth: 3,
+                  borderRadius: 16,
+                  backgroundColor: theme.colorScheme.primary,
+                  shadowColor: const Color(0xFF1B5E20),
                   onPressed: _proceed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
                   child: Text(
                     isRu ? 'Далее' : (isEn ? 'Next' : 'Keyingisi'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                 ),
               ],

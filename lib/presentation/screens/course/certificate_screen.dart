@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/localization/app_strings.dart';
+import '../../widgets/tactile_button.dart';
 
 class CertificateScreen extends StatefulWidget {
   const CertificateScreen({super.key});
@@ -60,7 +61,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFFDF8),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: const Color(0xFFD4AF37), width: 3),
                       boxShadow: [
                         BoxShadow(
@@ -77,7 +78,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         const Text(
                           'SERTIFIKAT / CERTIFICATE',
                           style: TextStyle(
-                            fontSize: 19,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2.0,
                             color: Color(0xFF8B6508),
@@ -134,7 +135,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
                                 Text(
                                   AppStrings.tr(
                                     lang: _lang,
-                                    uz: 'Sana / Sana:',
+                                    uz: 'Sana:',
                                     ru: 'Дата:',
                                     en: 'Date:',
                                   ),
@@ -166,7 +167,12 @@ class _CertificateScreenState extends State<CertificateScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton.icon(
+                  TactileButton(
+                    height: 52,
+                    depth: 3,
+                    borderRadius: 16,
+                    backgroundColor: const Color(0xFF2D7A4C),
+                    shadowColor: const Color(0xFF1B4E31),
                     onPressed: () async {
                       final text = AppStrings.tr(
                         lang: _lang,
@@ -199,19 +205,21 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         );
                       }
                     },
-                    icon: const Icon(Icons.share_rounded),
-                    label: Text(
-                      AppStrings.tr(
-                        lang: _lang,
-                        uz: 'Ulashish / Saqlash',
-                        ru: 'Поделиться / Сохранить сертификат',
-                        en: 'Share / Save Certificate',
-                      ),
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppStrings.tr(
+                            lang: _lang,
+                            uz: 'Ulashish / Saqlash',
+                            ru: 'Поделиться / Сохранить сертификат',
+                            en: 'Share / Save Certificate',
+                          ),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
                 ],
