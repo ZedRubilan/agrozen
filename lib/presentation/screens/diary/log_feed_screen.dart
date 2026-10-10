@@ -40,7 +40,7 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
-    final feedKg = double.parse(_controller.text.trim());
+    final feedKg = double.parse(_controller.text.trim().replaceAll(',', '.'));
     final prefs = await DailyCounters.rolled();
     await DailyCounters.addFeed(prefs, feedKg);
 
@@ -62,7 +62,7 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
   }
 
   void _addQuick(double delta) {
-    final current = double.tryParse(_controller.text.trim()) ?? 0.0;
+    final current = double.tryParse(_controller.text.trim().replaceAll(',', '.')) ?? 0.0;
     final next = current + delta;
     _controller.text = next % 1 == 0 ? next.toInt().toString() : next.toStringAsFixed(1);
   }
@@ -115,6 +115,7 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
@@ -156,7 +157,7 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                           ? 'Enter feed weight'
                           : (isRu ? 'Введите вес корма' : 'Yem miqdorini kiriting');
                     }
-                    final n = double.tryParse(v.trim());
+                    final n = double.tryParse(v.trim().replaceAll(',', '.'));
                     if (n == null || n <= 0) {
                       return isEn
                           ? 'Value must be greater than 0'
@@ -166,8 +167,10 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
                   children: [
                     _buildQuickChip('+5 kg', () => _addQuick(5)),
                     _buildQuickChip('+10 kg', () => _addQuick(10)),

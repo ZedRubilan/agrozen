@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -75,6 +76,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   String? _selectedImagePath;
   String? _speakingText;
   LiveFlockContext? _liveContext;
+  Locale? _observedLocale;
 
   String? _recordingPath;
   VoiceService? _voiceService;
@@ -95,17 +97,32 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     _loadState();
   }
 
-  Future<void> _loadState() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentLocale = Localizations.maybeLocaleOf(context);
+    if (_observedLocale != null &&
+        currentLocale != null &&
+        currentLocale != _observedLocale) {
+      _observedLocale = currentLocale;
+      _loadState(localeOverride: currentLocale.languageCode);
+    } else {
+      _observedLocale = currentLocale;
+    }
+  }
+
+  Future<void> _loadState({String? localeOverride}) async {
     final prefs = await DailyCounters.rolled(
       maxDailyQuestions: AppConstants.maxDailyQuestions,
     );
+    final resolvedLang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
     final context = await _flockContextService.getLiveContext();
 
     final bDay = context.batchDay;
     final cCount = context.currentCount;
     final welcomeMessage = ChatMessage(
       text: AppStrings.tr(
-        lang: prefs.getString('app_language') ?? 'uz',
+        lang: resolvedLang,
         uz: "Assalomu alaykum, ${context.farmerName}! Men AgroZen aqlli yordamchingizman.\n"
             "Sizning partiyangiz $bDay-kunda ($cCount ta parrandalar). Harorat, yem, shamollatish yoki jo'jalar sog'lig'i bo'yicha savolingizni bering yoki surat yuboring.",
         ru: "Здравствуйте, ${context.farmerName}! Я ваш помощник AgroZen.\n"
@@ -115,7 +132,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       ),
       isUser: false,
       source: AppStrings.tr(
-        lang: prefs.getString('app_language') ?? 'uz',
+        lang: resolvedLang,
         uz: 'AgroZen bilimlar bazasi',
         ru: 'База знаний AgroZen',
         en: 'AgroZen Knowledge Base',
@@ -124,7 +141,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
 
     if (!mounted) return;
     setState(() {
-      _lang = prefs.getString('app_language') ?? 'uz';
+      _lang = resolvedLang;
       _remainingQuestions = DailyCounters.getRemainingQuestions(
         prefs,
         maxDailyQuestions: AppConstants.maxDailyQuestions,
@@ -132,6 +149,8 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       _liveContext = context;
       if (_messages.isEmpty) {
         _messages.add(welcomeMessage);
+      } else if (_messages.length == 1 && !_messages.first.isUser) {
+        _messages[0] = welcomeMessage;
       }
     });
   }
@@ -565,7 +584,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       lang: _lang,
       uz: 'Bugun qoldi: $_remainingQuestions/30',
       ru: 'Осталось: $_remainingQuestions/30 сегодня',
-      en: 'Bugun qoldi: $_remainingQuestions/30',
+      en: 'Remaining today: $_remainingQuestions/30',
     );
 
     return Scaffold(
@@ -1210,23 +1229,63 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     final prompts = [
       {
         'icon': Icons.thermostat_rounded,
-        'label': '$day-kun harorat me\'yori',
-        'query': "$day-kunda xona harorati qanday bo'lishi kerak?",
+        'label': AppStrings.tr(
+          lang: _lang,
+          uz: '$day-kun harorat me\'yori',
+          ru: 'Норма тепла на $day-й день',
+          en: 'Day $day temp norm',
+        ),
+        'query': AppStrings.tr(
+          lang: _lang,
+          uz: "$day-kunda xona harorati qanday bo'lishi kerak?",
+          ru: 'Какая должна быть температура в птичнике на $day-й день?',
+          en: 'What should the barn temperature be on day $day?',
+        ),
       },
       {
         'icon': Icons.water_drop_rounded,
-        'label': 'Suv harorati qanday?',
-        'query': "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
+        'label': AppStrings.tr(
+          lang: _lang,
+          uz: 'Suv harorati qanday?',
+          ru: 'Температура воды',
+          en: 'Water temperature',
+        ),
+        'query': AppStrings.tr(
+          lang: _lang,
+          uz: "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
+          ru: 'Какой температуры должна быть вода для цыплят?',
+          en: 'What should the drinking water temperature be for chicks?',
+        ),
       },
       {
         'icon': Icons.grain_rounded,
-        'label': 'Yem sarfi me\'yori',
-        'query': "$day-kunda jo'jalar uchun yem sarfi qancha?",
+        'label': AppStrings.tr(
+          lang: _lang,
+          uz: 'Yem sarfi me\'yori',
+          ru: 'Норма расхода корма',
+          en: 'Daily feed norm',
+        ),
+        'query': AppStrings.tr(
+          lang: _lang,
+          uz: "$day-kunda jo'jalar uchun yem sarfi qancha?",
+          ru: 'Какова суточная норма корма для цыплят на $day-й день?',
+          en: 'What is the daily feed requirement for chicks on day $day?',
+        ),
       },
       {
         'icon': Icons.air_rounded,
-        'label': 'Shamollatish qoidalari',
-        'query': "Parrandaxonani shamollatish qoidalari qanday?",
+        'label': AppStrings.tr(
+          lang: _lang,
+          uz: 'Shamollatish qoidalari',
+          ru: 'Правила вентиляции',
+          en: 'Ventilation rules',
+        ),
+        'query': AppStrings.tr(
+          lang: _lang,
+          uz: 'Parrandaxonani shamollatish qoidalari qanday?',
+          ru: 'Каковы правила вентиляции птичника?',
+          en: 'What are the ventilation rules for the poultry house?',
+        ),
       },
     ];
 
@@ -1461,9 +1520,13 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
                 children: [
                   const Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
                   const SizedBox(width: 10),
-                  Text(
-                    "${AppStrings.tr(lang: _lang, uz: 'Veterinar:', ru: 'Ветеринар:', en: 'Vet:')} ${_liveContext!.localVet!['name']}",
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white),
+                  Flexible(
+                    child: Text(
+                      "${AppStrings.tr(lang: _lang, uz: 'Veterinar:', ru: 'Ветеринар:', en: 'Vet:')} ${_liveContext!.localVet!['name']}",
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -1555,26 +1618,66 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
               children: [
                 _buildSuggestionChip(
                   icon: Icons.thermostat_rounded,
-                  text: "Issiqlik me'yori",
-                  prompt: "Broylerlar uchun xona harorati qanday bo'lishi kerak?",
+                  text: AppStrings.tr(
+                    lang: _lang,
+                    uz: "Issiqlik me'yori",
+                    ru: 'Норма тепла',
+                    en: 'Temperature norm',
+                  ),
+                  prompt: AppStrings.tr(
+                    lang: _lang,
+                    uz: "Broylerlar uchun xona harorati qanday bo'lishi kerak?",
+                    ru: 'Какая должна быть температура в птичнике для бройлеров?',
+                    en: 'What should the barn temperature be for broilers?',
+                  ),
                 ),
                 const SizedBox(width: 8),
                 _buildSuggestionChip(
                   icon: Icons.grass_rounded,
-                  text: "Kunlik yem miqdori",
-                  prompt: "Broylerlarga kunlik yem me'yori qancha?",
+                  text: AppStrings.tr(
+                    lang: _lang,
+                    uz: 'Kunlik yem miqdori',
+                    ru: 'Суточная норма корма',
+                    en: 'Daily feed amount',
+                  ),
+                  prompt: AppStrings.tr(
+                    lang: _lang,
+                    uz: "Broylerlarga kunlik yem me'yori qancha?",
+                    ru: 'Какова суточная норма корма для бройлеров?',
+                    en: 'What is the daily feed requirement for broilers?',
+                  ),
                 ),
                 const SizedBox(width: 8),
                 _buildSuggestionChip(
                   icon: Icons.air_rounded,
-                  text: "Shamollatish qoidalari",
-                  prompt: "Parrandaxonani shamollatish qoidalari qanday?",
+                  text: AppStrings.tr(
+                    lang: _lang,
+                    uz: 'Shamollatish qoidalari',
+                    ru: 'Правила вентиляции',
+                    en: 'Ventilation rules',
+                  ),
+                  prompt: AppStrings.tr(
+                    lang: _lang,
+                    uz: 'Parrandaxonani shamollatish qoidalari qanday?',
+                    ru: 'Каковы правила вентиляции птичника?',
+                    en: 'What are the ventilation rules for the poultry house?',
+                  ),
                 ),
                 const SizedBox(width: 8),
                 _buildSuggestionChip(
                   icon: Icons.water_drop_rounded,
-                  text: "Suv harorati",
-                  prompt: "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
+                  text: AppStrings.tr(
+                    lang: _lang,
+                    uz: 'Suv harorati',
+                    ru: 'Температура воды',
+                    en: 'Water temperature',
+                  ),
+                  prompt: AppStrings.tr(
+                    lang: _lang,
+                    uz: "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
+                    ru: 'Какой температуры должна быть вода для цыплят?',
+                    en: 'What should the drinking water temperature be for chicks?',
+                  ),
                 ),
               ],
             ),
@@ -1601,12 +1704,21 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    File(_selectedImagePath!),
-                    width: 52,
-                    height: 52,
-                    fit: BoxFit.cover,
-                  ),
+                  child: kIsWeb
+                      ? Image.network(
+                          _selectedImagePath!,
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox(width: 52, height: 52),
+                        )
+                      : Image.file(
+                          File(_selectedImagePath!),
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox(width: 52, height: 52),
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1667,13 +1779,13 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
               // Media Action Buttons
               _buildInputIconBtn(
                 icon: Icons.camera_alt_rounded,
-                tooltip: 'Camera',
+                tooltip: AppStrings.tr(lang: _lang, uz: 'Kamera', ru: 'Камера', en: 'Camera'),
                 onPressed: () => _pickImage(ImageSource.camera),
               ),
               const SizedBox(width: 4),
               _buildInputIconBtn(
                 icon: Icons.photo_library_rounded,
-                tooltip: 'Gallery',
+                tooltip: AppStrings.tr(lang: _lang, uz: 'Galereya', ru: 'Галерея', en: 'Gallery'),
                 onPressed: () => _pickImage(ImageSource.gallery),
               ),
               const SizedBox(width: 4),
@@ -1925,13 +2037,21 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
             if (msg.imagePath != null) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: Image.file(
-                  File(msg.imagePath!),
-                  width: 240,
-                  height: 160,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const SizedBox(),
-                ),
+                child: kIsWeb
+                    ? Image.network(
+                        msg.imagePath!,
+                        width: 240,
+                        height: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                      )
+                    : Image.file(
+                        File(msg.imagePath!),
+                        width: 240,
+                        height: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                      ),
               ),
               const SizedBox(height: 10),
             ],
@@ -1982,7 +2102,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
             ] else if (msg.isUser && msg.source != null) ...[
               const SizedBox(height: 6),
               Text(
-                'Manba: ${msg.source}',
+                '${AppStrings.tr(lang: _lang, uz: 'Manba:', ru: 'Источник:', en: 'Source:')} ${msg.source}',
                 style: const TextStyle(fontSize: 11, color: Colors.white70),
               ),
             ],

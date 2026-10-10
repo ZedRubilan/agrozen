@@ -30,6 +30,8 @@ LocalRag _ragWith(Map<String, String> files) =>
     LocalRag(KnowledgeRepository(bundle: _FakeBundle(files)));
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('LocalRag safety rules (non-negotiable)', () {
     test('refuses to prescribe medicine, in both languages', () {
       final rag = _ragWith(const {});
@@ -70,12 +72,48 @@ void main() {
       expect(rag.wantsMedicine('Какая температура ночью?'), isFalse);
     });
 
-    test('detects emergencies so we send the farmer to a vet', () {
+    test('Russian vaccination schedule queries are NOT blocked by wantsMedicine and return guidance', () async {
+      final realRag = LocalRag(KnowledgeRepository());
+      const query = 'Когда делать прививку от Ньюкасла?';
+      expect(realRag.wantsMedicine(query), isFalse);
+
+      final result = await realRag.answer(
+        question: query,
+        language: 'ru',
+      );
+      expect(result, isNotNull);
+      expect(result!.sources, contains('Вакцинация'));
+      expect(result.answer, contains('Ньюкасла'));
+    });
+
+    test('detects emergencies in uz, ru, and en so we send the farmer to a vet', () {
       final rag = _ragWith(const {});
       expect(rag.looksLikeEmergency("Kecha 20 ta nobod bo'ldi"), isTrue);
       expect(rag.looksLikeEmergency('Падёж за сутки 5 птиц'), isTrue);
       expect(rag.looksLikeEmergency('Шиншиллы массово гибнут'), isTrue);
+      expect(rag.looksLikeEmergency('My chicks are dying and gasping for air'), isTrue);
       expect(rag.looksLikeEmergency('Жарко ли в брудере?'), isFalse);
+    });
+
+    test('Uzbek words with straight and curly apostrophes tokenize and match topics/emergencies', () async {
+      final realRag = LocalRag(KnowledgeRepository());
+
+      // Straight ' and curly ’ in o'lim
+      expect(realRag.looksLikeEmergency("Jo'jalarda o'lim ko'paydi"), isTrue);
+      expect(realRag.looksLikeEmergency("Jo’jalarda o’lim ko’paydi"), isTrue);
+
+      // Straight ' and curly ’ in jo'ja and go'ng
+      final resStraight = await realRag.answer(
+        question: "Birinchi kunlarda jo'ja zobi va eski go'ng tozalash",
+        language: 'uz',
+      );
+      final resCurly = await realRag.answer(
+        question: "Birinchi kunlarda jo’ja zobi va eski go’ng tozalash",
+        language: 'uz',
+      );
+      expect(resStraight, isNotNull);
+      expect(resCurly, isNotNull);
+      expect(resStraight!.sources, equals(resCurly!.sources));
     });
   });
 
@@ -126,6 +164,73 @@ void main() {
       expect(result, isNotNull);
       expect(result!.answer, contains('tekshirilgan bilimlar bazasidan'));
       expect(result.sources, isNotEmpty);
+    });
+
+    test('real Uzbek numbered articles (01_tayyorgarlik, 02_birinchi_kunlar, 03_harorat, 06_suv, 08_kasalliklar) are reachable', () async {
+      final realRag = LocalRag(KnowledgeRepository());
+
+      // 06_suv.md
+      final waterRes = await realRag.answer(
+        question: 'suv harorati va nipel',
+        language: 'uz',
+      );
+      expect(waterRes, isNotNull);
+      expect(waterRes!.sources, contains('Suv va suv berish'));
+      expect(waterRes.answer, contains("Suv — broyler uchun eng muhim"));
+
+      // 01_tayyorgarlik.md
+      final prepRes = await realRag.answer(
+        question: 'dezinfeksiya va tayyorgarlik',
+        language: 'uz',
+      );
+      expect(prepRes, isNotNull);
+      expect(prepRes!.sources, contains('Xonani tayyorlash'));
+
+      // 02_birinchi_kunlar.md
+      final firstDaysRes = await realRag.answer(
+        question: "birinchi kun jo'ja zob tekshirish",
+        language: 'uz',
+      );
+      expect(firstDaysRes, isNotNull);
+      expect(firstDaysRes!.sources, contains("Jo'jalarni qabul qilish va birinchi kunlar"));
+
+      // 03_harorat.md
+      final tempRes = await realRag.answer(
+        question: 'harorat va namlik jadvali',
+        language: 'uz',
+      );
+      expect(tempRes, isNotNull);
+      expect(tempRes!.sources, contains('Harorat va namlik'));
+
+      // 08_kasalliklar.md
+      final diseaseRes = await realRag.answer(
+        question: 'kasallik belgilari va holsizlik',
+        language: 'uz',
+      );
+      expect(diseaseRes, isNotNull);
+      expect(diseaseRes!.sources, contains('Kasallik belgilari — qachon veterinar kerak'));
+    });
+
+    test('strips raw HTML comments <!-- Source: ... --> and --- separators from snippets', () async {
+      final rag = _ragWith({
+        'knowledge/broilers/en/06_water.md': '<!--\nSource: Ross Broiler Management Manual\nStatus: Verified\n-->\n\n'
+            '# Water and Drinker Management\n\n'
+            '---\n\n'
+            'Clean water at 18-21°C is critical for broiler chicks.\n\n'
+            '---',
+      });
+
+      final res = await rag.answer(
+        question: 'What water temperature is needed for drinker management?',
+        language: 'en',
+      );
+      expect(res, isNotNull);
+      expect(res!.answer, isNot(contains('<!--')));
+      expect(res.answer, isNot(contains('-->')));
+      expect(res.answer, isNot(contains('Source: Ross')));
+      // Single-topic answer should not contain raw --- horizontal rule lines
+      expect(res.answer, isNot(contains('\n---')));
+      expect(res.answer, contains('18-21°C'));
     });
 
     test('titleFor maps file names to farmer-readable titles', () {

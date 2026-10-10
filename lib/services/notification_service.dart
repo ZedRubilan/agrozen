@@ -27,6 +27,7 @@ class NotificationService {
   /// Returns true on success; false on any platform failure so callers can
   /// stay quiet rather than crash on a device without notification support.
   Future<bool> initialize() async {
+    if (kIsWeb) return false;
     if (_initialized) return true;
 
     try {
@@ -63,6 +64,7 @@ class NotificationService {
 
   /// Requests OS permission on iOS / Android 13+. Returns true when granted.
   Future<bool> requestPermissions() async {
+    if (kIsWeb) return false;
     if (!_initialized) {
       final ok = await initialize();
       if (!ok) return false;
@@ -103,6 +105,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    if (kIsWeb) return false;
     if (!_initialized) {
       final ok = await initialize();
       if (!ok) return false;
@@ -116,16 +119,16 @@ class NotificationService {
         title,
         body,
         scheduled,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'agrozen_daily_plan',
             'Kunlik reja',
             channelDescription: "Har kuni ertalab 7:00 da partiya reja eslatmasi",
             importance: Importance.high,
             priority: Priority.high,
-            styleInformation: BigTextStyleInformation(''),
+            styleInformation: BigTextStyleInformation(body),
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -146,6 +149,7 @@ class NotificationService {
 
   /// Cancels the daily reminder.
   Future<void> cancelAll() async {
+    if (kIsWeb) return;
     try {
       await _plugin.cancelAll();
     } catch (e) {

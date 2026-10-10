@@ -6,7 +6,7 @@ part 'question_log.g.dart';
 @JsonSerializable(fieldRename: FieldRename.snake)
 class QuestionLog extends Equatable {
   final String id;
-  final String farmerId;
+  final String? farmerId;
   final String question;
   final String? answer;
   final List<String>? topicsUsed;
@@ -17,7 +17,7 @@ class QuestionLog extends Equatable {
 
   const QuestionLog({
     required this.id,
-    required this.farmerId,
+    this.farmerId,
     required this.question,
     this.answer,
     this.topicsUsed,

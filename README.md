@@ -30,8 +30,8 @@
    - Knowledge quizzes with instant feedback after each lesson.
    - Official readiness certificate for banks and microfinance organizations upon course completion.
 
-5. **Bilingual Support (Ikki tilli interfeys)**
-   - Full support for **O'zbekcha (Lotin)** and **Русский**.
+5. **Trilingual Support (Uch tilli interfeys)**
+   - Full support for **O'zbekcha (Lotin)**, **Русский**, and **English**.
 
 ---
 
@@ -43,16 +43,16 @@ Mobile Client (Flutter) ──► Supabase Backend (PostgreSQL + RLS)
                              │     ├── ask-question (RAG + Gemini 2.5 Flash)
                              │     ├── transcribe-voice (STT)
                              │     └── send-daily-plan (pg_cron 7:00 AM)
-                             └── Knowledge Base Assets
+                             └── Knowledge Base Assets (uz, ru, en)
 ```
 
 - **Client**: Flutter 3.44+ (Android, iOS, Web)
-- **State Management**: `flutter_bloc`
+- **State Management**: `flutter_bloc` + reactive local persistence
 - **Routing**: `go_router`
-- **Backend**: Supabase (PostgreSQL 15+, Row Level Security, Edge Functions)
-- **AI Models**: Google Gemini 2.5 Flash via Edge Functions
-- **Speech-to-Text**: Google Cloud STT / Whisper swappable adapter
-- **Testing**: 87 automated unit, repository, domain, and widget tests
+- **Backend**: Supabase (PostgreSQL 15+, Row Level Security, Edge Functions) with full offline `SharedPreferences` fallback
+- **AI Models**: Google Gemini 2.5 Flash / 2.0 Flash via Edge Functions + deterministic local RAG fallback
+- **Speech-to-Text**: Google Cloud STT / Whisper / Gemini Audio swappable adapter
+- **Testing**: 200 automated unit, repository, BLoC, domain, service, widget, and end-to-end flow tests
 
 ---
 
@@ -64,32 +64,34 @@ agrozen/
 │   ├── app.dart                   # MaterialApp, routing & localization
 │   ├── main.dart                  # App entry point
 │   ├── config/                    # Theme, SupabaseConfig & AppConstants
+│   ├── core/                      # Localization strings & helpers
 │   ├── data/
-│   │   ├── models/                # Farmer, Batch, DiaryEntry, DailyPlan, etc.
+│   │   ├── models/                # Farmer, Batch, DiaryEntry, DailyPlan, WeatherData, etc.
 │   │   ├── providers/             # Supabase & AI providers
-│   │   └── repositories/          # Auth, Farmer, Batch, Diary, Knowledge, Course
+│   │   └── repositories/          # Offline-capable Auth, Farmer, Batch, Diary, Knowledge, Course
 │   ├── domain/
 │   │   ├── alerts/                # AlertEngine & NormsData (Pure logic, no AI)
+│   │   ├── climate/               # ClimateAdvisor (Brooder & barn ventilation guidance)
 │   │   ├── scheduler/             # DayCalculator (42-day cycle)
-│   │   └── validators/            # DiaryValidators (input validation)
-│   ├── l10n/                      # ARB localization files (uz, ru)
+│   │   └── validators/            # DiaryValidators (trilingual input validation)
+│   ├── l10n/                      # ARB localization files (uz, ru, en)
 │   ├── presentation/
 │   │   ├── blocs/                 # Onboarding, Home, Diary, Ask, Course, DailyPlan
 │   │   ├── screens/               # Splash, Onboarding (4 steps), Dashboard, Diary, Course, Chat
-│   │   └── widgets/               # StatCard, AlertCard, DailyTaskCard, VoiceInputButton
-│   └── services/                  # Notification & Voice STT services
-├── knowledge/                     # Vet-verified agricultural guidelines
-│   ├── broiler_plan.json          # 42-day daily care checklist (uz + ru)
-│   ├── norms.json                 # Ross-308 / Cobb-500 standards
+│   │   └── widgets/               # StatCard, AlertCard, DailyTaskCard, WeatherClimateCard, etc.
+│   └── services/                  # LocalRag, Voice, TTS, Weather, Vision, Notification & Counters
+├── knowledge/                     # Vet-verified agricultural guidelines (uz, ru, en)
+│   ├── broiler_plan.json          # 42-day daily care checklist (uz + ru + en)
+│   ├── norms.json                 # Reconciled Ross-308 / Cobb-500 standards
 │   ├── vets.json                  # Veterinary directory (13 regions of Uzbekistan)
-│   ├── videos.json                # Curated video guides
-│   ├── broilers/                  # Markdown topic articles
-│   └── course/                    # 5 pre-credit lessons & quizzes
+│   ├── videos.json                # Curated video guides (uz + ru + en)
+│   ├── broilers/                  # Markdown topic articles (en, ru, uz)
+│   └── course/                    # 5 pre-credit lessons & quizzes (en, ru, uz)
 ├── supabase/
-│   ├── migrations/                # 001 to 007 SQL schema & RLS policies
+│   ├── migrations/                # 001 to 008 SQL schema, triggers & RLS policies
 │   ├── functions/                 # ask-question, transcribe-voice, send-daily-plan
-│   └── seed.sql                   # Sample veterinarians and reference data
-└── test/                          # Comprehensive test suite (87 tests)
+│   └── seed.sql                   # Idempotent sample veterinarians and reference data
+└── test/                          # Comprehensive test suite (200 tests)
 ```
 
 ---
@@ -132,12 +134,15 @@ agrozen/
 
 ## 🧪 Testing Coverage
 
-The project includes 87 automated unit and widget tests:
-- `test/domain/day_calculator_test.dart` (26 tests): 42-day cycle calculation, active status, week numbers.
-- `test/domain/alert_engine_test.dart` (24 tests): Mortality thresholds, weight deviations, critical alerts, zero division safety.
-- `test/domain/diary_validators_test.dart` (18 tests): Input validation rules for mortality, feed, and weight.
-- `test/data_layer_test.dart` (15 tests): JSON serialization, theme, knowledge loading, vet district filters.
-- `test/presentation/presentation_test.dart` (4 tests): StatCard, AlertCard, DailyTaskCard, LanguageSelector widget tests.
+The project includes 200 automated unit, repository, BLoC, service, widget, and end-to-end flow tests:
+- `test/domain/day_calculator_test.dart`: 42-day cycle calculation, DST-safe calendar math, active status, week numbers.
+- `test/domain/alert_engine_test.dart`: Mortality thresholds, cumulative mortality, weight deviations, temperature deviations, zero-division safety.
+- `test/domain/diary_validators_test.dart`: Trilingual (`uz`, `ru`, `en`) input validation rules, `NaN`/`Infinity` guards, and comma decimal support.
+- `test/domain/norms_parsing_test.dart`: Reconciled `norms.json` daily/weekly consistency, feed/weight/temperature target lookups, and Day > 42 clamping.
+- `test/data_layer_test.dart` & `test/data/repositories/repositories_test.dart`: Model serialization, trilingual `DailyPlan` & `WeatherData`, knowledge loading, and offline repository persistence (`Farmer`, `Batch`, `Diary`, `Course`, `Auth`).
+- `test/services/`: `LocalRag` (Uzbek numbered manuals, HTML comment stripping, apostrophe tokenization, emergency & medical guardrails), `TextToSpeechSanitizer` (decimal preservation), `ClimateAdvisor`, `WeatherService` cache invalidation, `DailyCounters`, and `VoiceService` UI.
+- `test/presentation/blocs/blocs_test.dart`: Full event/state coverage for `HomeBloc`, `DiaryBloc`, `DailyPlanBloc`, `AskBloc`, `CourseBloc`, and `OnboardingBloc`.
+- `test/presentation/presentation_test.dart` & `test/logical_flow_test.dart`: Widget and 18-step end-to-end user journey verification.
 
 ---
 

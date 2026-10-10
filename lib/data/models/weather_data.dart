@@ -49,19 +49,66 @@ class WeatherData extends Equatable {
 
   String get districtName => district;
 
-  String get conditionText {
+  String get conditionText => getConditionText('uz');
+
+  String getConditionText(String lang) {
+    final code = lang.trim().toLowerCase();
+    final isEn = code.startsWith('en');
+    final isRu = code.startsWith('ru');
+
     switch (condition) {
       case 'hot':
+        if (isEn) return 'Hot / Sunny';
+        if (isRu) return 'Жарко / Солнечно';
         return 'Issiq / Quyoshli';
       case 'cold':
+        if (isEn) return 'Cold';
+        if (isRu) return 'Холодно';
         return 'Sovuq';
       case 'rain':
+        if (isEn) return 'Rainy';
+        if (isRu) return 'Дождливо';
         return 'Yomg\'irli';
+      case 'snow':
+        if (isEn) return 'Snowy';
+        if (isRu) return 'Снежно';
+        return 'Qorli';
+      case 'thunderstorm':
+        if (isEn) return 'Thunderstorm';
+        if (isRu) return 'Гроза';
+        return 'Momaqaldiroq';
+      case 'partly_cloudy':
+        if (isEn) return 'Partly Cloudy';
+        if (isRu) return 'Переменная облачность';
+        return 'Qisman bulutli';
       case 'cloudy':
+        if (isEn) return 'Cloudy';
+        if (isRu) return 'Облачно';
         return 'Bulutli';
+      case 'clear':
       default:
+        if (isEn) return 'Clear Sky';
+        if (isRu) return 'Ясно';
         return 'Ochiq havo';
     }
+  }
+
+  WeatherData copyWith({
+    String? district,
+    double? temperature,
+    int? humidity,
+    double? windSpeed,
+    String? condition,
+    DateTime? timestamp,
+  }) {
+    return WeatherData(
+      district: district ?? this.district,
+      temperature: temperature ?? this.temperature,
+      humidity: humidity ?? this.humidity,
+      windSpeed: windSpeed ?? this.windSpeed,
+      condition: condition ?? this.condition,
+      timestamp: timestamp ?? this.timestamp,
+    );
   }
 
   factory WeatherData.fromJson(Map<String, dynamic> json) {

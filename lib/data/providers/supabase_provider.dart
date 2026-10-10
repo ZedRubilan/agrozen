@@ -3,19 +3,22 @@ import '../../config/supabase_config.dart';
 
 /// Central Supabase data provider that performs direct database and function calls.
 class SupabaseProvider {
-  final SupabaseClient _client;
+  final SupabaseClient? _injectedClient;
 
-  SupabaseProvider({SupabaseClient? client})
-      : _client = client ?? SupabaseConfig.client;
+  SupabaseProvider({SupabaseClient? client}) : _injectedClient = client;
 
-  SupabaseClient get client => _client;
+  bool get isConfigured => _injectedClient != null || SupabaseConfig.isConfigured;
+
+  SupabaseClient get _db => _injectedClient ?? SupabaseConfig.client;
+
+  SupabaseClient get client => _db;
 
   // ---------------------------------------------------------------------------
   // Table: farmers
   // ---------------------------------------------------------------------------
 
   Future<Map<String, dynamic>> createFarmer(Map<String, dynamic> data) async {
-    final response = await _client
+    final response = await _db
         .from('farmers')
         .insert(data)
         .select()
@@ -24,7 +27,7 @@ class SupabaseProvider {
   }
 
   Future<Map<String, dynamic>?> getFarmer(String id) async {
-    final response = await _client
+    final response = await _db
         .from('farmers')
         .select()
         .eq('id', id)
@@ -33,7 +36,7 @@ class SupabaseProvider {
   }
 
   Future<Map<String, dynamic>?> getFarmerByPhone(String phone) async {
-    final response = await _client
+    final response = await _db
         .from('farmers')
         .select()
         .eq('phone', phone)
@@ -45,7 +48,7 @@ class SupabaseProvider {
     String id,
     Map<String, dynamic> data,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('farmers')
         .update(data)
         .eq('id', id)
@@ -55,7 +58,7 @@ class SupabaseProvider {
   }
 
   Future<void> deleteFarmer(String id) async {
-    await _client.from('farmers').delete().eq('id', id);
+    await _db.from('farmers').delete().eq('id', id);
   }
 
   // ---------------------------------------------------------------------------
@@ -63,7 +66,7 @@ class SupabaseProvider {
   // ---------------------------------------------------------------------------
 
   Future<Map<String, dynamic>> createBatch(Map<String, dynamic> data) async {
-    final response = await _client
+    final response = await _db
         .from('batches')
         .insert(data)
         .select()
@@ -72,7 +75,7 @@ class SupabaseProvider {
   }
 
   Future<Map<String, dynamic>?> getBatch(String id) async {
-    final response = await _client
+    final response = await _db
         .from('batches')
         .select()
         .eq('id', id)
@@ -81,7 +84,7 @@ class SupabaseProvider {
   }
 
   Future<Map<String, dynamic>?> getActiveBatch(String farmerId) async {
-    final response = await _client
+    final response = await _db
         .from('batches')
         .select()
         .eq('farmer_id', farmerId)
@@ -95,7 +98,7 @@ class SupabaseProvider {
   Future<List<Map<String, dynamic>>> getBatchesForFarmer(
     String farmerId,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('batches')
         .select()
         .eq('farmer_id', farmerId)
@@ -107,7 +110,7 @@ class SupabaseProvider {
     String id,
     Map<String, dynamic> data,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('batches')
         .update(data)
         .eq('id', id)
@@ -117,7 +120,7 @@ class SupabaseProvider {
   }
 
   Future<void> deleteBatch(String id) async {
-    await _client.from('batches').delete().eq('id', id);
+    await _db.from('batches').delete().eq('id', id);
   }
 
   // ---------------------------------------------------------------------------
@@ -127,7 +130,7 @@ class SupabaseProvider {
   Future<Map<String, dynamic>> createDiaryEntry(
     Map<String, dynamic> data,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('diary_entries')
         .insert(data)
         .select()
@@ -138,7 +141,7 @@ class SupabaseProvider {
   Future<List<Map<String, dynamic>>> getDiaryEntriesForBatch(
     String batchId,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('diary_entries')
         .select()
         .eq('batch_id', batchId)
@@ -150,15 +153,13 @@ class SupabaseProvider {
     String batchId,
     DateTime date,
   ) async {
-    final startOfDay = DateTime(date.year, date.month, date.day).toIso8601String();
-    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59, 999).toIso8601String();
+    final dateStr = date.toIso8601String().split('T').first;
 
-    final response = await _client
+    final response = await _db
         .from('diary_entries')
         .select()
         .eq('batch_id', batchId)
-        .gte('entry_date', startOfDay)
-        .lte('entry_date', endOfDay)
+        .eq('entry_date', dateStr)
         .order('entry_date', ascending: false);
     return List<Map<String, dynamic>>.from(response);
   }
@@ -167,7 +168,7 @@ class SupabaseProvider {
     String batchId,
     String entryType,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('diary_entries')
         .select()
         .eq('batch_id', batchId)
@@ -177,7 +178,7 @@ class SupabaseProvider {
   }
 
   Future<void> deleteDiaryEntry(String id) async {
-    await _client.from('diary_entries').delete().eq('id', id);
+    await _db.from('diary_entries').delete().eq('id', id);
   }
 
   // ---------------------------------------------------------------------------
@@ -187,7 +188,7 @@ class SupabaseProvider {
   Future<Map<String, dynamic>> createQuestionLog(
     Map<String, dynamic> data,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('question_logs')
         .insert(data)
         .select()
@@ -199,7 +200,7 @@ class SupabaseProvider {
     String farmerId, {
     int limit = 50,
   }) async {
-    final response = await _client
+    final response = await _db
         .from('question_logs')
         .select()
         .eq('farmer_id', farmerId)
@@ -215,9 +216,9 @@ class SupabaseProvider {
   Future<Map<String, dynamic>> upsertCourseProgress(
     Map<String, dynamic> data,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('course_progress')
-        .upsert(data)
+        .upsert(data, onConflict: 'farmer_id,lesson_number')
         .select()
         .single();
     return response;
@@ -226,7 +227,7 @@ class SupabaseProvider {
   Future<List<Map<String, dynamic>>> getCourseProgressForFarmer(
     String farmerId,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('course_progress')
         .select()
         .eq('farmer_id', farmerId)
@@ -238,7 +239,7 @@ class SupabaseProvider {
     String farmerId,
     int lessonNumber,
   ) async {
-    final response = await _client
+    final response = await _db
         .from('course_progress')
         .select()
         .eq('farmer_id', farmerId)
@@ -255,7 +256,7 @@ class SupabaseProvider {
     String functionName, {
     Map<String, dynamic>? body,
   }) async {
-    return await _client.functions.invoke(
+    return await _db.functions.invoke(
       functionName,
       body: body,
     );

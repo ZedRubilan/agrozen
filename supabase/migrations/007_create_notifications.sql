@@ -31,4 +31,12 @@ CREATE POLICY "Allow select notification_logs"
 DROP POLICY IF EXISTS "Allow insert notification_logs" ON notification_logs;
 CREATE POLICY "Allow insert notification_logs"
     ON notification_logs FOR INSERT
-    WITH CHECK (true);
+    TO service_role
+    WITH CHECK (auth.role() = 'service_role');
+
+DROP POLICY IF EXISTS "Allow update notification_logs" ON notification_logs;
+CREATE POLICY "Allow update notification_logs"
+    ON notification_logs FOR UPDATE
+    TO service_role
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');

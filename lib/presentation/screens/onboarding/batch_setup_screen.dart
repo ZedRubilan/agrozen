@@ -17,6 +17,7 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
   final _nameController = TextEditingController(text: 'Fermer');
   final _formKey = GlobalKey<FormState>();
   String _lang = 'uz';
+  bool _isOnboarded = false;
 
   @override
   void initState() {
@@ -26,8 +27,14 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
 
   Future<void> _loadLang() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
+      _isOnboarded = prefs.getBool('is_onboarded') ?? false;
+      final existingName = prefs.getString('farmer_name');
+      if (existingName != null && existingName.isNotEmpty && _nameController.text == 'Fermer') {
+        _nameController.text = existingName;
+      }
     });
   }
 
@@ -59,8 +66,13 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
     await prefs.setInt('current_count', int.parse(_countController.text.trim()));
     await prefs.setString('arrival_date', _arrivalDate.toIso8601String());
 
+    final alreadyOnboarded = prefs.getBool('is_onboarded') ?? false;
     if (!mounted) return;
-    context.go('/onboarding/disclaimer');
+    if (alreadyOnboarded) {
+      context.go('/home');
+    } else {
+      context.go('/onboarding/disclaimer');
+    }
   }
 
   @override
@@ -73,6 +85,12 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
+        leading: _isOnboarded
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => context.go('/home'),
+              )
+            : null,
         title: Text(
           isRu ? 'Параметры партии' : (isEn ? 'Flock Setup' : 'Partiya ma\'lumotlari'),
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
@@ -310,7 +328,7 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                   children: [500, 1000, 2500, 5000].map((count) {
                     return ActionChip(
                       label: Text(
-                        '$count bosh',
+                        isRu ? '$count гол.' : (isEn ? '$count birds' : '$count bosh'),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                       ),
                       backgroundColor: Colors.white,

@@ -58,6 +58,8 @@ serve(async (req: Request) => {
 
   const startTime = Date.now();
   const supabase = getSupabaseClient();
+  const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
+  const fcmServiceAccountToken = Deno.env.get('FCM_SERVICE_ACCOUNT_TOKEN');
   const fcmServerKey = Deno.env.get('FCM_SERVER_KEY');
 
   try {
@@ -113,9 +115,11 @@ serve(async (req: Request) => {
       );
     }
 
-    const today = new Date();
-    // Normalize to midnight UTC
-    const todayMidnight = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    // Compute today's date in Uzbekistan local time (Asia/Tashkent, UTC+5)
+    const uzNow = new Date(Date.now() + 5 * 3600_000);
+    const todayMidnight = new Date(
+      Date.UTC(uzNow.getUTCFullYear(), uzNow.getUTCMonth(), uzNow.getUTCDate())
+    );
 
     const results: SendNotificationResult[] = [];
     let sentCount = 0;
@@ -123,9 +127,11 @@ serve(async (req: Request) => {
     for (const batch of batches) {
       try {
         const arrival = new Date(batch.arrival_date);
-        const arrivalMidnight = new Date(Date.UTC(arrival.getUTCFullYear(), arrival.getUTCMonth(), arrival.getUTCDate()));
+        const arrivalMidnight = new Date(
+          Date.UTC(arrival.getUTCFullYear(), arrival.getUTCMonth(), arrival.getUTCDate())
+        );
 
-        // Calculate cycle day: (CURRENT_DATE - arrival_date) + 1
+        // Calculate cycle day: (CURRENT_DATE_UZ - arrival_date) + 1
         const diffMs = todayMidnight.getTime() - arrivalMidnight.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         const batchDay = diffDays + 1;
@@ -143,78 +149,175 @@ serve(async (req: Request) => {
           continue;
         }
 
+        // Idempotency check: prevent duplicate notification for same (batch_id, batch_day)
+        const { data: existingLog, error: existingErr } = await supabase
+          .from('notification_logs')
+          .select('id')
+          .eq('batch_id', batch.id)
+          .eq('batch_day', batchDay)
+          .limit(1)
+          .maybeSingle();
+
+        if (existingErr) {
+          console.warn(
+            `Error checking existing notification_logs for batch ${batch.id} day ${batchDay}:`,
+            existingErr.message
+          );
+        } else if (existingLog) {
+          results.push({
+            batch_id: batch.id,
+            farmer_id: batch.farmer_id,
+            batch_day: batchDay,
+            fcm_sent: false,
+            status: 'skipped',
+            message: `Notification already sent for batch ${batch.id} on day ${batchDay}.`,
+          });
+          continue;
+        }
+
         // Retrieve today's tasks
         const dayPlan = BROILER_PLAN_DATA.find((p) => p.day === batchDay);
-        const farmer: any = Array.isArray(batch.farmers) ? batch.farmers[0] : batch.farmers;
-        const isRu = farmer?.language === 'ru';
+        const farmer: any = Array.isArray(batch.farmers)
+          ? batch.farmers[0]
+          : batch.farmers;
+        const lang: 'uz' | 'ru' | 'en' =
+          farmer?.language === 'ru'
+            ? 'ru'
+            : farmer?.language === 'en'
+              ? 'en'
+              : 'uz';
 
-        const title = isRu
-          ? `AgroZen: День ${batchDay} — Задачи на сегодня`
-          : `AgroZen: ${batchDay}-kun — Bugungi reja`;
+        const title =
+          lang === 'en'
+            ? `AgroZen: Day ${batchDay} — Today's Tasks`
+            : lang === 'ru'
+              ? `AgroZen: День ${batchDay} — Задачи на сегодня`
+              : `AgroZen: ${batchDay}-kun — Bugungi reja`;
 
-        const body = isRu
-          ? (dayPlan?.tasks_ru ?? 'Проверьте температуру, вентиляцию, расход корма и поилки.')
-          : (dayPlan?.tasks_uz ?? 'Harorat, shamollatish, yem sarfi va suv ta\'minotini tekshiring.');
+        const enTasksText = Array.isArray(dayPlan?.tasks_en)
+          ? dayPlan.tasks_en.join(' ')
+          : dayPlan?.tasks_en;
+
+        const body =
+          lang === 'en'
+            ? (enTasksText ||
+                'Check house temperature, ventilation, feed intake, and drinker lines.')
+            : lang === 'ru'
+              ? (dayPlan?.tasks_ru ??
+                  'Проверьте температуру, вентиляцию, расход корма и поилки.')
+              : (dayPlan?.tasks_uz ??
+                  "Harorat, shamollatish, yem sarfi va suv ta'minotini tekshiring.");
 
         let fcmSent = false;
 
-        // Dispatch FCM Push Notification if configured
-        if (fcmServerKey && farmer?.fcm_token) {
-          try {
-            const fcmResponse = await fetch('https://fcm.googleapis.com/fcm/send', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `key=${fcmServerKey}`,
-              },
-              body: JSON.stringify({
-                to: farmer.fcm_token,
-                notification: {
-                  title,
-                  body,
-                  sound: 'default',
+        // Dispatch FCM Push Notification if configured (prefer HTTP v1, fallback to legacy key)
+        if (farmer?.fcm_token) {
+          if (fcmProjectId && fcmServiceAccountToken) {
+            try {
+              const fcmV1Url = `https://fcm.googleapis.com/v1/projects/${fcmProjectId}/messages:send`;
+              const fcmResponse = await fetch(fcmV1Url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${fcmServiceAccountToken}`,
                 },
-                data: {
-                  type: 'daily_plan',
-                  batch_id: batch.id,
-                  batch_day: String(batchDay),
-                  video_url: dayPlan?.video_url ?? '',
-                },
-              }),
-            });
+                body: JSON.stringify({
+                  message: {
+                    token: farmer.fcm_token,
+                    notification: {
+                      title,
+                      body,
+                    },
+                    data: {
+                      type: 'daily_plan',
+                      batch_id: String(batch.id),
+                      batch_day: String(batchDay),
+                      video_url: dayPlan?.video_url ?? '',
+                    },
+                  },
+                }),
+              });
 
-            if (fcmResponse.ok) {
-              fcmSent = true;
-            } else {
-              console.warn(
-                `FCM dispatch failed for farmer ${batch.farmer_id}:`,
-                await fcmResponse.text()
-              );
+              if (fcmResponse.ok) {
+                fcmSent = true;
+              } else {
+                console.warn(
+                  `FCM v1 dispatch failed for farmer ${batch.farmer_id}:`,
+                  await fcmResponse.text()
+                );
+              }
+            } catch (fcmErr) {
+              console.error('FCM v1 dispatch error:', fcmErr);
             }
-          } catch (fcmErr) {
-            console.error('FCM dispatch error:', fcmErr);
+          } else if (fcmServerKey) {
+            try {
+              const fcmResponse = await fetch(
+                'https://fcm.googleapis.com/fcm/send',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `key=${fcmServerKey}`,
+                  },
+                  body: JSON.stringify({
+                    to: farmer.fcm_token,
+                    notification: {
+                      title,
+                      body,
+                      sound: 'default',
+                    },
+                    data: {
+                      type: 'daily_plan',
+                      batch_id: batch.id,
+                      batch_day: String(batchDay),
+                      video_url: dayPlan?.video_url ?? '',
+                    },
+                  }),
+                }
+              );
+
+              if (fcmResponse.ok) {
+                fcmSent = true;
+              } else {
+                console.warn(
+                  `FCM legacy dispatch failed for farmer ${batch.farmer_id}:`,
+                  await fcmResponse.text()
+                );
+              }
+            } catch (fcmErr) {
+              console.error('FCM legacy dispatch error:', fcmErr);
+            }
           }
         }
 
         // Record entry in notification_logs table
+        let logSucceeded = false;
         try {
-          await supabase.from('notification_logs').insert({
-            farmer_id: batch.farmer_id,
-            batch_id: batch.id,
-            batch_day: batchDay,
-            title,
-            body,
-            status: 'sent',
-            metadata: {
-              video_url: dayPlan?.video_url ?? null,
-              fcm_sent: fcmSent,
-              has_fcm_token: Boolean(farmer?.fcm_token),
-            },
-            sent_at: new Date().toISOString(),
-          });
-          sentCount++;
+          const { error: logError } = await supabase
+            .from('notification_logs')
+            .insert({
+              farmer_id: batch.farmer_id,
+              batch_id: batch.id,
+              batch_day: batchDay,
+              title,
+              body,
+              status: 'sent',
+              metadata: {
+                video_url: dayPlan?.video_url ?? null,
+                fcm_sent: fcmSent,
+                has_fcm_token: Boolean(farmer?.fcm_token),
+              },
+              sent_at: new Date().toISOString(),
+            });
+
+          if (logError) {
+            console.error('Failed to log notification in DB:', logError);
+          } else {
+            logSucceeded = true;
+            sentCount++;
+          }
         } catch (logErr) {
-          console.error('Failed to log notification in DB:', logErr);
+          console.error('Exception logging notification in DB:', logErr);
         }
 
         results.push({
@@ -222,7 +325,7 @@ serve(async (req: Request) => {
           farmer_id: batch.farmer_id,
           batch_day: batchDay,
           fcm_sent: fcmSent,
-          status: 'sent',
+          status: logSucceeded || fcmSent ? 'sent' : 'failed',
         });
       } catch (itemErr) {
         console.error(`Error processing batch ${batch.id}:`, itemErr);

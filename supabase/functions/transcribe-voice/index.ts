@@ -20,7 +20,19 @@ import { corsHeaders, handleCors } from '../_shared/cors.ts';
 
 interface TranscribeResponse {
   transcribed_text: string;
-  language: 'uz' | 'ru';
+  language: 'uz' | 'ru' | 'en';
+  error?: string;
+}
+
+const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10 MB
+
+function encodeBase64Chunked(bytes: Uint8Array): string {
+  const CHUNK = 0x8000;
+  const parts: string[] = [];
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    parts.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
+  }
+  return btoa(parts.join(''));
 }
 
 serve(async (req: Request) => {
@@ -40,7 +52,7 @@ serve(async (req: Request) => {
 
   try {
     let audioBytes: Uint8Array | null = null;
-    let languageCode: 'uz' | 'ru' = 'uz';
+    let languageCode: 'uz' | 'ru' | 'en' = 'uz';
     let mimeType = 'audio/m4a';
     let fileName = 'recording.m4a';
 
@@ -51,7 +63,7 @@ serve(async (req: Request) => {
       const file = formData.get('audio') || formData.get('file');
       const langParam = formData.get('language');
 
-      if (langParam === 'ru' || langParam === 'uz') {
+      if (langParam === 'ru' || langParam === 'uz' || langParam === 'en') {
         languageCode = langParam;
       }
 
@@ -63,7 +75,7 @@ serve(async (req: Request) => {
       }
     } else if (contentType.includes('application/json')) {
       const json = await req.json();
-      if (json.language === 'ru' || json.language === 'uz') {
+      if (json.language === 'ru' || json.language === 'uz' || json.language === 'en') {
         languageCode = json.language;
       }
       if (json.audio_base64) {
@@ -78,7 +90,7 @@ serve(async (req: Request) => {
       // Direct raw binary stream
       audioBytes = new Uint8Array(await req.arrayBuffer());
       const queryLang = new URL(req.url).searchParams.get('language');
-      if (queryLang === 'ru' || queryLang === 'uz') {
+      if (queryLang === 'ru' || queryLang === 'uz' || queryLang === 'en') {
         languageCode = queryLang;
       }
     }
@@ -87,12 +99,31 @@ serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           error:
-            languageCode === 'ru'
-              ? 'Аудиофайл не передан или пуст'
-              : 'Ovozli fayl topilmadi yoki bo\'sh',
+            languageCode === 'en'
+              ? 'Audio file is missing or empty'
+              : languageCode === 'ru'
+                ? 'Аудиофайл не передан или пуст'
+                : 'Ovozli fayl topilmadi yoki bo\'sh',
         }),
         {
           status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (audioBytes.byteLength > MAX_AUDIO_BYTES) {
+      return new Response(
+        JSON.stringify({
+          error:
+            languageCode === 'en'
+              ? 'Audio file exceeds maximum size of 10 MB'
+              : languageCode === 'ru'
+                ? 'Размер аудиофайла превышает допустимые 10 МБ'
+                : 'Ovozli fayl hajmi 10 MB dan oshmasligi kerak',
+        }),
+        {
+          status: 413,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
@@ -109,18 +140,27 @@ serve(async (req: Request) => {
 
     if (googleSttKey && !transcribedText) {
       try {
-        let binary = '';
-        for (let i = 0; i < audioBytes.byteLength; i++) {
-          binary += String.fromCharCode(audioBytes[i]);
-        }
-        const base64Audio = btoa(binary);
+        const base64Audio = encodeBase64Chunked(audioBytes);
 
-        const sttUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${googleSttKey}`;
+        const primarySttLocale =
+          languageCode === 'en'
+            ? 'en-US'
+            : languageCode === 'ru'
+              ? 'ru-RU'
+              : 'uz-UZ';
+        const altSttLocales =
+          languageCode === 'en'
+            ? ['uz-UZ', 'ru-RU']
+            : languageCode === 'ru'
+              ? ['uz-UZ', 'en-US']
+              : ['ru-RU', 'en-US'];
+
+        const sttUrl = 'https://speech.googleapis.com/v1/speech:recognize';
         const sttPayload = {
           config: {
             encoding: 'ENCODING_UNSPECIFIED',
-            languageCode: languageCode === 'uz' ? 'uz-UZ' : 'ru-RU',
-            alternativeLanguageCodes: languageCode === 'uz' ? ['ru-RU'] : ['uz-UZ'],
+            languageCode: primarySttLocale,
+            alternativeLanguageCodes: altSttLocales,
             enableAutomaticPunctuation: true,
           },
           audio: {
@@ -130,7 +170,10 @@ serve(async (req: Request) => {
 
         const gResponse = await fetch(sttUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': googleSttKey,
+          },
           body: JSON.stringify(sttPayload),
         });
 
@@ -197,40 +240,44 @@ serve(async (req: Request) => {
 
     if (geminiKey && !transcribedText) {
       try {
-        let binary = '';
-        for (let i = 0; i < audioBytes.byteLength; i++) {
-          binary += String.fromCharCode(audioBytes[i]);
-        }
-        const base64Audio = btoa(binary);
+        const base64Audio = encodeBase64Chunked(audioBytes);
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
+        const geminiUrl =
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
         const promptInstruction =
-          languageCode === 'ru'
-            ? 'Точно расшифруйте речь из аудиозаписи на русском языке. Верните только расшифрованный текст без лишних комментариев.'
-            : 'Ovozli yozuvdagi nutqni o\'zbek tilida so\'zma-so\'z matnga aylantiring (transkripsiya qiling). Hech qanday qo\'shimcha izohlarsiz faqat nutq matnini qaytaring.';
+          languageCode === 'en'
+            ? 'Accurately transcribe the speech in this audio recording in English. Return only the transcribed text with no extra commentary.'
+            : languageCode === 'ru'
+              ? 'Точно расшифруйте речь из аудиозаписи на русском языке. Верните только расшифрованный текст без лишних комментариев.'
+              : 'Ovozli yozuvdagi nutqni o\'zbek tilida so\'zma-so\'z matnga aylantiring (transkripsiya qiling). Hech qanday qo\'shimcha izohlarsiz faqat nutq matnini qaytaring.';
+
+        const geminiBody = JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: promptInstruction },
+                {
+                  inline_data: {
+                    mime_type: mimeType,
+                    data: base64Audio,
+                  },
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.1,
+          },
+        });
 
         const geminiAudioResponse = await fetch(geminiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  { text: promptInstruction },
-                  {
-                    inline_data: {
-                      mime_type: mimeType,
-                      data: base64Audio,
-                    },
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.1,
-            },
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': geminiKey,
+          },
+          body: geminiBody,
         });
 
         if (geminiAudioResponse.ok) {
@@ -241,30 +288,16 @@ serve(async (req: Request) => {
             transcribedText = textCandidate.trim();
           }
         } else {
-          // Fallback to gemini-1.5-flash if 2.5 returns error
-          const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+          // Fallback to gemini-2.0-flash if 2.5 returns error
+          const fallbackUrl =
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
           const fallbackResp = await fetch(fallbackUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [
-                    { text: promptInstruction },
-                    {
-                      inline_data: {
-                        mime_type: mimeType,
-                        data: base64Audio,
-                      },
-                    },
-                  ],
-                },
-              ],
-              generationConfig: {
-                temperature: 0.1,
-              },
-            }),
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': geminiKey,
+            },
+            body: geminiBody,
           });
 
           if (fallbackResp.ok) {
@@ -278,13 +311,9 @@ serve(async (req: Request) => {
       }
     }
 
-    // Default fallback if no STT key is configured or recognition was empty
+    // Handle case where no STT key is configured or recognition returned empty
     if (!transcribedText) {
-      if (
-        !googleSttKey &&
-        !openAiApiKey &&
-        !geminiKey
-      ) {
+      if (!googleSttKey && !openAiApiKey && !geminiKey) {
         return new Response(
           JSON.stringify({
             error:
@@ -299,10 +328,24 @@ serve(async (req: Request) => {
         );
       }
 
-      transcribedText =
-        languageCode === 'ru'
-          ? 'Не удалось распознать речь в аудиофайле.'
-          : 'Ovozli xabardagi nutqni aniqlab bo\'lmadi.';
+      const emptyErrorMsg =
+        languageCode === 'en'
+          ? 'Could not recognize speech in the audio recording.'
+          : languageCode === 'ru'
+            ? 'Не удалось распознать речь в аудиофайле.'
+            : 'Ovozli xabardagi nutqni aniqlab bo\'lmadi.';
+
+      return new Response(
+        JSON.stringify({
+          transcribed_text: '',
+          language: languageCode,
+          error: emptyErrorMsg,
+        }),
+        {
+          status: 422,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const responsePayload: TranscribeResponse = {
@@ -318,7 +361,7 @@ serve(async (req: Request) => {
     console.error('Unexpected error in transcribe-voice function:', err);
     return new Response(
       JSON.stringify({
-        error: 'Transkripsiya xatoligi. / Ошибка транскрипции.',
+        error: 'Transkripsiya xatoligi. / Ошибка транскрипции. / Transcription error.',
         details: err instanceof Error ? err.message : String(err),
       }),
       {

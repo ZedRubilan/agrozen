@@ -28,6 +28,7 @@ class AlertResult extends Equatable {
 
 class NormsData {
   final double mortalityThresholdPercent;
+  final double cumulativeMortalityThresholdPercent;
   final Map<int, double> weeklyWeightTargets;
 
   /// Exact per-day weight targets parsed from `knowledge/norms.json`
@@ -38,6 +39,7 @@ class NormsData {
   final Map<int, double> dailyTemperatureTargets;
 
   final double weightDeviationPercent;
+  final double tempDeviationCelsius;
   final Map<int, double> dailyFeedPerBird;
   final Map<int, double> temperatureTargets;
 
@@ -49,6 +51,8 @@ class NormsData {
     required this.temperatureTargets,
     Map<int, double>? dailyWeightTargets,
     Map<int, double>? dailyTemperatureTargets,
+    this.cumulativeMortalityThresholdPercent = 4.0,
+    this.tempDeviationCelsius = 2.0,
   })  : dailyWeightTargets = dailyWeightTargets ?? const {},
         dailyTemperatureTargets = dailyTemperatureTargets ?? const {};
 
@@ -65,84 +69,129 @@ class NormsData {
   /// Never throws on missing sections — falls back to the legacy flat schema
   /// and finally to built-in Ross-308 / Cobb-500 defaults.
   factory NormsData.fromJson(Map<String, dynamic> json) {
-    // Thresholds are read independently of the norm tables so that a partially
-    // edited norms.json still respects whatever the vet did fill in.
     final critical = _asMap(json['critical_thresholds']);
+    final alertThresholds = _asMap(json['alert_thresholds']);
     final legacyMortality = _asMap(json['mortality']);
-    final mortalityThreshold = _toDouble(critical['daily_mortality_alert_percent']) ??
-        _toDouble(legacyMortality['daily_threshold_percent']) ??
-        1.0;
+
+    final mortalityThreshold =
+        _toDouble(critical['daily_mortality_alert_percent']) ??
+            _toDouble(alertThresholds['daily_mortality_percent']) ??
+            _toDouble(legacyMortality['daily_threshold_percent']) ??
+            1.0;
+
+    final cumulativeMortalityThreshold =
+        _toDouble(critical['cumulative_mortality_warning_percent']) ??
+            _toDouble(alertThresholds['cumulative_mortality_percent']) ??
+            4.0;
 
     final legacyWeight = _asMap(json['weight']);
-    final weightDeviation = _toDouble(critical['weight_deficit_alert_percent']) ??
-        _toDouble(legacyWeight['deviation_percent']) ??
-        15.0;
+    final weightDeviation =
+        _toDouble(critical['weight_deficit_alert_percent']) ??
+            _toDouble(alertThresholds['weekly_weight_deviation_percent']) ??
+            _toDouble(legacyWeight['deviation_percent']) ??
+            15.0;
 
-    // --- Shipped schema: weekly_norms (list) + daily_norms (map) ---
+    final tempDeviation =
+        _toDouble(critical['temp_deviation_celsius']) ??
+            _toDouble(alertThresholds['temp_deviation_celsius']) ??
+            2.0;
+
+    // --- Shipped schema: weekly_norms (list) and/or daily_norms (map) ---
     final weeklyRaw = json['weekly_norms'];
     final dailyRaw = json['daily_norms'];
 
-    if (weeklyRaw is List && dailyRaw is Map) {
+    if (weeklyRaw is List || dailyRaw is Map) {
       final weekly = <int, double>{};
-      for (final entry in weeklyRaw) {
-        if (entry is! Map) continue;
-        final week = _toInt(entry['week']);
-        if (week == null) continue;
-        weekly[week * 7] = _toDouble(entry['target_weight_g']) ?? 0;
+      final weeklyFeed = <int, double>{};
+      final weeklyTemp = <int, double>{};
+      if (weeklyRaw is List) {
+        for (final entry in weeklyRaw) {
+          if (entry is! Map) continue;
+          final week = _toInt(entry['week']);
+          if (week == null) continue;
+          final dayKey = week * 7;
+          final tw = _toDouble(entry['target_weight_g']);
+          if (tw != null) weekly[dayKey] = tw;
+          final df = _toDouble(entry['daily_feed_g']);
+          if (df != null) weeklyFeed[dayKey] = df;
+          final tc = _toDouble(entry['temperature_c']);
+          if (tc != null) weeklyTemp[dayKey] = tc;
+        }
       }
 
       final dailyWeight = <int, double>{};
       final dailyFeed = <int, double>{};
       final dailyTemp = <int, double>{};
-      for (final entry in dailyRaw.entries) {
-        final day = int.tryParse(entry.key.toString());
-        if (day == null || entry.value is! Map) continue;
-        final m = entry.value as Map;
-        final w = _toDouble(m['weight_g']);
-        final f = _toDouble(m['feed_g']);
-        final t = _toDouble(m['temp_c']);
-        if (w != null) dailyWeight[day] = w;
-        if (f != null) dailyFeed[day] = f;
-        if (t != null) dailyTemp[day] = t;
+      if (dailyRaw is Map) {
+        for (final entry in dailyRaw.entries) {
+          final day = int.tryParse(entry.key.toString());
+          if (day == null || entry.value is! Map) continue;
+          final m = entry.value as Map;
+          final w = _toDouble(m['weight_g']);
+          final f = _toDouble(m['feed_g']);
+          final t = _toDouble(m['temp_c']);
+          if (w != null) dailyWeight[day] = w;
+          if (f != null) dailyFeed[day] = f;
+          if (t != null) dailyTemp[day] = t;
+        }
       }
 
       return NormsData(
         mortalityThresholdPercent: mortalityThreshold,
+        cumulativeMortalityThresholdPercent: cumulativeMortalityThreshold,
         weeklyWeightTargets: weekly,
         dailyWeightTargets: dailyWeight,
         dailyTemperatureTargets: dailyTemp,
         weightDeviationPercent: weightDeviation,
-        dailyFeedPerBird: dailyFeed,
-        temperatureTargets: dailyTemp,
+        tempDeviationCelsius: tempDeviation,
+        dailyFeedPerBird: dailyFeed.isNotEmpty ? dailyFeed : weeklyFeed,
+        temperatureTargets: dailyTemp.isNotEmpty ? dailyTemp : weeklyTemp,
       );
     }
 
-    // --- Legacy flat schema (kept for backwards compatibility) ---
+    // --- Legacy flat schema & fallback keys (kept for backwards compatibility) ---
     final feed = _asMap(json['feed']);
     final temp = _asMap(json['temperature']);
 
+    final weeklyWeights = _numMap(legacyWeight['weekly_targets_grams']);
+    final flatWeeklyWeights = _numMap(json['weekly_weight_targets']);
+
+    final feedMap = _numMap(feed['daily_grams_per_bird']);
+    final flatFeedMap = _numMap(json['daily_feed_per_bird']);
+
+    final tempMap = _numMap(temp['targets_celsius']);
+    final flatTempMap = _numMap(json['temperature_targets']);
+
     return NormsData(
       mortalityThresholdPercent: mortalityThreshold,
-      weeklyWeightTargets: _numMap(legacyWeight['weekly_targets_grams']),
+      cumulativeMortalityThresholdPercent: cumulativeMortalityThreshold,
+      weeklyWeightTargets:
+          weeklyWeights.isNotEmpty ? weeklyWeights : flatWeeklyWeights,
       weightDeviationPercent: weightDeviation,
-      dailyFeedPerBird: _numMap(feed['daily_grams_per_bird']),
-      temperatureTargets: _numMap(temp['targets_celsius']),
+      tempDeviationCelsius: tempDeviation,
+      dailyFeedPerBird: feedMap.isNotEmpty ? feedMap : flatFeedMap,
+      temperatureTargets: tempMap.isNotEmpty ? tempMap : flatTempMap,
     );
   }
 
   /// Get the target weight for a given day.
-  /// Prefers the exact daily norm; falls back to the closest weekly checkpoint
-  /// at or before [day].
+  /// Prefers the exact daily norm; falls back to the closest daily or weekly
+  /// checkpoint at or before [day].
   double? weightTargetForDay(int day) {
     final exact = dailyWeightTargets[day];
     if (exact != null && exact > 0) return exact;
 
-    final checkpoints = weeklyWeightTargets.keys.toList()..sort();
-    int? closest;
-    for (final cp in checkpoints) {
-      if (cp <= day) closest = cp;
+    final dailyClosest = _closestCheckpoint(dailyWeightTargets, day);
+    final weeklyClosest = _closestCheckpoint(weeklyWeightTargets, day);
+
+    if (dailyClosest != null && weeklyClosest != null) {
+      return dailyClosest >= weeklyClosest
+          ? dailyWeightTargets[dailyClosest]
+          : weeklyWeightTargets[weeklyClosest];
     }
-    return closest != null ? weeklyWeightTargets[closest] : null;
+    if (dailyClosest != null) return dailyWeightTargets[dailyClosest];
+    if (weeklyClosest != null) return weeklyWeightTargets[weeklyClosest];
+    return null;
   }
 
   /// Get the target temperature for a given day, or null if unknown.
@@ -150,12 +199,39 @@ class NormsData {
     final exact = dailyTemperatureTargets[day];
     if (exact != null && exact > 0) return exact;
 
-    final checkpoints = temperatureTargets.keys.toList()..sort();
+    final dailyClosest = _closestCheckpoint(dailyTemperatureTargets, day);
+    final targetClosest = _closestCheckpoint(temperatureTargets, day);
+
+    if (dailyClosest != null && targetClosest != null) {
+      return dailyClosest >= targetClosest
+          ? dailyTemperatureTargets[dailyClosest]
+          : temperatureTargets[targetClosest];
+    }
+    if (dailyClosest != null) return dailyTemperatureTargets[dailyClosest];
+    if (targetClosest != null) return temperatureTargets[targetClosest];
+    return null;
+  }
+
+  /// Get the target daily feed per bird (in grams) for a given day, or null if unknown.
+  double? feedTargetForDay(int day) {
+    final exact = dailyFeedPerBird[day];
+    if (exact != null && exact > 0) return exact;
+
+    final closest = _closestCheckpoint(dailyFeedPerBird, day);
+    return closest != null ? dailyFeedPerBird[closest] : null;
+  }
+
+  static int? _closestCheckpoint(Map<int, double> map, int day) {
+    if (map.isEmpty) return null;
+    final checkpoints = map.keys.toList()..sort();
     int? closest;
     for (final cp in checkpoints) {
-      if (cp <= day) closest = cp;
+      final val = map[cp];
+      if (cp <= day && val != null && val > 0) {
+        closest = cp;
+      }
     }
-    return closest != null ? temperatureTargets[closest] : null;
+    return closest;
   }
 
   static Map<String, dynamic> _asMap(Object? value) =>

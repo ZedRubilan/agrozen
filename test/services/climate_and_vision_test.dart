@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrozen/data/models/weather_data.dart';
 import 'package:agrozen/domain/climate/climate_advisor.dart';
 import 'package:agrozen/services/poultry_vision_analyzer.dart';
@@ -6,6 +10,8 @@ import 'package:agrozen/services/tts_service.dart';
 import 'package:agrozen/services/weather_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('ClimateAdvisor & Microclimate Guidance Tests', () {
     test('1. Detects heat stress and provides cooling & feed restrictions', () {
       final advice = ClimateAdvisor.evaluate(
@@ -65,6 +71,22 @@ void main() {
       expect(advice.riskLevel, ClimateRiskLevel.optimal);
       expect(advice.statusBadge, contains('Qulay mikroklimat'));
     });
+
+    test('4b. On Day 2 (targetHouseTemp: 33.5°C, outsideTemp: 32.0°C, diff = -1.5°C), does NOT falsely trigger heatWarning or tunnel ventilation', () {
+      final advice = ClimateAdvisor.evaluate(
+        flockAgeDays: 2,
+        outsideTemp: 32.0,
+        outsideHumidity: 55.0,
+        targetHouseTemp: 33.5,
+        lang: 'uz',
+      );
+
+      expect(advice.tempDifference, closeTo(-1.5, 0.01));
+      expect(advice.riskLevel, isNot(ClimateRiskLevel.heatWarning));
+      expect(advice.riskLevel, ClimateRiskLevel.optimal);
+      expect(advice.ventilationAdvice, isNot(contains('1.5-2.5 m/s')));
+      expect(advice.ventilationAdvice, isNot(contains('Tunnel ventilyatsiya')));
+    });
   });
 
   group('WeatherData & WeatherService Tests', () {
@@ -111,6 +133,50 @@ void main() {
       expect(WeatherService.districtCoordinates.containsKey('Xorazm'), isTrue);
       expect(WeatherService.districtCoordinates.containsKey('Navoiy'), isTrue);
       expect(WeatherService.districtCoordinates.containsKey("Qoraqalpog'iston"), isTrue);
+    });
+
+    test('7b. WeatherService.getWeatherForDistrict with forceRefresh: true clears weather_cache_Toshkent and fetches fresh data from HTTP client', () async {
+      final staleWeather = WeatherData(
+        district: 'Toshkent',
+        temperature: 15.0,
+        humidity: 60,
+        windSpeed: 5.0,
+        condition: 'clear',
+        timestamp: DateTime.now(),
+      );
+      SharedPreferences.setMockInitialValues({
+        'weather_cache_Toshkent': jsonEncode(staleWeather.toJson()),
+      });
+
+      int httpCallCount = 0;
+      final mockClient = MockClient((request) async {
+        httpCallCount++;
+        return http.Response(
+          jsonEncode({
+            'current': {
+              'temperature_2m': 29.5,
+              'relative_humidity_2m': 42,
+              'wind_speed_10m': 11.0,
+              'weather_code': 1,
+            },
+          }),
+          200,
+        );
+      });
+
+      final service = WeatherService(client: mockClient);
+
+      // Without forceRefresh, returns cached 15.0°C without hitting network
+      final cachedResult = await service.getWeatherForDistrict('Toshkent', forceRefresh: false);
+      expect(cachedResult.temperature, 15.0);
+      expect(httpCallCount, 0);
+
+      // With forceRefresh: true, clears cache and fetches 29.5°C from HTTP client
+      final freshResult = await service.getWeatherForDistrict('Toshkent', forceRefresh: true);
+      expect(httpCallCount, 1);
+      expect(freshResult.temperature, 29.5);
+      expect(freshResult.humidity, 42);
+      expect(freshResult.condition, 'partly_cloudy');
     });
   });
 

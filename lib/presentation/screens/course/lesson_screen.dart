@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../services/external_actions.dart';
 import '../../widgets/tactile_button.dart';
 
 class LessonScreen extends StatefulWidget {
@@ -15,6 +18,8 @@ class LessonScreen extends StatefulWidget {
 class _LessonScreenState extends State<LessonScreen> {
   String _lang = 'uz';
   bool _isLoading = true;
+  String? _jsonDetailContent;
+  String? _videoUrl;
 
   @override
   void initState() {
@@ -24,10 +29,47 @@ class _LessonScreenState extends State<LessonScreen> {
 
   Future<void> _loadLang() async {
     final prefs = await SharedPreferences.getInstance();
+    final lang = prefs.getString('app_language') ?? 'uz';
+    if (!mounted) return;
     setState(() {
-      _lang = prefs.getString('app_language') ?? 'uz';
+      _lang = lang;
       _isLoading = false;
     });
+    _loadRichJsonLesson(lang);
+  }
+
+  Future<void> _loadRichJsonLesson(String lang) async {
+    final folder = lang == 'ru' ? 'ru' : 'uz';
+    try {
+      final raw = await rootBundle.loadString(
+        'knowledge/course/$folder/lesson_${widget.lessonId}.json',
+      );
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      if (!mounted) return;
+      setState(() {
+        if (lang != 'en') {
+          _jsonDetailContent = map['content'] as String?;
+        }
+        _videoUrl = map['video_url'] as String?;
+      });
+    } catch (_) {
+      // Fallback gracefully if asset cannot be loaded in isolated test environments.
+    }
+  }
+
+  String _defaultVideoUrlForLesson(int id) {
+    switch (id) {
+      case 1:
+        return 'https://www.youtube.com/results?search_query=ross+308+broiler+barn+preparation+disinfection+preheating';
+      case 2:
+        return 'https://www.youtube.com/results?search_query=ross+308+broiler+chicks+first+3+days+crop+fill';
+      case 3:
+        return 'https://www.youtube.com/results?search_query=ross+308+broiler+temperature+ventilation+management';
+      case 4:
+        return 'https://www.youtube.com/results?search_query=ross+308+broiler+starter+grower+finisher+feeding';
+      default:
+        return 'https://www.youtube.com/results?search_query=ross+308+broiler+biosecurity+disease+prevention';
+    }
   }
 
   Map<String, String> _getLessonContent(int id, String lang) {
@@ -181,6 +223,7 @@ class _LessonScreenState extends State<LessonScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final data = _getLessonContent(widget.lessonId, _lang);
+    final videoUrl = _videoUrl ?? _defaultVideoUrlForLesson(widget.lessonId);
 
     final lessonBadge = _lang == 'en'
         ? 'Lesson ${widget.lessonId}'
@@ -203,6 +246,7 @@ class _LessonScreenState extends State<LessonScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -220,6 +264,20 @@ class _LessonScreenState extends State<LessonScreen> {
                               fontWeight: FontWeight.w800,
                               color: theme.colorScheme.primary,
                               letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => const ExternalActions().openVideo(context, videoUrl),
+                          icon: const Icon(Icons.play_circle_fill_rounded, size: 18, color: Color(0xFFDC2626)),
+                          label: Text(
+                            _lang == 'en'
+                                ? 'Watch Video Guide'
+                                : (_lang == 'ru' ? 'Смотреть видеоурок' : "Videodarsni ko'rish"),
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
                             ),
                           ),
                         ),
@@ -253,14 +311,42 @@ class _LessonScreenState extends State<LessonScreen> {
                           ],
                         ),
                         child: SingleChildScrollView(
-                          child: Text(
-                            data['content']!,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              height: 1.65,
-                              color: Color(0xFF334155),
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['content']!,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  height: 1.65,
+                                  color: Color(0xFF334155),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (_jsonDetailContent != null && _jsonDetailContent!.isNotEmpty) ...[
+                                const SizedBox(height: 18),
+                                const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                                const SizedBox(height: 14),
+                                Text(
+                                  _lang == 'ru' ? 'Подробный стандарт Ross-308:' : 'Batafsil Ross-308 standarti:',
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _jsonDetailContent!,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    height: 1.6,
+                                    color: Color(0xFF475569),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ),

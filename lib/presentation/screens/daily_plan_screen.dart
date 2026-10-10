@@ -16,6 +16,7 @@ class DailyPlanScreen extends StatefulWidget {
 
 class _DailyPlanScreenState extends State<DailyPlanScreen> {
   final KnowledgeRepository _repo = KnowledgeRepository();
+  final ScrollController _dayScrollController = ScrollController();
   List<DailyPlan> _allPlans = [];
   int _currentBatchDay = 1;
   int _selectedDay = 1;
@@ -27,6 +28,12 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
   void initState() {
     super.initState();
     _loadPlans();
+  }
+
+  @override
+  void dispose() {
+    _dayScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPlans() async {
@@ -54,6 +61,16 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
 
     if (!mounted) return;
     setState(() => _isLoading = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_dayScrollController.hasClients) return;
+      final maxOffset = _dayScrollController.position.maxScrollExtent;
+      final targetOffset = ((_selectedDay - 1) * 66.0 - 120.0).clamp(0.0, maxOffset);
+      _dayScrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   /// Target temperature from the vet-verified `knowledge/norms.json`.
@@ -112,6 +129,7 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                     ],
                   ),
                   child: ListView.builder(
+                    controller: _dayScrollController,
                     scrollDirection: Axis.horizontal,
                     itemCount: 42,
                     padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -214,17 +232,19 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                               children: [
                                 const Icon(Icons.check_circle_rounded, color: Color(0xFF1B5E20), size: 20),
                                 const SizedBox(width: 10),
-                                Text(
-                                  AppStrings.tr(
-                                    lang: _lang,
-                                    uz: 'Bu sizning bugungi partiya kuningiz!',
-                                    ru: 'Это ваш текущий день партии!',
-                                    en: 'This is your current batch day!',
-                                  ),
-                                  style: const TextStyle(
-                                    color: Color(0xFF1B5E20),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13.5,
+                                Expanded(
+                                  child: Text(
+                                    AppStrings.tr(
+                                      lang: _lang,
+                                      uz: 'Bu sizning bugungi partiya kuningiz!',
+                                      ru: 'Это ваш текущий день партии!',
+                                      en: 'This is your current batch day!',
+                                    ),
+                                    style: const TextStyle(
+                                      color: Color(0xFF1B5E20),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13.5,
+                                    ),
                                   ),
                                 ),
                               ],

@@ -200,6 +200,88 @@ void main() {
       });
     });
 
+    group('checkTemperature', () {
+      test('temperature within threshold -> no alert', () {
+        // Day 7 target is 30.0°C, default tempDeviationCelsius is 2.0°C
+        expect(
+          alertEngine.checkTemperature(batchDay: 7, actualTempCelsius: 31.5),
+          isNull,
+        );
+      });
+
+      test('temperature above threshold -> warning highTemperature alert', () {
+        // Day 7 target is 30.0°C, actual 33.0°C -> diff = 3.0°C (> 2.0°C, <= 4.0°C)
+        final alert = alertEngine.checkTemperature(
+          batchDay: 7,
+          actualTempCelsius: 33.0,
+        );
+        expect(alert, isNotNull);
+        expect(alert!.type, equals(AlertType.highTemperature));
+        expect(alert.severity, equals(AlertSeverity.warning));
+        expect(alert.actualValue, equals(33.0));
+        expect(alert.threshold, equals(30.0));
+        expect(alert.messageRu, contains('выше нормы'));
+        expect(alert.messageUz, contains('yuqori'));
+        expect(alert.messageEn, contains('exceeds target'));
+      });
+
+      test('temperature far below threshold (> 2x deviation) -> critical highTemperature alert', () {
+        // Day 7 target is 30.0°C, actual 24.5°C -> diff = 5.5°C (> 4.0°C)
+        final alert = alertEngine.checkTemperature(
+          batchDay: 7,
+          actualTempCelsius: 24.5,
+        );
+        expect(alert, isNotNull);
+        expect(alert!.type, equals(AlertType.highTemperature));
+        expect(alert.severity, equals(AlertSeverity.critical));
+        expect(alert.messageRu, contains('ниже нормы'));
+        expect(alert.messageUz, contains('past'));
+        expect(alert.messageEn, contains('below target'));
+      });
+    });
+
+    group('checkCumulativeMortality', () {
+      test('cumulative mortality at or below 4.0% threshold -> no alert', () {
+        // 40 out of 1000 = 4.0%
+        expect(
+          alertEngine.checkCumulativeMortality(
+            totalDeaths: 40,
+            initialCount: 1000,
+            batchDay: 21,
+          ),
+          isNull,
+        );
+      });
+
+      test('cumulative mortality above 4.0% threshold -> warning alert', () {
+        // 50 out of 1000 = 5.0% (> 4.0%, <= 8.0%)
+        final alert = alertEngine.checkCumulativeMortality(
+          totalDeaths: 50,
+          initialCount: 1000,
+          batchDay: 21,
+        );
+        expect(alert, isNotNull);
+        expect(alert!.type, equals(AlertType.highMortality));
+        expect(alert.severity, equals(AlertSeverity.warning));
+        expect(alert.actualValue, closeTo(5.0, 0.01));
+        expect(alert.threshold, equals(4.0));
+        expect(alert.messageRu, contains('Общий падёж'));
+        expect(alert.messageUz, contains('umumiy nobodlik'));
+        expect(alert.messageEn, contains('Cumulative mortality'));
+      });
+
+      test('cumulative mortality above 2x threshold (> 8.0%) -> critical alert', () {
+        // 90 out of 1000 = 9.0%
+        final alert = alertEngine.checkCumulativeMortality(
+          totalDeaths: 90,
+          initialCount: 1000,
+          batchDay: 28,
+        );
+        expect(alert, isNotNull);
+        expect(alert!.severity, equals(AlertSeverity.critical));
+      });
+    });
+
     group('runAllChecks', () {
       test('runAllChecks with multiple alerts', () {
         // Day 7: high mortality (20/1000 = 2%) AND low weight (160g vs 200g)
@@ -285,6 +367,14 @@ void main() {
         expect(testNorms.weightTargetForDay(14), equals(450.0));
         expect(testNorms.weightTargetForDay(20), equals(450.0));
         expect(testNorms.weightTargetForDay(45), equals(2800.0));
+      });
+
+      test('feedTargetForDay returns exact or closest previous checkpoint', () {
+        expect(testNorms.feedTargetForDay(1), equals(15.0));
+        expect(testNorms.feedTargetForDay(4), equals(15.0));
+        expect(testNorms.feedTargetForDay(7), equals(35.0));
+        expect(testNorms.feedTargetForDay(14), equals(65.0));
+        expect(testNorms.feedTargetForDay(20), equals(65.0));
       });
 
       test('AlertResult equality based on props', () {

@@ -9,9 +9,10 @@ import '../data/models/weather_data.dart';
 /// Fetches free real-time weather from Open-Meteo with zero API keys required,
 /// and caches data locally in SharedPreferences with fallback when offline.
 class WeatherService {
+  static final http.Client _sharedClient = http.Client();
   final http.Client _client;
 
-  WeatherService({http.Client? client}) : _client = client ?? http.Client();
+  WeatherService({http.Client? client}) : _client = client ?? _sharedClient;
 
   static const Map<String, ({double lat, double lon})> districtCoordinates = {
     'Toshkent': (lat: 41.3111, lon: 69.2797),
@@ -35,6 +36,7 @@ class WeatherService {
       // Clear cache for this district to force fresh API call
       try {
         final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('weather_cache_$district');
         await prefs.remove('weather_$district');
       } catch (_) {}
     }

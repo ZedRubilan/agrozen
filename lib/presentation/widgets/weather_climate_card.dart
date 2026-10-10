@@ -84,6 +84,34 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
     }
   }
 
+  String _localizedConditionText(String condition, String lang) {
+    switch (condition) {
+      case 'snow':
+        return AppStrings.tr(lang: lang, uz: 'Qorli', ru: 'Снег', en: 'Snowy');
+      case 'thunderstorm':
+        return AppStrings.tr(lang: lang, uz: 'Momaqaldiroq', ru: 'Гроза', en: 'Thunderstorm');
+      case 'partly_cloudy':
+        return AppStrings.tr(lang: lang, uz: 'Yarim bulutli', ru: 'Переменная облачность', en: 'Partly Cloudy');
+      case 'rain':
+        return AppStrings.tr(lang: lang, uz: "Yomg'irli", ru: 'Дождь', en: 'Rainy');
+      case 'cloudy':
+        return AppStrings.tr(lang: lang, uz: 'Bulutli', ru: 'Облачно', en: 'Cloudy');
+      case 'hot':
+        return AppStrings.tr(lang: lang, uz: 'Issiq / Quyoshli', ru: 'Жарко / Солнечно', en: 'Hot / Sunny');
+      case 'cold':
+        return AppStrings.tr(lang: lang, uz: 'Sovuq', ru: 'Холодно', en: 'Cold');
+      case 'clear':
+      default:
+        return AppStrings.tr(lang: lang, uz: 'Ochiq havo', ru: 'Ясно', en: 'Clear');
+    }
+  }
+
+  int _targetTempForDayOffset(int dayOffset) {
+    final targetDay = (widget.batchDay + dayOffset).clamp(1, 42);
+    final actualDeltaDays = targetDay - widget.batchDay;
+    return (widget.targetHouseTemp - actualDeltaDays * 0.38).clamp(18.0, 34.0).round();
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = widget.language;
@@ -99,7 +127,15 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
       lang: lang,
     );
 
-    final currentTempInt = widget.targetHouseTemp.round();
+    final dMinus2 = _targetTempForDayOffset(-2);
+    final dMinus1 = _targetTempForDayOffset(-1);
+    final currentTempInt = _targetTempForDayOffset(0);
+    final dPlus1 = _targetTempForDayOffset(1);
+    final dPlus2 = _targetTempForDayOffset(2);
+    final dPlus3 = _targetTempForDayOffset(3);
+
+    final conditionLabel = _localizedConditionText(weather.condition, lang);
+    final todayLabel = AppStrings.tr(lang: lang, uz: 'Bugun', ru: 'Сегодня', en: 'Today');
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -187,11 +223,11 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                "• ${weather.conditionText}",
+                                "• $conditionLabel (${weather.temperature.toStringAsFixed(0)}°C, ${weather.humidity}%)",
                                 style: TextStyle(
-                                  color: Colors.white.withAlpha(200),
+                                  color: Colors.white.withAlpha(215),
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -207,14 +243,24 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
                                 ? Icons.volume_up_rounded
                                 : Icons.volume_down_rounded,
                             onTap: () => _toggleTts(advice),
-                            tooltip: 'Ovozli eshitish',
+                            tooltip: AppStrings.tr(
+                              lang: lang,
+                              uz: 'Ovozli eshitish',
+                              ru: 'Озвучить',
+                              en: 'Listen aloud',
+                            ),
                             isActive: _isSpeaking,
                           ),
                           const SizedBox(width: 8),
                           _buildGlassCircleButton(
                             icon: Icons.refresh_rounded,
                             onTap: () => _loadWeather(forceRefresh: true),
-                            tooltip: 'Yangilash',
+                            tooltip: AppStrings.tr(
+                              lang: lang,
+                              uz: 'Yangilash',
+                              ru: 'Обновить',
+                              en: 'Refresh',
+                            ),
                           ),
                         ],
                       ),
@@ -222,29 +268,29 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
                   ),
                   const SizedBox(height: 18),
 
-                  // Multi-Day / Hourly Forecast Pills Strip (Directly matching Image 3)
+                  // Multi-Day Ross-308 Target Temperature Strip (decreasing as chicks grow)
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildForecastPill(label: 'D-1', icon: Icons.wb_sunny_outlined, temp: '${currentTempInt - 2}°', isSelected: false),
+                        _buildForecastPill(label: 'D-2', icon: Icons.thermostat_rounded, temp: '$dMinus2°', isSelected: false),
                         const SizedBox(width: 8),
-                        _buildForecastPill(label: 'D-2', icon: Icons.cloud_queue_rounded, temp: '${currentTempInt - 1}°', isSelected: false),
+                        _buildForecastPill(label: 'D-1', icon: Icons.thermostat_rounded, temp: '$dMinus1°', isSelected: false),
                         const SizedBox(width: 8),
                         // Current Active Day in Radiant Amber
-                        _buildForecastPill(label: 'Bugun', icon: Icons.wb_sunny_rounded, temp: '$currentTempInt°', isSelected: true),
+                        _buildForecastPill(label: todayLabel, icon: Icons.wb_sunny_rounded, temp: '$currentTempInt°', isSelected: true),
                         const SizedBox(width: 8),
-                        _buildForecastPill(label: 'D+1', icon: Icons.wb_sunny_outlined, temp: '${currentTempInt + 1}°', isSelected: false),
+                        _buildForecastPill(label: 'D+1', icon: Icons.thermostat_rounded, temp: '$dPlus1°', isSelected: false),
                         const SizedBox(width: 8),
-                        _buildForecastPill(label: 'D+2', icon: Icons.wb_cloudy_outlined, temp: '${currentTempInt + 2}°', isSelected: false),
+                        _buildForecastPill(label: 'D+2', icon: Icons.thermostat_rounded, temp: '$dPlus2°', isSelected: false),
                         const SizedBox(width: 8),
-                        _buildForecastPill(label: 'D+3', icon: Icons.cloud_outlined, temp: '${currentTempInt + 3}°', isSelected: false),
+                        _buildForecastPill(label: 'D+3', icon: Icons.thermostat_rounded, temp: '$dPlus3°', isSelected: false),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
 
-                  // Bottom Area: Large Temperature + Condition & Suitable Growth Pill Badge
+                  // Bottom Area: Large Target Temperature + Outdoor Telemetry & Suitable Growth Pill Badge
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -254,7 +300,12 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "${widget.batchDay}-kun • Ross-308",
+                              AppStrings.tr(
+                                lang: lang,
+                                uz: "${widget.batchDay}-kun • Ross-308",
+                                ru: "${widget.batchDay}-й день • Ross-308",
+                                en: "Day ${widget.batchDay} • Ross-308",
+                              ),
                               style: TextStyle(
                                 color: Colors.white.withAlpha(200),
                                 fontSize: 12.5,
@@ -281,15 +332,10 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
                                 const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
-                                    AppStrings.tr(
-                                      lang: lang,
-                                      uz: "Me'yor",
-                                      ru: 'Норма',
-                                      en: 'Target',
-                                    ),
+                                    '${AppStrings.tr(lang: lang, uz: "Me'yor", ru: 'Норма', en: 'Target')} • ${AppStrings.tr(lang: lang, uz: "Tashqi", ru: 'Улица', en: 'Out')}: ${weather.temperature.toStringAsFixed(0)}°C (${weather.humidity}%)',
                                     style: TextStyle(
                                       color: Colors.white.withAlpha(220),
-                                      fontSize: 12,
+                                      fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
                                     ),
                                     maxLines: 1,

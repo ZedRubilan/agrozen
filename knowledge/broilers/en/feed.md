@@ -4,18 +4,18 @@ Broilers possess rapid metabolic growth rates. Feeding is structured into three 
 
 ## Feeding Phases:
 1. **Starter (Days 1–14):**
-   - Crude protein: 22–24%
-   - Form: fine crumbs (2 mm)
+   - Crude protein: 21–23%
+   - Form: fine crumbs (1.5–2 mm)
    - Stimulates skeletal framing and visceral organ development.
 
 2. **Grower (Days 15–28):**
-   - Crude protein: 20–21%
+   - Crude protein: 19–20%
    - Form: pellets (2.5–3 mm)
    - Rapid accretion of lean muscle mass.
 
 3. **Finisher (Days 29–42):**
-   - Crude protein: 18–19%
-   - Form: pellets (3.5–4 mm)
+   - Crude protein: 17.5–18.5%
+   - Form: pellets (3–3.5 mm)
    - Final weight gain prior to processing. Antibiotics are strictly banned during this withdrawal phase!
 
 ## Golden Rules:

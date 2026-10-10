@@ -11,6 +11,9 @@ class TextToSpeechSanitizer {
     final lang = language.toLowerCase();
     String s = text;
 
+    // 0. Strip HTML comments so metadata never gets spoken aloud
+    s = s.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
+
     // 1. Remove markdown links: [Label](url) -> Label
     s = s.replaceAllMapped(
       RegExp(r'\[([^\]]+)\]\([^)]+\)'),
@@ -24,14 +27,18 @@ class TextToSpeechSanitizer {
     s = s.replaceAll(RegExp(r'```[\s\S]*?```'), '');
     s = s.replaceAll(RegExp(r'`([^`]+)`'), r'$1');
 
-    // 4. Remove bold, italic, strike formatting
+    // 4. Strip line-leading markdown bullets before inline *italic* matching
+    // so consecutive '* item' lines do not get paired as a single italic span.
+    s = s.replaceAll(RegExp(r'^[\t ]*[-*+•]\s+', multiLine: true), '');
+
+    // 5. Remove bold, italic, strike formatting
     s = s.replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'$1');
-    s = s.replaceAll(RegExp(r'\*([^*]+)\*'), r'$1');
+    s = s.replaceAll(RegExp(r'\*([^*\n]+)\*'), r'$1');
     s = s.replaceAll(RegExp(r'__([^_]+)__'), r'$1');
-    s = s.replaceAll(RegExp(r'_([^_]+)_'), r'$1');
+    s = s.replaceAll(RegExp(r'_([^_\n]+)_'), r'$1');
     s = s.replaceAll(RegExp(r'~~([^~]+)~~'), r'$1');
 
-    // 5. Expand agricultural / scientific units to natural spoken words
+    // 6. Expand agricultural / scientific units to natural spoken words
     if (lang == 'uz') {
       s = s.replaceAllMapped(
         RegExp(r'(\d+(?:[.,]\d+)?)\s*°\s*C', caseSensitive: false),
@@ -113,7 +120,7 @@ class TextToSpeechSanitizer {
       );
     }
 
-    // 6. Clean headers, bullet points, blockquotes and table markers line-by-line
+    // 7. Clean headers, bullet points, blockquotes and table markers line-by-line
     final lines = s.split('\n');
     final cleanedLines = <String>[];
 
@@ -148,18 +155,18 @@ class TextToSpeechSanitizer {
 
     s = cleanedLines.join('. ');
 
-    // 7. Strip distracting emojis and unicode symbols that TTS engines read out literally
+    // 8. Strip distracting emojis and unicode symbols that TTS engines read out literally
     s = s.replaceAll(
       RegExp(r'[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]', unicode: true),
       '',
     );
     s = s.replaceAll(RegExp(r'[•✔✅❌📌💡📞🚨⚠️©®™]'), '');
 
-    // 8. Normalize spacing and punctuation
+    // 9. Normalize spacing and punctuation without breaking decimal numbers (e.g. 32.5 or 32,5)
     s = s.replaceAll(RegExp(r'\s+'), ' ');
     s = s.replaceAll(RegExp(r'\.{2,}'), '.');
-    s = s.replaceAll(RegExp(r'\s*,\s*'), ', ');
-    s = s.replaceAll(RegExp(r'\s*\.\s*'), '. ');
+    s = s.replaceAll(RegExp(r'\s*,(?!\d)\s*'), ', ');
+    s = s.replaceAll(RegExp(r'\s*\.(?!\d)\s*'), '. ');
     s = s.replaceAll(RegExp(r'\s*\?\s*'), '? ');
     s = s.replaceAll(RegExp(r'\s*!\s*'), '! ');
 

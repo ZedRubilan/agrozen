@@ -7,14 +7,14 @@ class AppStrings {
 
   /// Resolve text according to the language code ('uz', 'ru', 'en').
   static String tr({
-    required String lang,
+    required String? lang,
     required String uz,
     required String ru,
     required String en,
   }) {
-    final code = lang.toLowerCase();
-    if (code == 'en') return en;
-    if (code == 'ru') return ru;
+    final code = (lang ?? 'uz').trim().toLowerCase();
+    if (code.startsWith('en')) return en;
+    if (code.startsWith('ru')) return ru;
     return uz;
   }
 

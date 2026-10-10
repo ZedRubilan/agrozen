@@ -3,17 +3,87 @@ import 'package:flutter/services.dart';
 import '../../domain/alerts/alert_models.dart';
 import '../models/daily_plan.dart';
 
+class VideoGuide {
+  final int day;
+  final String titleRu;
+  final String titleUz;
+  final String titleEn;
+  final String url;
+  final String? duration;
+
+  const VideoGuide({
+    required this.day,
+    required this.titleRu,
+    required this.titleUz,
+    this.titleEn = '',
+    required this.url,
+    this.duration,
+  });
+
+  factory VideoGuide.fromJson(Map<String, dynamic> json) {
+    return VideoGuide(
+      day: (json['day'] as num?)?.toInt() ?? 1,
+      titleRu: json['title_ru'] as String? ?? '',
+      titleUz: json['title_uz'] as String? ?? '',
+      titleEn: json['title_en'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+      duration: json['duration'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'day': day,
+        'title_ru': titleRu,
+        'title_uz': titleUz,
+        if (titleEn.isNotEmpty) 'title_en': titleEn,
+        'url': url,
+        if (duration != null) 'duration': duration,
+      };
+
+  String getTitle(String language) {
+    final code = language.trim().toLowerCase();
+    if (code.startsWith('en')) {
+      return titleEn.isNotEmpty
+          ? titleEn
+          : (titleUz.isNotEmpty ? titleUz : titleRu);
+    }
+    if (code.startsWith('ru')) {
+      return titleRu.isNotEmpty ? titleRu : titleUz;
+    }
+    return titleUz.isNotEmpty ? titleUz : titleRu;
+  }
+}
+
 class KnowledgeRepository {
   final AssetBundle _bundle;
+  final bool _useStaticCache;
 
   KnowledgeRepository({AssetBundle? bundle})
-      : _bundle = bundle ?? rootBundle;
+      : _bundle = bundle ?? rootBundle,
+        _useStaticCache = bundle == null || identical(bundle, rootBundle);
 
   static List<DailyPlan>? _dailyPlansCache;
   static Map<String, dynamic>? _normsCache;
   static NormsData? _parsedNormsCache;
   static List<Map<String, dynamic>>? _vetsCache;
   static List<Map<String, dynamic>>? _videosCache;
+
+  List<DailyPlan>? _instanceDailyPlansCache;
+  Map<String, dynamic>? _instanceNormsCache;
+  NormsData? _instanceParsedNormsCache;
+  List<Map<String, dynamic>>? _instanceVetsCache;
+  List<Map<String, dynamic>>? _instanceVideosCache;
+
+  static const Duration _loadTimeout = Duration(milliseconds: 2000);
+
+  /// Clears static caches (useful in test tearDown/setUp).
+  static void clearCache() {
+    _dailyPlansCache = null;
+    _normsCache = null;
+    _parsedNormsCache = null;
+    _vetsCache = null;
+    _videosCache = null;
+  }
 
   static const List<String> _defaultTopicFiles = [
     'temperature.md',
@@ -29,12 +99,16 @@ class KnowledgeRepository {
   /// otherwise the deterministic alert engine drifts away from the
   /// vet-verified data.
   Future<NormsData> getParsedNorms() async {
-    final cached = _parsedNormsCache;
+    final cached = _useStaticCache ? _parsedNormsCache : _instanceParsedNormsCache;
     if (cached != null) return cached;
 
     final raw = await getNorms();
     final parsed = NormsData.fromJson(raw);
-    _parsedNormsCache = parsed;
+    if (_useStaticCache) {
+      _parsedNormsCache = parsed;
+    } else {
+      _instanceParsedNormsCache = parsed;
+    }
     return parsed;
   }
 
@@ -55,90 +129,135 @@ class KnowledgeRepository {
 
   /// Get all 42 days of broiler plan
   Future<List<DailyPlan>> getAllDailyPlans() async {
-    if (_dailyPlansCache != null) {
-      return _dailyPlansCache!;
+    final cached = _useStaticCache ? _dailyPlansCache : _instanceDailyPlansCache;
+    if (cached != null) {
+      return cached;
     }
     try {
       final content = await _bundle
           .loadString('knowledge/broiler_plan.json')
-          .timeout(const Duration(milliseconds: 300));
+          .timeout(_loadTimeout);
       final dynamic decoded = jsonDecode(content);
       final List list = decoded is List
           ? decoded
           : (decoded is Map && decoded['days'] is List
               ? (decoded['days'] as List)
               : []);
-      _dailyPlansCache = list
+      final plans = list
           .map((item) => DailyPlan.fromJson(item as Map<String, dynamic>))
           .toList();
-      return _dailyPlansCache!;
+      if (_useStaticCache) {
+        _dailyPlansCache = plans;
+      } else {
+        _instanceDailyPlansCache = plans;
+      }
+      return plans;
     } catch (_) {
-      // Fallback: generate default 42-day plans if assets cannot be read
-      _dailyPlansCache = List.generate(
+      final fallback = List.generate(
         42,
         (i) => DailyPlan(
           day: i + 1,
-          tasksRu: 'День ${i + 1}: Поддержание температуры, контроль воды и комбикорма.',
-          tasksUz: '${i + 1}-kun: Haroratni nazorat qilish, toza suv va aralash yem berish.',
-          videoUrl: 'https://youtube.com/watch?v=agrozen_day_${i + 1}',
+          tasksRu:
+              'День ${i + 1}: Поддержание температуры, контроль воды и комбикорма.',
+          tasksUz:
+              '${i + 1}-kun: Haroratni nazorat qilish, toza suv va aralash yem berish.',
+          tasksEn:
+              'Day ${i + 1}: Maintain target house temperature, inspect clean water lines and balanced feed.',
+          videoUrl:
+              'https://www.youtube.com/results?search_query=ross+308+broiler+day+${i + 1}+management',
         ),
       );
-      return _dailyPlansCache!;
+      if (!_useStaticCache) {
+        _instanceDailyPlansCache = fallback;
+      }
+      return fallback;
     }
   }
 
   /// Get normative data for broilers (Ross-308 / Cobb-500)
   Future<Map<String, dynamic>> getNorms() async {
-    if (_normsCache != null) {
-      return _normsCache!;
+    final cached = _useStaticCache ? _normsCache : _instanceNormsCache;
+    if (cached != null) {
+      return cached;
     }
     try {
       final content = await _bundle
           .loadString('knowledge/norms.json')
-          .timeout(const Duration(milliseconds: 300));
+          .timeout(_loadTimeout);
       final dynamic parsed = jsonDecode(content);
       if (parsed is Map<String, dynamic>) {
-        _normsCache = parsed;
-        return _normsCache!;
+        if (_useStaticCache) {
+          _normsCache = parsed;
+        } else {
+          _instanceNormsCache = parsed;
+        }
+        return parsed;
       }
       return _defaultNorms;
     } catch (_) {
-      _normsCache = _defaultNorms;
-      return _normsCache!;
+      if (!_useStaticCache) {
+        _instanceNormsCache = _defaultNorms;
+      }
+      return _defaultNorms;
     }
   }
 
   static const Map<String, dynamic> _defaultNorms = {
-    'breed': 'Ross-308',
+    'breed': 'Ross-308 / Cobb-500',
+    'critical_thresholds': {
+      'daily_mortality_alert_percent': 1.0,
+      'cumulative_mortality_warning_percent': 4.0,
+      'weight_deficit_alert_percent': 15.0,
+      'feed_drop_alert_percent': 20.0,
+    },
     'alert_thresholds': {
       'daily_mortality_percent': 1.0,
       'weekly_weight_deviation_percent': 15.0,
     },
+    'weekly_norms': [
+      {'week': 1, 'target_weight_g': 185, 'daily_feed_g': 24, 'temperature_c': 30.0},
+      {'week': 2, 'target_weight_g': 465, 'daily_feed_g': 54, 'temperature_c': 27.0},
+      {'week': 3, 'target_weight_g': 975, 'daily_feed_g': 95, 'temperature_c': 24.0},
+      {'week': 4, 'target_weight_g': 1600, 'daily_feed_g': 140, 'temperature_c': 21.0},
+      {'week': 5, 'target_weight_g': 2280, 'daily_feed_g': 175, 'temperature_c': 19.0},
+      {'week': 6, 'target_weight_g': 2900, 'daily_feed_g': 195, 'temperature_c': 18.0},
+    ],
+    'daily_norms': {
+      '1': {'weight_g': 42, 'feed_g': 12, 'temp_c': 32.5},
+      '3': {'weight_g': 70, 'feed_g': 18, 'temp_c': 31.5},
+      '7': {'weight_g': 185, 'feed_g': 38, 'temp_c': 29.5},
+      '14': {'weight_g': 510, 'feed_g': 77, 'temp_c': 26.0},
+      '21': {'weight_g': 1055, 'feed_g': 119, 'temp_c': 22.5},
+      '28': {'weight_g': 1745, 'feed_g': 155, 'temp_c': 20.5},
+      '35': {'weight_g': 2480, 'feed_g': 184, 'temp_c': 18.8},
+      '42': {'weight_g': 3180, 'feed_g': 208, 'temp_c': 18.0},
+    },
     'weekly_weight_targets': {
-      '7': 180,
-      '14': 500,
-      '21': 900,
-      '28': 1400,
-      '35': 1900,
-      '42': 2400,
+      '7': 185,
+      '14': 510,
+      '21': 1055,
+      '28': 1745,
+      '35': 2480,
+      '42': 3180,
     },
     'daily_feed_per_bird': {
-      '7': 25,
-      '14': 55,
-      '21': 85,
-      '28': 120,
-      '35': 155,
-      '42': 180,
+      '1': 12,
+      '7': 38,
+      '14': 77,
+      '21': 119,
+      '28': 155,
+      '35': 184,
+      '42': 208,
     },
     'temperature_targets': {
-      '1': 34,
-      '3': 33,
-      '7': 32,
-      '14': 29,
-      '21': 27,
-      '28': 24,
-      '35': 22,
-      '42': 20,
+      '1': 32.5,
+      '3': 31.5,
+      '7': 29.5,
+      '14': 26.0,
+      '21': 22.5,
+      '28': 20.5,
+      '35': 18.8,
+      '42': 18.0,
     },
   };
 
@@ -161,13 +280,71 @@ class KnowledgeRepository {
     {'district': "Qoraqalpog'iston", 'name': 'Dr. Azamat Seytov', 'phone': '+998612204513'},
   ];
 
+  static const List<Map<String, dynamic>> _defaultVideos = [
+    {
+      'day': 1,
+      'title_ru': 'Подготовка птичника и прием суточных цыплят',
+      'title_uz': "Binoni tayyorlash va bir kunlik jo'jalarni qabul qilish",
+      'title_en': 'Barn Preparation and Day-Old Chick Placement',
+      'url': 'https://www.youtube.com/results?search_query=ross+308+broiler+day+1+brooder+setup',
+      'duration': '8:25',
+    },
+    {
+      'day': 7,
+      'title_ru': 'Первая неделя: вакцинация и контроль веса',
+      'title_uz': '1-hafta: emlash va vazn nazorati',
+      'title_en': 'Week 1: Vaccination and Weight Control',
+      'url': 'https://www.youtube.com/results?search_query=ross+308+broiler+week+1+management+weighing',
+      'duration': '6:40',
+    },
+    {
+      'day': 14,
+      'title_ru': 'Переход на ростовой корм и регулировка вентиляции',
+      'title_uz': "O'sish yemiga o'tish va ventilyatsiyani sozlash",
+      'title_en': 'Transition to Grower Feed and Ventilation Setup',
+      'url': 'https://www.youtube.com/results?search_query=broiler+grower+feed+transition+ventilation',
+      'duration': '7:15',
+    },
+    {
+      'day': 21,
+      'title_ru': 'Профилактика респираторных болезней и кокцидиоза',
+      'title_uz': "Nafas yo'llari kasalliklari va koksidioz profilaktikasi",
+      'title_en': 'Prevention of Respiratory Disease and Coccidiosis',
+      'url': 'https://www.youtube.com/results?search_query=broiler+coccidiosis+litter+management+prevention',
+      'duration': '9:10',
+    },
+    {
+      'day': 28,
+      'title_ru': 'Борьба с тепловым стрессом и переход на финишный корм',
+      'title_uz': "Issiqlik stressiga qarshi kurash va finish yemiga o'tish",
+      'title_en': 'Heat Stress Control and Finisher Feed Transition',
+      'url': 'https://www.youtube.com/results?search_query=broiler+heat+stress+tunnel+ventilation+finisher',
+      'duration': '8:50',
+    },
+    {
+      'day': 35,
+      'title_ru': 'Финальный откорм и качество подстилки',
+      'title_uz': "Yakuniy semirtirish va to'shak sifati",
+      'title_en': 'Final Fattening and Litter Quality Management',
+      'url': 'https://www.youtube.com/results?search_query=ross+308+broiler+week+5+litter+management',
+      'duration': '5:30',
+    },
+    {
+      'day': 42,
+      'title_ru': 'Подготовка к отлову, прекращение выпойки препаратов и отгрузка',
+      'title_uz': "Ushlashga tayyorgarlik, dorilarni to'xtatish va topshirish",
+      'title_en': 'Pre-Harvest Preparation and Feed/Medication Withdrawal',
+      'url': 'https://www.youtube.com/results?search_query=broiler+harvest+preparation+feed+withdrawal',
+      'duration': '10:05',
+    },
+  ];
+
   /// Get veterinarians for a specific district (e.g. 'Toshkent', 'Samarqand')
   Future<List<Map<String, dynamic>>> getVetByDistrict(String district) async {
     try {
       final allVets = await getAllVets();
       final normalizedQuery = district.trim().toLowerCase();
       if (normalizedQuery.isEmpty) {
-        // Never guess: an empty query must not resolve to a random vet.
         return const [];
       }
       final filtered = allVets.where((vet) {
@@ -179,9 +356,6 @@ class KnowledgeRepository {
             vetName.contains(normalizedQuery);
       }).toList();
 
-      // No match at all -> empty, NOT the whole directory. Callers show a
-      // generic "call your district vet service" fallback instead of a wrong
-      // region's phone number when no match exists.
       return filtered;
     } catch (_) {
       return _defaultVets;
@@ -190,24 +364,38 @@ class KnowledgeRepository {
 
   /// Get all registered veterinarians
   Future<List<Map<String, dynamic>>> getAllVets() async {
-    if (_vetsCache != null) {
-      return _vetsCache!;
+    final cached = _useStaticCache ? _vetsCache : _instanceVetsCache;
+    if (cached != null) {
+      return cached;
     }
     try {
       final content = await _bundle
           .loadString('knowledge/vets.json')
-          .timeout(const Duration(milliseconds: 300));
+          .timeout(_loadTimeout);
       final dynamic decoded = jsonDecode(content);
       final List list = decoded is List
           ? decoded
           : (decoded is Map && decoded['districts'] is List
               ? (decoded['districts'] as List)
               : []);
-      _vetsCache = list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
-      return _vetsCache!.isNotEmpty ? _vetsCache! : _defaultVets;
+      final vets = list
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      final result = vets.isNotEmpty
+          ? vets
+          : List<Map<String, dynamic>>.from(_defaultVets);
+      if (_useStaticCache) {
+        _vetsCache = result;
+      } else {
+        _instanceVetsCache = result;
+      }
+      return result;
     } catch (_) {
-      _vetsCache = List<Map<String, dynamic>>.from(_defaultVets);
-      return _vetsCache!;
+      final fallback = List<Map<String, dynamic>>.from(_defaultVets);
+      if (!_useStaticCache) {
+        _instanceVetsCache = fallback;
+      }
+      return fallback;
     }
   }
 
@@ -233,33 +421,52 @@ class KnowledgeRepository {
     }
   }
 
-  /// Get all available videos
+  /// Get all available videos as raw maps
   Future<List<Map<String, dynamic>>> getAllVideos() async {
-    if (_videosCache != null) {
-      return _videosCache!;
+    final cached = _useStaticCache ? _videosCache : _instanceVideosCache;
+    if (cached != null) {
+      return cached;
     }
     try {
       final content = await _bundle
           .loadString('knowledge/videos.json')
-          .timeout(const Duration(milliseconds: 300));
+          .timeout(_loadTimeout);
       final dynamic decoded = jsonDecode(content);
       final List list = decoded is List
           ? decoded
           : (decoded is Map && decoded['videos'] is List
               ? (decoded['videos'] as List)
               : []);
-      _videosCache = list.map((item) => Map<String, dynamic>.from(item as Map)).toList();
-      return _videosCache!;
+      final videos = list
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      if (_useStaticCache) {
+        _videosCache = videos;
+      } else {
+        _instanceVideosCache = videos;
+      }
+      return videos;
     } catch (_) {
-      _videosCache = [];
-      return _videosCache!;
+      final fallback = List<Map<String, dynamic>>.from(_defaultVideos);
+      if (!_useStaticCache) {
+        _instanceVideosCache = fallback;
+      }
+      return fallback;
     }
+  }
+
+  /// Get all available videos parsed as [VideoGuide] models
+  Future<List<VideoGuide>> getVideoGuides() async {
+    final raw = await getAllVideos();
+    return raw.map(VideoGuide.fromJson).toList();
   }
 
   /// List all available knowledge topic file names for a given language ('uz', 'ru', or 'en')
   Future<List<String>> listTopicNames(String language) async {
-    final lower = language.toLowerCase();
-    final lang = lower == 'en' ? 'en' : (lower == 'ru' ? 'ru' : 'uz');
+    final lower = language.trim().toLowerCase();
+    final lang = lower.startsWith('en')
+        ? 'en'
+        : (lower.startsWith('ru') ? 'ru' : 'uz');
     final prefix = 'knowledge/broilers/$lang/';
 
     try {
@@ -282,14 +489,16 @@ class KnowledgeRepository {
 
   /// Load markdown content for a specific topic article
   Future<String> getTopicContent(String language, String fileName) async {
-    final lower = language.toLowerCase();
-    final lang = lower == 'en' ? 'en' : (lower == 'ru' ? 'ru' : 'uz');
+    final lower = language.trim().toLowerCase();
+    final lang = lower.startsWith('en')
+        ? 'en'
+        : (lower.startsWith('ru') ? 'ru' : 'uz');
     final normalizedFileName =
         fileName.endsWith('.md') ? fileName : '$fileName.md';
     final assetPath = 'knowledge/broilers/$lang/$normalizedFileName';
 
     try {
-      return await _bundle.loadString(assetPath);
+      return await _bundle.loadString(assetPath).timeout(_loadTimeout);
     } catch (e) {
       throw Exception('Failed to load topic content from $assetPath: $e');
     }

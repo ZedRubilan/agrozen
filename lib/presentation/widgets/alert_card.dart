@@ -8,7 +8,7 @@ class AlertCard extends StatelessWidget {
   final AlertSeverity severity;
   final String? vetPhone;
   final String? vetName;
-  final String locale;
+  final String? locale;
   final VoidCallback? onCallVet;
 
   const AlertCard({
@@ -17,7 +17,7 @@ class AlertCard extends StatelessWidget {
     this.severity = AlertSeverity.warning,
     this.vetPhone,
     this.vetName,
-    this.locale = 'uz',
+    this.locale,
     this.onCallVet,
   });
 
@@ -49,16 +49,24 @@ class AlertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCritical = severity == AlertSeverity.critical;
-    final isEn = locale == 'en';
-    final isRu = locale == 'ru';
+    final effectiveLocale = (locale ?? 'uz').toLowerCase();
+    final isEn = effectiveLocale == 'en';
+    final isRu = effectiveLocale == 'ru';
     final bgColor = isCritical ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
     final borderColor = isCritical ? const Color(0xFFFCA5A5) : const Color(0xFFFCD34D);
     final iconColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
     final buttonColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
 
-    final headerTitle = isEn
-        ? (isCritical ? 'CRITICAL RISK / EMERGENCY' : 'WARNING / HEALTH ALERT')
-        : (isCritical ? 'XAVF! / ОПАСНОСТЬ!' : 'OGOHLANTIRISH / ПРЕДУПРЕЖДЕНИЕ');
+    final String headerTitle;
+    if (locale == null) {
+      headerTitle = isCritical ? 'XAVF! / ОПАСНОСТЬ!' : 'OGOHLANTIRISH / ПРЕДУПРЕЖДЕНИЕ';
+    } else if (isEn) {
+      headerTitle = isCritical ? 'CRITICAL ALERT' : 'WARNING';
+    } else if (isRu) {
+      headerTitle = isCritical ? 'ОПАСНОСТЬ!' : 'ПРЕДУПРЕЖДЕНИЕ';
+    } else {
+      headerTitle = isCritical ? 'XAVF!' : 'OGOHLANTIRISH';
+    }
 
     final callLabel = isEn
         ? (vetPhone != null ? "Call: $vetPhone" : "Call District Veterinarian")

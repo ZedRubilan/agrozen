@@ -13,7 +13,11 @@ class Farmer extends Equatable {
   final bool disclaimerAccepted;
   final int dailyQuestionCount;
   final DateTime? lastQuestionDate;
+  @JsonKey(name: 'fcm_token')
+  final String? fcmToken;
   final DateTime createdAt;
+  @JsonKey(name: 'updated_at')
+  final DateTime? updatedAt;
 
   const Farmer({
     required this.id,
@@ -24,7 +28,9 @@ class Farmer extends Equatable {
     this.disclaimerAccepted = false,
     this.dailyQuestionCount = 0,
     this.lastQuestionDate,
+    this.fcmToken,
     required this.createdAt,
+    this.updatedAt,
   });
 
   factory Farmer.fromJson(Map<String, dynamic> json) => _$FarmerFromJson(json);
@@ -40,7 +46,9 @@ class Farmer extends Equatable {
     bool? disclaimerAccepted,
     int? dailyQuestionCount,
     DateTime? lastQuestionDate,
+    String? fcmToken,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Farmer(
       id: id ?? this.id,
@@ -51,7 +59,9 @@ class Farmer extends Equatable {
       disclaimerAccepted: disclaimerAccepted ?? this.disclaimerAccepted,
       dailyQuestionCount: dailyQuestionCount ?? this.dailyQuestionCount,
       lastQuestionDate: lastQuestionDate ?? this.lastQuestionDate,
+      fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -65,6 +75,8 @@ class Farmer extends Equatable {
         disclaimerAccepted,
         dailyQuestionCount,
         lastQuestionDate,
+        fcmToken,
         createdAt,
+        updatedAt,
       ];
 }

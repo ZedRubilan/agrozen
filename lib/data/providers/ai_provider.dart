@@ -9,6 +9,7 @@ abstract class AiProvider {
     required String language,
     required List<String> relevantTopicContents,
     required List<String> topicNames,
+    String? farmerId,
   });
 }
 
@@ -50,6 +51,7 @@ class GeminiAiProvider implements AiProvider {
     required String language,
     required List<String> relevantTopicContents,
     required List<String> topicNames,
+    String? farmerId,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -59,6 +61,7 @@ class GeminiAiProvider implements AiProvider {
           'language': language,
           'relevant_topic_contents': relevantTopicContents,
           'topic_names': topicNames,
+          if (farmerId != null) 'farmer_id': farmerId,
         },
       );
 

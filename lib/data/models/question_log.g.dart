@@ -8,7 +8,7 @@ part of 'question_log.dart';
 
 QuestionLog _$QuestionLogFromJson(Map<String, dynamic> json) => QuestionLog(
   id: json['id'] as String,
-  farmerId: json['farmer_id'] as String,
+  farmerId: json['farmer_id'] as String?,
   question: json['question'] as String,
   answer: json['answer'] as String?,
   topicsUsed: (json['topics_used'] as List<dynamic>?)

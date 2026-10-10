@@ -2,20 +2,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase_config.dart';
 
 class AuthRepository {
-  final SupabaseClient _client;
+  final SupabaseClient? _customClient;
 
-  AuthRepository({SupabaseClient? client})
-      : _client = client ?? SupabaseConfig.client;
+  AuthRepository({SupabaseClient? client}) : _customClient = client;
 
-  User? get currentUser => _client.auth.currentUser;
+  bool get _isReady => _customClient != null || SupabaseConfig.isConfigured;
 
-  Session? get currentSession => _client.auth.currentSession;
+  SupabaseClient get _client => _customClient ?? SupabaseConfig.client;
 
-  bool get isAuthenticated => _client.auth.currentUser != null;
+  User? get currentUser => _isReady ? _client.auth.currentUser : null;
 
-  String? get currentUserId => _client.auth.currentUser?.id;
+  Session? get currentSession => _isReady ? _client.auth.currentSession : null;
 
-  Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+  bool get isAuthenticated => currentUser != null;
+
+  String? get currentUserId => currentUser?.id;
+
+  Stream<AuthState> get authStateChanges =>
+      _isReady ? _client.auth.onAuthStateChange : const Stream.empty();
 
   /// Sign up with email and password
   Future<AuthResponse> signUpWithEmail({

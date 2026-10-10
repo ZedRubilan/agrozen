@@ -81,6 +81,7 @@ class DailyCounters {
     await prefs.remove(_mortalityKey);
     await prefs.remove(_feedKey);
     await prefs.remove(_questionsKey);
+    await prefs.remove('last_weight');
   }
 
   /// Today's stamp in the same format used for persistence.

@@ -138,6 +138,7 @@ class _RegionScreenState extends State<RegionScreen> {
               const SizedBox(height: 14),
               Expanded(
                 child: ListView.separated(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {

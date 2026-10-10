@@ -54,7 +54,7 @@ class ClimateAdvisor {
     ClimateRiskLevel riskLevel = ClimateRiskLevel.optimal;
 
     // Heat stress evaluation (broilers cannot sweat, depend on panting)
-    if (outsideTemp >= 32.0 || diff >= 5.0) {
+    if (diff >= 5.0 || (outsideTemp >= 32.0 && diff >= 0.0)) {
       riskLevel = ClimateRiskLevel.heatWarning;
     }
     // Cold stress evaluation (chicks under-cool, ascites & huddling risks)
@@ -81,8 +81,9 @@ class ClimateAdvisor {
       statusBadge: _getStatusBadge(riskLevel, lang),
       title: _getTitle(riskLevel, lang),
       summary: _getSummary(riskLevel, diff, outsideHumidity, lang),
-      directive: _getDirective(riskLevel, flockAgeDays, lang),
-      ventilationAdvice: _getVentilationAdvice(riskLevel, flockAgeDays, lang),
+      directive: _getDirective(riskLevel, flockAgeDays, lang, diff: diff),
+      ventilationAdvice:
+          _getVentilationAdvice(riskLevel, flockAgeDays, lang, diff: diff),
       waterFeedAdvice: _getWaterFeedAdvice(riskLevel, flockAgeDays, lang),
     );
   }
@@ -171,6 +172,14 @@ class ClimateAdvisor {
       ClimateRiskLevel risk, double diff, double humidity, String lang) {
     switch (risk) {
       case ClimateRiskLevel.heatWarning:
+        if (diff <= 0) {
+          return AppStrings.tr(
+            lang: lang,
+            uz: 'Tashqi harorat yuqori darajada. Broylerlar terlamaydi, og\'iz orqali nafas olib soviydi.',
+            ru: 'Внешняя температура на высоком уровне. Бройлеры не потеют и охлаждаются только одышкой.',
+            en: 'Outside temperature is at a high level. Broilers cannot sweat and rely solely on panting.',
+          );
+        }
         return AppStrings.tr(
           lang: lang,
           uz: 'Tashqi harorat me\'yordan ${diff.toStringAsFixed(1)}°C yuqori. Broylerlar terlamaydi, og\'iz orqali nafas olib soviydi.',
@@ -209,9 +218,21 @@ class ClimateAdvisor {
   }
 
   static String _getDirective(
-      ClimateRiskLevel risk, int flockAgeDays, String lang) {
+    ClimateRiskLevel risk,
+    int flockAgeDays,
+    String lang, {
+    double diff = 0.0,
+  }) {
     switch (risk) {
       case ClimateRiskLevel.heatWarning:
+        if (flockAgeDays <= 10 && diff < 4.0) {
+          return AppStrings.tr(
+            lang: lang,
+            uz: 'Kichik jo\'jalar uchun kuchli shamol xavfli! Bruderdagi haroratni nazorat qiling va 0.1-0.3 m/s yumshoq shamollatishni saqlang.',
+            ru: 'Для маленьких цыплят сильный обдув опасен! Контролируйте температуру брудера и поддерживайте мягкую вентиляцию (0.1-0.3 м/с).',
+            en: 'High wind speed is dangerous for young chicks! Monitor brooder temperature and maintain gentle ventilation (0.1-0.3 m/s).',
+          );
+        }
         return AppStrings.tr(
           lang: lang,
           uz: 'Kunning eng issiq vaqtida (12:00-16:00) ozuqa berishni kamaytiring (hazm qilish tana haroratini ko\'taradi). Ventilyatorlarni maksimal rejimga qo\'ying.',
@@ -257,9 +278,21 @@ class ClimateAdvisor {
   }
 
   static String _getVentilationAdvice(
-      ClimateRiskLevel risk, int flockAgeDays, String lang) {
+    ClimateRiskLevel risk,
+    int flockAgeDays,
+    String lang, {
+    double diff = 0.0,
+  }) {
     switch (risk) {
       case ClimateRiskLevel.heatWarning:
+        if (flockAgeDays <= 10 && diff < 4.0) {
+          return AppStrings.tr(
+            lang: lang,
+            uz: 'Bruder ventilyatsiyasi: kichik jo\'jalar ustida 0.1-0.3 m/s yumshoq havo oqimini saqlang va bruder haroratini kuzating.',
+            ru: 'Брудерная вентиляция: поддерживайте мягкий поток воздуха 0.1-0.3 м/с без сквозняков на уровне цыплят.',
+            en: 'Brooding ventilation: maintain gentle 0.1-0.3 m/s airflow without drafts at chick level while monitoring brooder temperature.',
+          );
+        }
         return AppStrings.tr(
           lang: lang,
           uz: 'Tunnel ventilyatsiya: qushlar ustida 1.5-2.5 m/s shamol tezligini yarating (shamol sovutish effekti).',

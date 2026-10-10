@@ -82,7 +82,7 @@ class LiveFlockContext {
     final cond = weatherCondition ?? 'clear';
     final wind = windSpeed ?? 10.0;
     final tempDelta = outT - targetTemperatureC;
-    final isHotDelta = tempDelta > 3.0 || outT >= 32.0;
+    final isHotDelta = tempDelta >= 4.0 || (outT >= 32.0 && tempDelta >= 0.0);
     final isColdDelta = tempDelta < -8.0 || outT <= 14.0;
 
     if (isEn) {
@@ -236,7 +236,7 @@ class FlockContextService {
     final targetWeightG = norms?.weightTargetForDay(batchDay) ??
         _fallbackTargetWeight(batchDay);
 
-    final targetDailyFeedPerBirdG = norms?.dailyFeedPerBird[batchDay] ??
+    final targetDailyFeedPerBirdG = norms?.feedTargetForDay(batchDay) ??
         _fallbackDailyFeedPerBird(batchDay);
 
     // Growth Phase

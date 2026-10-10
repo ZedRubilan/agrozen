@@ -11,6 +11,7 @@ import 'package:web/web.dart' as web;
 class WebTtsDelegate {
   Timer? _keepAliveTimer;
   bool _isSpeaking = false;
+  int _sessionId = 0;
   VoidCallback? _onCompleteCallback;
   List<String> _pendingChunks = [];
   int _currentChunkIndex = 0;
@@ -40,6 +41,7 @@ class WebTtsDelegate {
 
     await stop();
 
+    _sessionId++;
     _isSpeaking = true;
     _onCompleteCallback = onComplete;
     _currentLanguage = language;
@@ -47,11 +49,12 @@ class WebTtsDelegate {
     _currentChunkIndex = 0;
 
     _startKeepAlive();
-    _playNextChunk();
+    _playNextChunk(_sessionId);
   }
 
   /// Cancels any active web utterance and cleans timers.
   Future<void> stop() async {
+    _sessionId++;
     _stopKeepAlive();
     _isSpeaking = false;
     _pendingChunks = [];
@@ -67,8 +70,8 @@ class WebTtsDelegate {
     }
   }
 
-  void _playNextChunk() {
-    if (!_isSpeaking) return;
+  void _playNextChunk(int session) {
+    if (!_isSpeaking || session != _sessionId) return;
 
     if (_currentChunkIndex >= _pendingChunks.length) {
       _finishPlayback();
@@ -78,7 +81,7 @@ class WebTtsDelegate {
     final chunk = _pendingChunks[_currentChunkIndex];
     if (chunk.trim().isEmpty) {
       _currentChunkIndex++;
-      _playNextChunk();
+      _playNextChunk(session);
       return;
     }
 
@@ -100,21 +103,25 @@ class WebTtsDelegate {
       utterance.lang = targetLang;
 
       utterance.onend = ((web.Event _) {
+        if (!_isSpeaking || session != _sessionId) return;
         _currentChunkIndex++;
-        _playNextChunk();
+        _playNextChunk(session);
       }).toJS;
 
       utterance.onerror = ((web.SpeechSynthesisErrorEvent err) {
+        if (!_isSpeaking || session != _sessionId) return;
+        if (err.error == 'canceled' || err.error == 'interrupted') return;
         debugPrint('WebSpeechUtterance error: ${err.error}');
         _currentChunkIndex++;
-        _playNextChunk();
+        _playNextChunk(session);
       }).toJS;
 
       synth.speak(utterance);
     } catch (e) {
       debugPrint('WebTtsDelegate _playNextChunk error: $e');
+      if (!_isSpeaking || session != _sessionId) return;
       _currentChunkIndex++;
-      _playNextChunk();
+      _playNextChunk(session);
     }
   }
 
@@ -188,11 +195,12 @@ class WebTtsDelegate {
   }
 
   /// Workaround for notorious Chromium issue where SpeechSynthesis pauses after 14s.
+  /// Note: we already chunk utterances under 180 chars (~10s), so only `resume()` is
+  /// needed; calling `pause()` before `resume()` causes audible word clipping.
   void _startKeepAlive() {
     _keepAliveTimer?.cancel();
     _keepAliveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (_isSpeaking && isSupported) {
-        web.window.speechSynthesis.pause();
         web.window.speechSynthesis.resume();
       }
     });
@@ -210,6 +218,7 @@ class WebSpeechRecognitionDelegate {
   web.SpeechRecognition? _recognizer;
   bool _isListening = false;
   String _accumulatedTranscript = '';
+  Completer<void>? _endCompleter;
 
   bool get isSupported {
     try {
@@ -250,6 +259,7 @@ class WebSpeechRecognitionDelegate {
 
     _accumulatedTranscript = '';
     _isListening = true;
+    _endCompleter = Completer<void>();
 
     final lang = language.toLowerCase();
     _recognizer!.lang = lang == 'ru'
@@ -284,6 +294,10 @@ class WebSpeechRecognitionDelegate {
 
     _recognizer!.onend = ((web.Event _) {
       _isListening = false;
+      final completer = _endCompleter;
+      if (completer != null && !completer.isCompleted) {
+        completer.complete();
+      }
     }).toJS;
 
     try {
@@ -300,6 +314,13 @@ class WebSpeechRecognitionDelegate {
     if (_recognizer != null && _isListening) {
       try {
         _recognizer!.stop();
+        final completer = _endCompleter;
+        if (completer != null && !completer.isCompleted) {
+          await completer.future.timeout(
+            const Duration(milliseconds: 350),
+            onTimeout: () {},
+          );
+        }
       } catch (e) {
         debugPrint('WebSpeechRecognition stop error: $e');
       }
@@ -314,6 +335,11 @@ class WebSpeechRecognitionDelegate {
         _recognizer!.abort();
       } catch (_) {}
     }
+    final completer = _endCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+    _endCompleter = null;
     _isListening = false;
     _accumulatedTranscript = '';
   }

@@ -29,10 +29,12 @@ CREATE POLICY "Allow select veterinarians"
 DROP POLICY IF EXISTS "Allow insert veterinarians" ON veterinarians;
 CREATE POLICY "Allow insert veterinarians"
     ON veterinarians FOR INSERT
-    WITH CHECK (true);
+    TO service_role
+    WITH CHECK (auth.role() = 'service_role');
 
 DROP POLICY IF EXISTS "Allow update veterinarians" ON veterinarians;
 CREATE POLICY "Allow update veterinarians"
     ON veterinarians FOR UPDATE
-    USING (true)
-    WITH CHECK (true);
+    TO service_role
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');

@@ -1,16 +1,17 @@
 {
   "lesson_number": 1,
   "title": "Barn Preparation and Disinfection",
-  "content": "Before day-old chicks arrive, the poultry barn must be completely cleared of old litter, power-washed under pressure, and sanitized. Whitewashing walls with 20% slaked lime significantly reduces bacterial load. Turn on heaters 24 hours prior to placement so the floor and bedding reach 32-33°C. The dry bedding (wood shavings) should be at least 5–7 cm deep.",
+  "content": "Before day-old chicks arrive, the poultry barn must be completely cleared of old litter, power-washed under pressure, and sanitized. Whitewashing walls with 20% slaked lime significantly reduces bacterial load. Turn on heaters 24–48 hours prior to placement so the floor/bedding reaches 30–32°C and air temperature at chick height reaches 33–34°C. The dry bedding (wood shavings) should be at least 5–7 cm deep in summer and 7–10 cm in winter.",
+  "video_url": "https://www.youtube.com/results?search_query=ross+308+broiler+barn+preparation+disinfection+preheating",
   "quiz": {
-    "question": "What floor/bedding temperature is required upon day-old chick placement?",
+    "question": "What floor/bedding and air temperatures are required upon day-old chick placement?",
     "options": [
-      "18-20°C",
-      "24-26°C",
-      "32-33°C",
-      "38-40°C"
+      "18-20°C floor / 22°C air",
+      "24-26°C floor / 28°C air",
+      "30-32°C floor (bedding) and 33-34°C air at chick height",
+      "38-40°C floor / 42°C air"
     ],
     "correct_option_index": 2,
-    "explanation": "Bedding temperature must reach 32-33°C at placement to prevent hypothermia and yolk sac infections."
+    "explanation": "At placement, floor/litter temperature must reach 30-32°C and air temperature at chick height must be 33-34°C to prevent hypothermia and yolk sac infections."
   }
 }

@@ -34,5 +34,30 @@ void main() {
       expect(TextToSpeechSanitizer.clean(text: '', language: 'uz'), '');
       expect(TextToSpeechSanitizer.clean(text: '   ', language: 'ru'), '');
     });
+
+    test('preserves decimal numbers without inserting spaces and strips HTML comments', () {
+      const inputUz = '<!-- Source: Ross 308 Manual -->\n'
+          'Harorat 32.5°C va suv 1.8-2.0 barobar ko\'proq.';
+      final cleanedUz = TextToSpeechSanitizer.clean(
+        text: inputUz,
+        language: 'uz',
+      );
+      expect(cleanedUz, contains('32.5 gradus'));
+      expect(cleanedUz, contains('1.8-2.0 barobar'));
+      expect(cleanedUz, isNot(contains('32. 5')));
+      expect(cleanedUz, isNot(contains('1. 8')));
+      expect(cleanedUz, isNot(contains('2. 0')));
+      expect(cleanedUz, isNot(contains('<!--')));
+      expect(cleanedUz, isNot(contains('Source')));
+
+      const inputRu = '<!-- comment --> Вес корма 25,5 кг на партию.';
+      final cleanedRu = TextToSpeechSanitizer.clean(
+        text: inputRu,
+        language: 'ru',
+      );
+      expect(cleanedRu, contains('25,5 кг'));
+      expect(cleanedRu, isNot(contains('25, 5')));
+      expect(cleanedRu, isNot(contains('comment')));
+    });
   });
 }

@@ -89,14 +89,16 @@ void main() {
       expect(DailyCounters.getRemainingQuestions(prefs), 0);
     });
 
-    test('resetAll clears counters and the day stamp', () async {
+    test('resetAll clears counters, last_weight, and the day stamp', () async {
       var prefs = await DailyCounters.rolled();
       await DailyCounters.addMortality(prefs, 7);
       await DailyCounters.addFeed(prefs, 20);
+      await prefs.setDouble('last_weight', 480.0);
 
       await DailyCounters.resetAll(prefs);
 
       expect(prefs.getString('counters_date'), isNull);
+      expect(prefs.getDouble('last_weight'), isNull);
       // A fresh read re-initialises to zero for today.
       prefs = await DailyCounters.rolled();
       expect(DailyCounters.getMortality(prefs), 0);

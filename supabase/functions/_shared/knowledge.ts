@@ -51,7 +51,7 @@ export const KNOWLEDGE_ARTICLES_UZ: KnowledgeArticle[] = [
   {
     "filename": "feed.md",
     "title": "Broylerlarni bosqichma-bosqich oziqlantirish",
-    "content": "# Broylerlarni bosqichma-bosqich oziqlantirish\n\nBroyler jo'jalari juda tez o'sadi. Oziqlantirish 3 asosiy bosqichga bo'linadi:\n\n## Oziqlantirish bosqichlari:\n1. **Start (1–14 kunlar):**\n   - Xom protein: 22–24%\n   - Shakli: mayda yorma (2 mm)\n   - Ichki a'zolar va suyak tizimini shakllantirish uchun muhim.\n\n2. **O'sish / Grover (15–28 kunlar):**\n   - Xom protein: 20–21%\n   - Shakli: granula (2.5–3 mm)\n   - Go'sht va mushak massasining jadal o'sishi davri.\n\n3. **Finish (29–42 kunlar):**\n   - Xom protein: 18–19%\n   - Shakli: granula (3.5–4 mm)\n   - So'yish oldidan vazn to'plash. Ushbu bosqichda antibiotik va dori vositalarini berish qat'iyan taqiqlanadi!\n\n## Muhim qoidalar:\n- Yem doimo yemdonlarda bo'lishi kerak.\n- Suv har doim toza va yangi bo'lishi shart. 1 kg yem uchun broyler 1.8–2 litr suv ichadi.\n"
+    "content": "# Broylerlarni bosqichma-bosqich oziqlantirish\n\nBroyler jo'jalari juda tez o'sadi. Oziqlantirish 3 asosiy bosqichga bo'linadi:\n\n## Oziqlantirish bosqichlari:\n1. **Start (1–14 kunlar):**\n   - Xom protein: 21–23%\n   - Shakli: mayda yorma (1.5–2 mm)\n   - Ichki a'zolar va suyak tizimini shakllantirish uchun muhim.\n\n2. **O'sish / Grover (15–28 kunlar):**\n   - Xom protein: 19–20%\n   - Shakli: granula (2.5–3 mm)\n   - Go'sht va mushak massasining jadal o'sishi davri.\n\n3. **Finish (29–42 kunlar):**\n   - Xom protein: 17.5–18.5%\n   - Shakli: granula (3–3.5 mm)\n   - So'yish oldidan vazn to'plash. Ushbu bosqichda antibiotik va dori vositalarini berish qat'iyan taqiqlanadi!\n\n## Muhim qoidalar:\n- Yem doimo yemdonlarda bo'lishi kerak.\n- Suv har doim toza va yangi bo'lishi shart. 1 kg yem uchun broyler 1.8–2 litr suv ichadi.\n"
   },
   {
     "filename": "temperature.md",
@@ -114,7 +114,7 @@ export const KNOWLEDGE_ARTICLES_RU: KnowledgeArticle[] = [
   {
     "filename": "feed.md",
     "title": "Кормление бройлеров по фазам",
-    "content": "# Кормление бройлеров по фазам\n\nБройлеры имеют интенсивный обмен веществ. Кормление делится на три основные фазы:\n\n## Фазы кормления:\n1. **Старт (1–14 дни):**\n   - Сырой протеин: 22–24%\n   - Форма: мелкая крупка (2 мм)\n   - Способствует формированию внутренних органов и костяка.\n\n2. **Рост / Гровер (15–28 дни):**\n   - Сырой протеин: 20–21%\n   - Форма: гранула (2.5–3 мм)\n   - Интенсивный набор мышечной массы.\n\n3. **Финиш (29–42 дни):**\n   - Сырой протеин: 18–19%\n   - Форма: гранула (3.5–4 мм)\n   - Набор веса перед сдачей. Запрещено использовать антибиотики в этой фазе!\n\n## Важные правила:\n- Корм должен быть доступен круглосуточно.\n- Вода должна быть всегда чистой и прохладной. На 1 кг съеденного корма бройлер выпивает около 1.8–2 л воды.\n"
+    "content": "# Кормление бройлеров по фазам\n\nБройлеры имеют интенсивный обмен веществ. Кормление делится на три основные фазы:\n\n## Фазы кормления:\n1. **Старт (1–14 дни):**\n   - Сырой протеин: 21–23%\n   - Форма: мелкая крупка (1.5–2 мм)\n   - Способствует формированию внутренних органов и костяка.\n\n2. **Рост / Гровер (15–28 дни):**\n   - Сырой протеин: 19–20%\n   - Форма: гранула (2.5–3 мм)\n   - Интенсивный набор мышечной массы.\n\n3. **Финиш (29–42 дни):**\n   - Сырой протеин: 17.5–18.5%\n   - Форма: гранула (3–3.5 мм)\n   - Набор веса перед сдачей. Запрещено использовать антибиотики в этой фазе!\n\n## Важные правила:\n- Корм должен быть доступен круглосуточно.\n- Вода должна быть всегда чистой и прохладной. На 1 кг съеденного корма бройлер выпивает около 1.8–2 л воды.\n"
   },
   {
     "filename": "temperature.md",
@@ -133,6 +133,69 @@ export const KNOWLEDGE_ARTICLES_RU: KnowledgeArticle[] = [
   }
 ];
 
+export const KNOWLEDGE_ARTICLES_EN: KnowledgeArticle[] = [
+  {
+    "filename": "01_preparation.md",
+    "title": "Barn Preparation Prior to Chick Placement",
+    "content": "<!--\nSource: Ross-308 / Cobb-500 Broiler Management Manual & Uzbekistan Veterinary Committee Guidelines\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Barn Preparation Prior to Chick Placement\n\nOver 70% of broiler farming success is determined by how thoroughly the house is prepared before day-old chicks arrive. Placing chicks in damp, cold, or inadequately sanitized housing leads to heavy mortality within the first 10 days.\n\n---\n\n## 1. Mechanical Cleaning and Washing\nPreparation begins immediately after depopulating the previous batch:\n1. **Litter Removal:** Completely transport all old litter and manure at least 50 meters away from the poultry house.\n2. **Dry Cleaning:** Sweep dust, cobwebs, and down from ceilings, trusses, light fixtures, and fans. Dust harbors enormous bacterial and viral loads.\n3. **High-Pressure Washing:** Wash the entire house with high-pressure water (minimum 100–140 bar). Use a 1–2% detergent or washing soda solution to dissolve fatty residues, paying meticulous attention to wall-floor seams and corners.\n\n---\n\n## 2. Disinfection and Equipment Sanitation\nDisinfection is only effective on clean, fully dried surfaces:\n* **Wall and Ceiling Whitewashing:** Treat walls with a 20% fresh slaked lime suspension combined with 2–3% copper sulfate to eradicate fungi and bacteria.\n* **Wet Disinfection:** Apply certified broad-spectrum disinfectants (glutaraldehyde, quaternary ammonium, or Virocid formulations) following manufacturer specifications.\n* **Equipment Care:** Soak feeders, drinkers, and hoses in disinfectant solution, rinse thoroughly with fresh water, and sun-dry.\n* **Sanitary Downtime (\"All-In / All-Out\"):** After disinfection, keep the barn sealed and vacant for at least **4–7 days**.\n\n---\n\n## 3. Pest Exclusion and Wild Bird Biosecurity\nRodents carry Salmonella and Pasteurella, while wild birds vector Avian Influenza and Newcastle Disease:\n* Mesh all windows, eaves, and ventilation inlets with galvanized wire (aperture ≤ 1.5 cm).\n* Seal all foundation and wall crevices using mortar reinforced with crushed glass.\n* Set tamper-proof rodent bait stations along the exterior building perimeter.\n\n---\n\n## 4. Bedding: Selection and Depth\nBroilers spend their entire life cycle on bedding. Cold or wet litter induces footpad dermatitis, ascites, and systemic infection.\n* **Material:** Ideal choices are dust-free, dry, medium-to-coarse wood shavings (conifer or hardwood) or clean chopped wheat straw.\n* **Layer Depth:** Winter and early spring: **7–10 cm**; Summer: **5–7 cm**.\n* **Requirements:** Bedding must be completely dry (moisture < 15%), mold-free, and odorless. Avoid fine sawdust; chicks ingest it, causing crop impaction.\n\n---\n\n## 5. Barn Pre-Heating (24–48 Hours Ahead)\nA common novice mistake is activating heating just 2 hours before arrival. Air warms quickly, but concrete floors remain freezing cold.\n* **24–48 Hours Prior:** Ignite heaters (gas brooders, space heaters, radiant tubes).\n* **Floor Temperature:** At placement, bedding surface temperature must measure **30–32°C**, and air temperature at chick height must be **33–34°C**.\n* If a chick sits on cold flooring, internal organs chill, yolk sac absorption fails, and systemic sepsis follows.\n\n---\n\n## 6. Pre-Placement Readiness Checklist\nBefore dispatching transport to pick up chicks, verify:\n- [ ] Heating operates stably with bedding temperature at 30–32°C.\n- [ ] Drinkers are filled with fresh water at room temperature (20–22°C).\n- [ ] Starter crumb feed is distributed on paper brooding sheets and initial feeder pans.\n- [ ] Lighting is set to full intensity (30–40 lux).\n- [ ] Minimum ventilation is tuned with zero floor drafts.\n- [ ] Calibrated thermometers and hygrometers are set at chick eye level (5–8 cm above floor).\n- [ ] Footwear disinfection mat is prepared at the entrance.\n"
+  },
+  {
+    "filename": "02_first_days.md",
+    "title": "Chick Placement and the First 3 Days",
+    "content": "<!--\nSource: Ross-308 / Cobb-500 Broiler Management Handbook\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Chick Placement and the First 3 Days\n\nThe first 72 hours of a broiler chick's life directly determine harvest weight. If chicks fail to quadruple their initial hatch weight by Day 7 (target: ≥ 180 g), this growth deficit cannot be recovered by late feeding or medications.\n\n---\n\n## 1. Chick Unloading and Quality Assessment\n* **Unloading Speed:** Unload chick boxes promptly without rough movements. Never drop boxes to the floor.\n* **Initial Culling:** Inspect batch quality upon delivery. A healthy day-old chick:\n  * Weighs between 40–44 grams;\n  * Stands firmly and alertly on its legs with bright, clean eyes;\n  * Has a fully healed, dry navel free from scabs and bleeding;\n  * Possesses a soft, pliable abdomen without bloating;\n  * Has clean, dry, fluffy down with no adhering shell fragments.\n* Isolate weak or deformed chicks immediately under dedicated warmth or cull humanely.\n\n---\n\n## 2. First 2 Hours: Water Only!\nChicks arriving from hatchery transit are severely dehydrated. **Water takes absolute priority over feed!**\n* **Water Temperature:** Strictly maintained at **20–22°C**. Freezing water causes visceral hypothermia and gut cramping, while water above 25°C rapidly cultivates bacteria.\n* **First Drink:** Adding glucose (20–30 g per liter) or vitamin-electrolyte stress packs assists rapid transport recovery.\n* **Guiding to Drinkers:** Gently dip the beaks of a few chicks into drinkers — flock peers rapidly mimic them.\n* Drinker availability: 1 bell drinker per 50 chicks or 1 nipple per 10–12 birds.\n\n---\n\n## 3. Feed Presentation (2 Hours Post-Watering)\nOnly after the entire flock has drunk water should feed be introduced.\n* **Brooding Paper:** Spread dedicated textured brooding paper covering at least 20–30% of the brooding area (do not use ink newsprint as newsprint ink is toxic).\n* **Paper Rustle:** Chicks running over the paper generate rustling sounds, naturally drawing peers to explore feed crumbs.\n* **Feed Texture:** Use only high-quality starter crumbs (1.5–2 mm particle size). Powdery flour-like feed obstructs nostrils and beaks.\n* Replenish feed frequently in modest amounts (5–6 times daily) to preserve aroma and cleanliness.\n\n---\n\n## 4. Lighting Regimen in Early Days\n* **Days 1–3:** 23 hours of bright light (30–40 lux) with 1 hour of total darkness.\n* The 1 hour of darkness conditions chicks to darkness, preventing catastrophic piling and smothering during sudden power outages.\n\n---\n\n## 5. The Crop Fill Test (Primary Health Metric)\nThis is the single most objective field test of placement quality:\n* **8 Hours Post-Placement:** Sample 50 chicks from varied zones. At least **80%** must have soft, pliable crops filled with blended feed and water (like a moist sponge).\n* **24 Hours Post-Placement:** At least **95–100%** must display full crops.\n* *Hard crop:* Chicks found feed but lack water (water too cold or lines too high).\n* *Watery crop:* Chicks drinking but failing to find feed (insufficient feeder space or inadequate light).\n* *Empty crop:* Chicks chilled or experiencing severe stress.\n\n---\n\n## 6. Reading Chick Behavior for Climate Assessment\nThermometers can misread, but chicks never lie:\n* **Ideal:** Chicks evenly dispersed across the brooding floor, eating, drinking, or resting stretched out. Soft, contented chirping.\n* **Cold:** Huddled in dense clusters directly beneath heaters, chirping distressfully. High risk of bottom birds smothering.\n* **Hot:** Fleeing heat sources toward perimeter walls, panting with open beaks and outstretched wings. Feed intake ceases.\n* **Drafts:** Clustered against one corner away from cold incoming air currents.\n"
+  },
+  {
+    "filename": "03_temperature.md",
+    "title": "Temperature and Humidity Standards",
+    "content": "<!--\nSource: Poultry Microclimate Standards (Ross Broiler Management Handbook)\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Temperature and Humidity Standards\n\nDay-old broiler chicks cannot regulate their internal body temperature. During the first 10–14 days, thermoregulation depends entirely on the housing microclimate. An error of just 2–3 degrees Celsius can trigger sudden mortality or permanent growth stunting.\n\n---\n\n## 1. Broiler Temperature and Humidity Schedule\n\nMeasurements are taken strictly at **chick back level** (5–8 cm from the floor), never at the ceiling!\n\n| Bird Age | Air Temperature (°C) | Bedding Temperature (°C) | Relative Humidity (%) |\n| :--- | :--- | :--- | :--- |\n| **Day 1** | **33 – 34°C** | 30 – 32°C | 60 – 70% |\n| **Day 3** | **33°C** | 30°C | 60 – 70% |\n| **Day 7 (Week 1)** | **31 – 32°C** | 29 – 30°C | 60 – 65% |\n| **Day 14 (Week 2)** | **28 – 29°C** | 27 – 28°C | 60 – 65% |\n| **Day 21 (Week 3)** | **26 – 27°C** | 25 – 26°C | 55 – 60% |\n| **Day 28 (Week 4)** | **23 – 24°C** | 22 – 23°C | 55 – 60% |\n| **Day 35 (Week 5)** | **21 – 22°C** | 20 – 21°C | 55 – 65% |\n| **Day 42 (Week 6)** | **19 – 20°C** | 19 – 20°C | 55 – 65% |\n\n---\n\n## 2. Bedding Temperature Outweighs Air Temperature\nWhy floor temperature is vital:\n* Chicks rest their feet and bellies on the litter 100% of the time.\n* If house air registers 34°C but concrete flooring under thin litter sits at 22°C, chicks suffer hypothermia within 3–4 hours.\n* Chilled footpads drain core blood flow, inhibiting yolk sac absorption and inciting fatal yolk sac peritonitis (primary cause of mortality on Days 3–5).\n* **Field Rule:** Touch a chick's footpad to your cheek: the chick's foot must feel pleasantly warm! If cold, litter has not preheated properly.\n\n---\n\n## 3. Relative Humidity (RH)\n* **Week 1 (60–70%):** Hatcheries maintain high humidity (70–80%). If barn air is dry (< 50%), chicks lose pulmonary moisture rapidly, down parches, and respiratory tracts inflame. Humidify walkways or mist air to preserve humidity.\n* **From Week 2 Onward (55–65%):** High humidity (> 70%) combined with warmth (25–28°C) is hazardous — litter cakes, ammonia spikes, and coccidia proliferate.\n\n---\n\n## 4. Managing Diurnal Temperature Fluctuations\nIn Uzbekistan's continental climate, day-night temperatures often swing by 15–20°C (e.g. +25°C daytime down to +5°C night).\n* **Critical Mistake:** Shutting off heat overnight or leaving ventilation shutters wide open during night cold snaps.\n* Diurnal fluctuations inside the poultry barn should never exceed **1.5–2°C**.\n* Severe swings trigger viral respiratory complexes (IB, mycoplasma) and metabolic stress that halts weight gain.\n\n---\n\n## 5. Sensor and Thermometer Placement\n* Install sensors strictly at chick head/back level.\n* Maintain at least 3 checkpoints: under the brooder/heater, near perimeter walls, and beside drinker lines.\n* Shield sensors from radiant infrared lamps to avoid falsely elevated readings.\n"
+  },
+  {
+    "filename": "04_ventilation.md",
+    "title": "Ventilation and Heat Stress Management",
+    "content": "<!--\nSource: Poultry Microclimate and Ventilation Guide (Ross/Cobb)\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Ventilation and Heat Stress Management\n\nVentilation in a poultry house solves 5 critical objectives: providing oxygen, exhausting carbon dioxide, eliminating toxic ammonia, removing excess humidity, and cooling the flock. In Uzbekistan's intense climate, correct ventilation is a life-or-death factor for broilers beyond 25 days of age.\n\n---\n\n## 1. Minimum Ventilation (First 2–3 Weeks)\nDuring early brooding, the primary goal is refreshing air without exhausting valuable heat or creating floor-level drafts.\n* **Principle:** Incoming cold outdoor air must enter through high ceiling inlets, mix with upper thermal air layers, and gently descend warmed toward chick height.\n* **Air Velocity:** At chick level, air speed must never exceed **0.15–0.2 m/s** during the first 2 weeks.\n* **Drafts Kill:** Cold drafts flowing directly along the floor chill chicks, causing corner pile-ups and suffocation.\n\n---\n\n## 2. Ammonia Hazards ($NH_3$) and Damp Litter\nAmmonia is generated by bacterial fermentation of uric acid in damp litter.\n* **Farmer's Field Test:** If entering the barn burns your eyes or causes a sharp nasal sting, ammonia exceeds 20 ppm!\n* For broilers, this is catastrophic: ammonia strips tracheal mucosal cilia, enabling E. coli and mycoplasma to penetrate deep into air sacs, causing chronic respiratory complexes.\n* **Action:** Immediately increase fresh air intake and replace damp litter spots with fresh dry shavings.\n\n---\n\n## 3. Tunnel Ventilation and Heat Stress (After Day 25)\nBroilers over 4 weeks weigh > 1.5 kg. Birds possess no sweat glands, and dense plumage retains body heat. Their sole cooling mechanisms are panting (respiratory evaporative loss) and convective heat transfer from airspeed.\n* **Tunnel Effect:** Large exhaust fans extract air from one end of the barn, pulling a longitudinal wind stream at **2.0–2.5 m/s**.\n* At this airspeed, convective heat loss produces a chill effect making birds perceive temperatures 4–6°C lower than actual ambient air.\n\n---\n\n## 4. Evaporative Cooling Pads and Fogging\nWhen outdoor temperatures in Uzbekistan climb above 35–38°C, fan circulation alone is insufficient (hot airflow acts like a hairdryer):\n* **Cooling Pads:** Water flows over cellulose paper pads at air inlets. Hot dry outside air passes through, evaporates moisture, and drops 6–10°C in temperature.\n* **Golden Rule:** Activate pad water ONLY when relative humidity is below 70% and temperature is above 28°C. If barn air is already humid, evaporation stops and suffocating heat stroke occurs.\n\n---\n\n## 5. Practical Hot-Weather Countermeasures for Farmers:\n1. **Roof Whitewashing:** Whitewash outer roof surfaces with lime — reflected solar radiation reduces interior barn heat by 3–4°C.\n2. **Night Feeding Shift:** During peak heat (12:00 to 17:00), elevate feed lines or dim lighting. Digestive heat increment triggers fatal heat stroke. Feed birds during cool night and early dawn hours.\n3. **Flushing Water Lines:** Keep drinker lines cool (18–20°C). Regularly flush stagnated, hot pipe water during peak afternoon hours.\n4. **Vitamin C & Electrolytes:** Provide sodium bicarbonate, potassium chloride, and Vitamin C in drinking water 2–3 days prior to forecasted heatwaves.\n"
+  },
+  {
+    "filename": "05_feeding.md",
+    "title": "Broiler Feeding Phases: Starter, Grower, and Finisher",
+    "content": "<!--\nSource: Broiler Nutrition Guidelines (Ross/Cobb Nutrition Guidelines)\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Broiler Feeding Phases: Starter, Grower, and Finisher\n\nModern broiler genetics enable a chick to grow from 42 grams to 2.5 kilograms within just 6 weeks. However, achieving this potential requires balanced, commercial crumbled and pelleted rations. Feeding homemade ground grain mixtures or boiled eggs results in severe amino acid deficiencies, rickets, and 50% stunted body weight.\n\n---\n\n## 1. The Three Primary Feeding Phases\n\n| Parameter | Phase 1: Starter | Phase 2: Grower | Phase 3: Finisher |\n| :--- | :--- | :--- | :--- |\n| **Duration** | **Days 1 – 10 (or 14)** | **Days 11 (or 15) – 28** | **Days 29 – 42** |\n| **Feed Form** | Fine Crumb (1.5–2 mm) | Pellets (2.5–3 mm) | Pellets (3–3.5 mm) |\n| **Crude Protein** | **21 – 23%** | **19 – 20%** | **17.5 – 18.5%** |\n| **Metabolizable Energy** | 3000 – 3050 kcal/kg | 3100 – 3150 kcal/kg | 3200 – 3250 kcal/kg |\n| **Primary Goal** | Organ, skeletal, digestive, and immune development | Rapid muscle and skeletal frame accretion | Breast and thigh meat deposition, market weight |\n\n---\n\n## 2. The 3-Day Feed Transition Protocol\nA broiler's digestive tract is acutely sensitive to abrupt ration shifts. Sudden changes cause dysbiosis, wet droppings, and feed refusal.\n* Always transition over **3 consecutive days**:\n  * **Day 1 of transition:** 70% current feed + 30% new feed;\n  * **Day 2 of transition:** 50% current feed + 50% new feed;\n  * **Day 3 of transition:** 25% current feed + 75% new feed;\n  * **Day 4:** 100% new feed.\n\n---\n\n## 3. Daily Feed Intake per Bird Benchmark\n\n| Age (Week) | Daily Feed per Bird (g) | Cumulative Intake (g) |\n| :--- | :--- | :--- |\n| **Week 1 (Days 1–7)** | 15 – 27 g | ~148 g |\n| **Week 2 (Days 8–14)** | 31 – 54 g | ~448 g |\n| **Week 3 (Days 15–21)** | 60 – 98 g | ~999 g |\n| **Week 4 (Days 22–28)** | 105 – 145 g | ~1871 g |\n| **Week 5 (Days 29–35)** | 151 – 185 g | ~3051 g |\n| **Week 6 (Days 36–42)** | 190 – 215 g | ~4471 g |\n\n*Over the full 42-day cycle, one broiler consumes approximately **4.0 – 4.5 kg** of quality balanced feed.*\n\n---\n\n## 4. Feed Conversion Ratio (FCR)\nFeed Conversion Ratio is the premier benchmark of farm profitability:\n$$\text{FCR} = \frac{\text{Total Feed Consumed (kg)}}{\text{Total Live Body Weight (kg)}}$$\n* **Excellent FCR:** 1.6 – 1.7 (1.6–1.7 kg feed required per 1 kg live weight gain).\n* **Average FCR:** 1.75 – 1.85.\n* **Loss-making FCR:** > 2.0 (feed wasted due to disease, substandard nutrition, or spillage).\n\n---\n\n## 5. Feeder Pan Height Management\n* **Feeder Height:** The lip of the feeder pan or trough must align exactly with the bird's **back/crop level**. Low feeders permit birds to flick feed with beaks and feet, discarding up to 15% directly into the litter!\n* **Daily Clean-Out:** Permit birds to clean out feeder pans completely for 30–45 minutes once daily to prevent stale fine dust accumulation and mycotoxin formation.\n"
+  },
+  {
+    "filename": "06_water.md",
+    "title": "Water Supply and Drinking System Management",
+    "content": "<!--\nSource: Poultry Water Supply Standards (Ross Broiler Management Manual)\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Water Supply and Drinking System Management\n\nWater is the most crucial yet frequently neglected nutrient for broilers. Birds can survive days without feed, but perish within 24 hours without water. Restricting water immediately stops feed assimilation and halts growth.\n\n---\n\n## 1. Water Demand and the \"Water : Feed\" Ratio\n* Under comfortable temperatures (20–22°C), broilers drink **1.8–2.0 times more** water by weight than dry feed consumed.\n* When barn temperatures exceed 30°C, water consumption increases **2.5–3.0 times**.\n* A sudden dip in daily water consumption is the earliest clinical herald of impending disease, manifesting 24–48 hours before visible symptoms or mortality.\n\n---\n\n## 2. Drinking Water Quality Standards\nWater offered to broilers must meet the same sanitary standards as potable human tap water:\n* **Temperature:** Optimally **18–21°C**. Water above 25°C is unpalatable to birds and fosters bacterial growth. Water below 14°C causes gut spasms and chilling.\n* **Acidity (pH):** Ideal range is **6.5 – 7.5**. Water exceeding pH 8.0 impairs digestive enzyme efficacy.\n* **Microbiological Purity:** Zero coliforms (E. coli) and Salmonella.\n* **Biofilm in Water Lines:** Bacterial slime and vitamin residues coat inner PVC pipes. Flush lines under pressure every 2 weeks, and sanitize thoroughly between flocks with stabilized hydrogen peroxide or organic acids.\n\n---\n\n## 3. Selecting and Adjusting Drinker Systems\n### Nipple Drinkers (Industry Best Practice)\n* **Density:** 1 nipple with drip cup per **10–12 birds**.\n* **Height Adjustment:**\n  * Days 1–3: Nipple at chick eye level (bird points beak upward at a 45° angle).\n  * Day 4 onward: Birds stretch upward at a 65–75° angle while feet remain planted flat on the floor (birds must not stand on tiptoes).\n* **Water Pressure:** During Week 1, maintain low pressure (water column 10–15 cm) for effortless triggering. By Week 5, increase column to 30–35 cm.\n\n### Bell / Vacuum Drinkers\n* Common in smaller setups: 1 bell drinker per 50 chicks.\n* Requires manual scrubbing and refilling at least twice daily.\n* Never place bell drinkers directly on loose litter — rest them on plastic platforms to avoid contamination.\n\n---\n\n## 4. Water Administration Protocols for Vaccines and Vitamins\n1. **48 Hours Prior to Vaccination:** Terminate all water acidifiers, chlorine, and sanitizers (which destroy live vaccine viruses).\n2. **Water Deprivation (Thirsting):** Withdraw water 1.5–2 hours prior to vaccination (in extreme heat, no more than 1 hour).\n3. **Stabilizer:** Add non-fat dry skimmed milk powder (2 g per liter) to neutralize residual heavy metals and chlorine traces.\n4. The entire vaccine volume must be consumed within **1.5–2 hours**.\n"
+  },
+  {
+    "filename": "07_vaccination.md",
+    "title": "Broiler Vaccination: Schedule and Field Principles",
+    "content": "<!--\nSource: Central Asian Broiler Immunoprophylaxis Framework\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Broiler Vaccination: Schedule and Field Principles\n\n> **IMPORTANT NOTICE:** \n> AgroZen does not prescribe vaccine strains or medication dosages. Vaccination is a state veterinary regulation measure. Finalize your specific farm schedule, strain selection (LaSota, Clone, Winterfield), and local disease status with your certified district veterinarian!\n\n---\n\n## 1. Why Is Vaccination Crucial for Broilers?\nBroilers live only 40–45 days, but their immunological system is exceptionally delicate. Avian viral diseases (Newcastle Disease, Gumboro / IBD, Infectious Bronchitis) propagate like wildfire: if Newcastle Disease enters an unimmunized barn, **90–100% of the flock can perish within 48–72 hours**. Viral infections cannot be treated with antibiotics — only prophylactic vaccination prevents catastrophic loss.\n\n---\n\n## 2. Standard Broiler Vaccination Timeline\n\n| Day | Disease | Method | Field Note |\n| :--- | :--- | :--- | :--- |\n| **Day 1** | Marek's Disease, Infectious Bronchitis (IB), Newcastle Disease (ND) | Coarse spray or subcutaneous injection at hatchery | Handled at the hatchery prior to chick dispatch (verify veterinary certificate) |\n| **Day 7** | Newcastle Disease (ND) + Infectious Bronchitis (IB) | Eye/nose drops or drinking water | Establishes mucosal respiratory barrier |\n| **Days 11 – 14** | Gumboro Disease (IBD — Infectious Bursal Disease) | Drinking water | Protects the Bursa of Fabricius (primary immune organ) |\n| **Days 18 – 21** | Newcastle Disease booster / Gumboro revaccination | Drinking water | Secures immune titer through slaughter |\n\n---\n\n## 3. Golden Rules of Drinking Water Vaccination\nOver 90% of field vaccine failures stem from killing the live viral antigen before birds consume it:\n1. **Cold Chain (+2 to +8°C):** Transport vaccine vials from the pharmacy inside insulated ice coolers. Exposure above +10°C or freezing destroys live viral titers.\n2. **Chlorine-Free Water:** Tap water chlorine kills live virus particles within 60 seconds! Use untreated spring water or de-chlorinated water rested 48 hours, fortified with milk powder stabilizer.\n3. **Blue Dye Indicator:** Use commercial blue dye stabilizer tablets. 1–2 hours following vaccination, inspect chick beaks: a blue tongue and crop verify genuine vaccine ingestion.\n4. **Adequate Drinking Space:** Ensure sufficient drinker access so all birds drink concurrently, preventing dominant chicks from overconsuming while timid birds receive none.\n\n---\n\n## 4. Vaccination Contraindications\n* Never vaccinate clinically sick, chilled, or severely stressed birds — the live vaccine will trigger outright disease flare-ups.\n* Never administer antibacterial drugs 2 days before and 2 days after live viral vaccines.\n* Never prepare vaccine solutions in galvanized or rusted metal containers — use food-grade plastic only.\n"
+  },
+  {
+    "filename": "08_diseases.md",
+    "title": "Disease Signs: When to Immediately Consult a Veterinarian",
+    "content": "<!--\nSource: Clinical Diagnostics of Avian Infectious Diseases (FAO / Uzbekistan State Veterinary Committee)\nVerified by: AgroZen Chief Veterinary Consultant\nDate: 2026-10-09\nStatus: Approved\n-->\n\n# Disease Signs: When to Immediately Consult a Veterinarian\n\n> **CORE AGROZEN PRINCIPLE:** \n> AgroZen does not replace a veterinary physician. If a flock shows acute infectious symptoms, self-treating with blind antibiotic dosing will decimate the flock and cause grave financial loss. Contact your veterinarian at the first dangerous sign!\n\n---\n\n## 1. Red Flag Emergency Symptoms\n\nIf you observe any of the following signs, take immediate action:\n\n### 1. Acute Mortality Spike\n* **Normal Range:** Baseline daily mortality should never exceed 0.1–0.15% of the total flock (e.g. 1–2 birds per day out of 1,000).\n* **CRITICAL ALERT:** If daily mortality surpasses **1% in 24 hours** (> 10 birds out of 1,000), an acute disease outbreak is actively spreading!\n\n### 2. Severe Respiratory Distress\n* Loud rattling, whistling, gurgling, or clicking sounds audible across the entire poultry barn.\n* Birds craning necks upward, gasping desperately for breath through open beaks.\n* Facial edema, periocular swelling (\"owl head\"), foamy or purulent ocular discharge.\n\n### 3. Alarm Signs in Droppings\n* **Bloody or dark reddish-brown droppings:** Hallmarks of acute coccidiosis.\n* **Vivid green, watery frothy droppings:** Highly indicative of Newcastle Disease or Gumboro Disease.\n* **Chalky white diarrhea pasting the vent:** Sign of pullorum disease (Salmonella pullorum) in young stock.\n\n### 4. Neurological Dysfunction and Paralysis\n* Torticollis / twisted neck (birds twisting head backward or upside down).\n* Loss of balance, head tremors, clonic leg convulsions.\n* Complete wing and leg paralysis (birds stuck in a split posture).\n\n---\n\n## 2. Mandatory Protocol BEFORE the Veterinarian Arrives\n1. **Isolation:** Immediately remove suspect and dead birds from the flock. Seal dead birds in clean airtight bags in a cool location for veterinary necropsy.\n2. **Review Environmental Equipment:** Inspect temperature, airflow, and drinker lines. Occasionally \"disease outbreaks\" stem from sudden drinker line blockages or extreme overheating.\n3. **NEVER Administer Blind Antibiotics!** Dosing flocks with broad-spectrum antimicrobials before diagnostic sampling renders veterinary lab cultures sterile, preventing accurate pathogen isolation and sensitivity testing.\n4. **Compile Flock Records:**\n   * Exact flock age in days;\n   * Counts of sick and dead birds over the preceding 3 days;\n   * Feed manufacturer, ration phase, and batch lot;\n   * Administered vaccine brand names, dates, and serial batch numbers;\n   * Water supply source (piped municipal, deep borehole, canal).\n\n---\n\n## 3. Biosecurity Rules During Suspected Outbreaks\n* Do not enter neighboring poultry farms and forbid outside visitors from entering your premises.\n* Don dedicated protective footwear and overalls used solely inside that specific barn.\n* Step thoroughly into disinfection mats placed at entryways.\n* Dispose of mortalities strictly according to veterinary direction (incineration or deep burial ≥ 1.5 meters layered with bleaching powder). Discarding carcasses into open canals, streets, or trash heaps is illegal and spreads disease.\n"
+  },
+  {
+    "filename": "feed.md",
+    "title": "Broiler Phase Feeding",
+    "content": "# Broiler Phase Feeding\n\nBroilers possess rapid metabolic growth rates. Feeding is structured into three primary phases:\n\n## Feeding Phases:\n1. **Starter (Days 1–14):**\n   - Crude protein: 21–23%\n   - Form: fine crumbs (1.5–2 mm)\n   - Stimulates skeletal framing and visceral organ development.\n\n2. **Grower (Days 15–28):**\n   - Crude protein: 19–20%\n   - Form: pellets (2.5–3 mm)\n   - Rapid accretion of lean muscle mass.\n\n3. **Finisher (Days 29–42):**\n   - Crude protein: 17.5–18.5%\n   - Form: pellets (3–3.5 mm)\n   - Final weight gain prior to processing. Antibiotics are strictly banned during this withdrawal phase!\n\n## Golden Rules:\n- Feed must remain available 24/7.\n- Clean, cool water must always accompany feed. For every 1 kg of dry feed eaten, broilers consume roughly 1.8–2.0 liters of water.\n"
+  },
+  {
+    "filename": "temperature.md",
+    "title": "Temperature Guidelines for Broilers",
+    "content": "# Temperature Guidelines for Broilers\n\nTemperature is the decisive factor in chick survival during the initial weeks. A day-old chick has no physiological internal thermoregulation.\n\n## Temperature Schedule by Week:\n- **Days 1–3:** 32–33°C (at litter level under the brooder)\n- **Days 4–7:** 30–31°C\n- **Week 2 (Days 8–14):** 27–29°C\n- **Week 3 (Days 15–21):** 24–26°C\n- **Week 4 (Days 22–28):** 21–23°C\n- **Weeks 5–6 (Days 29–42):** 18–20°C\n\n## Chick Behavior as the Ultimate Gauge:\n- **Optimal:** Chicks evenly dispersed across the barn, actively feeding, drinking, and resting comfortably.\n- **Cold:** Huddling in tight clusters under heaters, loud distress chirping.\n- **Hot:** Moving away towards walls, panting with open beaks, spreading wings.\n- **Drafts:** Crowding together in one sector away from cold airflow.\n"
+  },
+  {
+    "filename": "vaccination.md",
+    "title": "Broiler Vaccination",
+    "content": "# Broiler Vaccination\n\nTimely immunization protects the entire flock against mass mortality.\n\n## Core Vaccination Timeline:\n1. **Day 1 (at hatchery):**\n   - Marek's Disease\n   - Infectious Bronchitis (IB)\n2. **Day 7:**\n   - Newcastle Disease (ND) + Infectious Bronchitis (drinking water or coarse spray)\n3. **Days 12–14:**\n   - Gumboro Disease (IBD) — via drinking water\n4. **Days 20–22:**\n   - Revaccination against Gumboro or Newcastle (based on regional veterinary guidance)\n\n## Water Vaccination Rules:\n- Deprive birds of water 2 hours before administration (ensuring entire solution is consumed within 1.5–2 hours).\n- Water must be completely chlorine-free! Add skimmed milk powder (2 g dry milk per 1 liter water) to stabilize the live viral vaccine.\n- Metal drinkers and buckets are strictly prohibited.\n"
+  },
+  {
+    "filename": "ventilation.md",
+    "title": "Broiler Barn Ventilation",
+    "content": "# Broiler Barn Ventilation\n\nProper ventilation eliminates carbon dioxide, ammonia, and moisture, supplying the flock with fresh oxygen.\n\n## Primary Requirements:\n- First 7 days: Minimum ventilation (0.1–0.15 m/s), eliminating drafts at floor level.\n- Weeks 2–4: Moderate ventilation providing steady fresh air exchange.\n- Weeks 5–6: Maximum fan output, especially during high ambient summer conditions.\n- Maximum allowable ammonia concentration: 15 ppm (if humans perceive ammonia odor, levels are already excessive!).\n\n## Heat Stress Protection:\nWhen temperatures exceed 30°C, employ evaporative cooling pads, fogging misters, or roof cold-water sprinkling.\n"
+  }
+];
+
 export const NORMS_DATA = {
   "breed": "Ross-308 / Cobb-500",
   "critical_thresholds": {
@@ -145,55 +208,61 @@ export const NORMS_DATA = {
     {
       "week": 1,
       "target_weight_g": 185,
-      "daily_feed_g": 24,
-      "cumulative_feed_g": 167,
-      "temperature_c": 30,
+      "daily_feed_g": 27,
+      "cumulative_feed_g": 165,
+      "temperature_c": 29.5,
+      "temp_celsius": 29.5,
       "humidity_percent": 65,
       "mortality_threshold_percent": 1
     },
     {
       "week": 2,
-      "target_weight_g": 465,
+      "target_weight_g": 510,
       "daily_feed_g": 54,
-      "cumulative_feed_g": 475,
-      "temperature_c": 27,
-      "humidity_percent": 65,
+      "cumulative_feed_g": 540,
+      "temperature_c": 26.5,
+      "temp_celsius": 26.5,
+      "humidity_percent": 60,
       "mortality_threshold_percent": 0.6
     },
     {
       "week": 3,
-      "target_weight_g": 975,
-      "daily_feed_g": 95,
-      "cumulative_feed_g": 1050,
-      "temperature_c": 24,
-      "humidity_percent": 65,
+      "target_weight_g": 1055,
+      "daily_feed_g": 98,
+      "cumulative_feed_g": 1225,
+      "temperature_c": 23,
+      "temp_celsius": 23,
+      "humidity_percent": 60,
       "mortality_threshold_percent": 0.5
     },
     {
       "week": 4,
-      "target_weight_g": 1600,
-      "daily_feed_g": 140,
-      "cumulative_feed_g": 1900,
-      "temperature_c": 21,
-      "humidity_percent": 65,
+      "target_weight_g": 1745,
+      "daily_feed_g": 145,
+      "cumulative_feed_g": 2240,
+      "temperature_c": 20.5,
+      "temp_celsius": 20.5,
+      "humidity_percent": 60,
       "mortality_threshold_percent": 0.4
     },
     {
       "week": 5,
-      "target_weight_g": 2280,
-      "daily_feed_g": 175,
-      "cumulative_feed_g": 3050,
+      "target_weight_g": 2480,
+      "daily_feed_g": 185,
+      "cumulative_feed_g": 3535,
       "temperature_c": 19,
-      "humidity_percent": 65,
+      "temp_celsius": 19,
+      "humidity_percent": 60,
       "mortality_threshold_percent": 0.4
     },
     {
       "week": 6,
-      "target_weight_g": 2900,
-      "daily_feed_g": 195,
-      "cumulative_feed_g": 4350,
+      "target_weight_g": 3125,
+      "daily_feed_g": 215,
+      "cumulative_feed_g": 5040,
       "temperature_c": 18,
-      "humidity_percent": 65,
+      "temp_celsius": 18,
+      "humidity_percent": 60,
       "mortality_threshold_percent": 0.4
     }
   ],
@@ -202,551 +271,738 @@ export const NORMS_DATA = {
       "weight_g": 42,
       "feed_g": 12,
       "water_ml": 24,
-      "temp_c": 32.5,
+      "temp_c": 33,
       "mortality_max_percent": 0.3
     },
     "2": {
-      "weight_g": 55,
+      "weight_g": 56,
       "feed_g": 15,
       "water_ml": 30,
-      "temp_c": 32,
+      "temp_c": 32.5,
       "mortality_max_percent": 0.3
     },
     "3": {
-      "weight_g": 70,
+      "weight_g": 73,
       "feed_g": 18,
       "water_ml": 36,
-      "temp_c": 31.5,
+      "temp_c": 32,
       "mortality_max_percent": 0.25
     },
     "4": {
-      "weight_g": 90,
-      "feed_g": 22,
-      "water_ml": 44,
-      "temp_c": 31,
+      "weight_g": 95,
+      "feed_g": 21,
+      "water_ml": 42,
+      "temp_c": 31.5,
       "mortality_max_percent": 0.25
     },
     "5": {
-      "weight_g": 115,
-      "feed_g": 27,
-      "water_ml": 54,
-      "temp_c": 30.5,
+      "weight_g": 120,
+      "feed_g": 23,
+      "water_ml": 46,
+      "temp_c": 31,
       "mortality_max_percent": 0.2
     },
     "6": {
-      "weight_g": 145,
-      "feed_g": 32,
-      "water_ml": 64,
+      "weight_g": 150,
+      "feed_g": 25,
+      "water_ml": 50,
       "temp_c": 30,
       "mortality_max_percent": 0.2
     },
     "7": {
       "weight_g": 185,
-      "feed_g": 38,
-      "water_ml": 76,
+      "feed_g": 27,
+      "water_ml": 54,
       "temp_c": 29.5,
       "mortality_max_percent": 0.2
     },
     "8": {
-      "weight_g": 215,
-      "feed_g": 43,
-      "water_ml": 86,
+      "weight_g": 220,
+      "feed_g": 31,
+      "water_ml": 62,
       "temp_c": 29,
       "mortality_max_percent": 0.15
     },
     "9": {
-      "weight_g": 250,
-      "feed_g": 48,
-      "water_ml": 96,
+      "weight_g": 260,
+      "feed_g": 35,
+      "water_ml": 70,
       "temp_c": 28.5,
       "mortality_max_percent": 0.15
     },
     "10": {
-      "weight_g": 295,
-      "feed_g": 53,
-      "water_ml": 106,
+      "weight_g": 305,
+      "feed_g": 39,
+      "water_ml": 78,
       "temp_c": 28,
       "mortality_max_percent": 0.15
     },
     "11": {
-      "weight_g": 340,
-      "feed_g": 59,
-      "water_ml": 118,
+      "weight_g": 350,
+      "feed_g": 43,
+      "water_ml": 86,
       "temp_c": 27.5,
       "mortality_max_percent": 0.12
     },
     "12": {
-      "weight_g": 395,
-      "feed_g": 65,
-      "water_ml": 130,
+      "weight_g": 400,
+      "feed_g": 47,
+      "water_ml": 94,
       "temp_c": 27,
       "mortality_max_percent": 0.12
     },
     "13": {
-      "weight_g": 450,
-      "feed_g": 71,
-      "water_ml": 142,
-      "temp_c": 26.5,
+      "weight_g": 455,
+      "feed_g": 51,
+      "water_ml": 102,
+      "temp_c": 26.8,
       "mortality_max_percent": 0.1
     },
     "14": {
       "weight_g": 510,
-      "feed_g": 77,
-      "water_ml": 154,
-      "temp_c": 26,
+      "feed_g": 54,
+      "water_ml": 108,
+      "temp_c": 26.5,
       "mortality_max_percent": 0.1
     },
     "15": {
       "weight_g": 575,
-      "feed_g": 83,
-      "water_ml": 166,
-      "temp_c": 25.5,
+      "feed_g": 60,
+      "water_ml": 120,
+      "temp_c": 26,
       "mortality_max_percent": 0.1
     },
     "16": {
       "weight_g": 645,
-      "feed_g": 89,
-      "water_ml": 178,
-      "temp_c": 25,
+      "feed_g": 66,
+      "water_ml": 132,
+      "temp_c": 25.5,
       "mortality_max_percent": 0.08
     },
     "17": {
       "weight_g": 720,
-      "feed_g": 95,
-      "water_ml": 190,
-      "temp_c": 24.5,
+      "feed_g": 72,
+      "water_ml": 144,
+      "temp_c": 25,
       "mortality_max_percent": 0.08
     },
     "18": {
       "weight_g": 800,
-      "feed_g": 101,
-      "water_ml": 202,
-      "temp_c": 24,
+      "feed_g": 78,
+      "water_ml": 156,
+      "temp_c": 24.5,
       "mortality_max_percent": 0.08
     },
     "19": {
       "weight_g": 880,
-      "feed_g": 107,
-      "water_ml": 214,
-      "temp_c": 23.5,
+      "feed_g": 85,
+      "water_ml": 170,
+      "temp_c": 24,
       "mortality_max_percent": 0.08
     },
     "20": {
       "weight_g": 965,
-      "feed_g": 113,
-      "water_ml": 226,
-      "temp_c": 23,
+      "feed_g": 91,
+      "water_ml": 182,
+      "temp_c": 23.5,
       "mortality_max_percent": 0.07
     },
     "21": {
       "weight_g": 1055,
-      "feed_g": 119,
-      "water_ml": 238,
-      "temp_c": 22.5,
+      "feed_g": 98,
+      "water_ml": 196,
+      "temp_c": 23,
       "mortality_max_percent": 0.07
     },
     "22": {
       "weight_g": 1145,
-      "feed_g": 124,
-      "water_ml": 248,
-      "temp_c": 22,
+      "feed_g": 105,
+      "water_ml": 210,
+      "temp_c": 22.5,
       "mortality_max_percent": 0.07
     },
     "23": {
       "weight_g": 1240,
-      "feed_g": 130,
-      "water_ml": 260,
-      "temp_c": 21.8,
+      "feed_g": 112,
+      "water_ml": 224,
+      "temp_c": 22,
       "mortality_max_percent": 0.06
     },
     "24": {
       "weight_g": 1335,
-      "feed_g": 135,
-      "water_ml": 270,
-      "temp_c": 21.5,
+      "feed_g": 119,
+      "water_ml": 238,
+      "temp_c": 21.8,
       "mortality_max_percent": 0.06
     },
     "25": {
       "weight_g": 1435,
-      "feed_g": 140,
-      "water_ml": 280,
-      "temp_c": 21.2,
+      "feed_g": 126,
+      "water_ml": 252,
+      "temp_c": 21.5,
       "mortality_max_percent": 0.06
     },
     "26": {
       "weight_g": 1535,
-      "feed_g": 145,
-      "water_ml": 290,
+      "feed_g": 132,
+      "water_ml": 264,
       "temp_c": 21,
       "mortality_max_percent": 0.06
     },
     "27": {
       "weight_g": 1640,
-      "feed_g": 150,
-      "water_ml": 300,
+      "feed_g": 139,
+      "water_ml": 278,
       "temp_c": 20.8,
       "mortality_max_percent": 0.05
     },
     "28": {
       "weight_g": 1745,
-      "feed_g": 155,
-      "water_ml": 310,
+      "feed_g": 145,
+      "water_ml": 290,
       "temp_c": 20.5,
       "mortality_max_percent": 0.05
     },
     "29": {
       "weight_g": 1850,
-      "feed_g": 160,
-      "water_ml": 320,
+      "feed_g": 151,
+      "water_ml": 302,
       "temp_c": 20.2,
       "mortality_max_percent": 0.05
     },
     "30": {
       "weight_g": 1955,
-      "feed_g": 165,
-      "water_ml": 330,
+      "feed_g": 157,
+      "water_ml": 314,
       "temp_c": 20,
       "mortality_max_percent": 0.05
     },
     "31": {
       "weight_g": 2060,
-      "feed_g": 169,
-      "water_ml": 338,
+      "feed_g": 163,
+      "water_ml": 326,
       "temp_c": 19.8,
       "mortality_max_percent": 0.05
     },
     "32": {
       "weight_g": 2165,
-      "feed_g": 173,
-      "water_ml": 346,
+      "feed_g": 169,
+      "water_ml": 338,
       "temp_c": 19.5,
       "mortality_max_percent": 0.05
     },
     "33": {
       "weight_g": 2270,
-      "feed_g": 177,
-      "water_ml": 354,
-      "temp_c": 19.2,
+      "feed_g": 175,
+      "water_ml": 350,
+      "temp_c": 19.3,
       "mortality_max_percent": 0.05
     },
     "34": {
       "weight_g": 2375,
-      "feed_g": 181,
-      "water_ml": 362,
-      "temp_c": 19,
+      "feed_g": 180,
+      "water_ml": 360,
+      "temp_c": 19.2,
       "mortality_max_percent": 0.05
     },
     "35": {
       "weight_g": 2480,
-      "feed_g": 184,
-      "water_ml": 368,
-      "temp_c": 18.8,
+      "feed_g": 185,
+      "water_ml": 370,
+      "temp_c": 19,
       "mortality_max_percent": 0.05
     },
     "36": {
       "weight_g": 2580,
-      "feed_g": 187,
-      "water_ml": 374,
-      "temp_c": 18.6,
+      "feed_g": 190,
+      "water_ml": 380,
+      "temp_c": 18.8,
       "mortality_max_percent": 0.05
     },
     "37": {
       "weight_g": 2680,
-      "feed_g": 190,
-      "water_ml": 380,
-      "temp_c": 18.4,
+      "feed_g": 195,
+      "water_ml": 390,
+      "temp_c": 18.6,
       "mortality_max_percent": 0.05
     },
     "38": {
       "weight_g": 2775,
-      "feed_g": 193,
-      "water_ml": 386,
-      "temp_c": 18.2,
+      "feed_g": 199,
+      "water_ml": 398,
+      "temp_c": 18.4,
       "mortality_max_percent": 0.05
     },
     "39": {
       "weight_g": 2870,
-      "feed_g": 195,
-      "water_ml": 390,
-      "temp_c": 18,
+      "feed_g": 203,
+      "water_ml": 406,
+      "temp_c": 18.2,
       "mortality_max_percent": 0.05
     },
     "40": {
       "weight_g": 2960,
-      "feed_g": 197,
-      "water_ml": 394,
+      "feed_g": 207,
+      "water_ml": 414,
       "temp_c": 18,
       "mortality_max_percent": 0.05
     },
     "41": {
       "weight_g": 3045,
-      "feed_g": 199,
-      "water_ml": 398,
+      "feed_g": 211,
+      "water_ml": 422,
       "temp_c": 18,
       "mortality_max_percent": 0.05
     },
     "42": {
       "weight_g": 3125,
-      "feed_g": 200,
-      "water_ml": 400,
+      "feed_g": 215,
+      "water_ml": 430,
       "temp_c": 18,
       "mortality_max_percent": 0.05
     }
   }
 };
 
-export const BROILER_PLAN_DATA = [
+export interface DailyPlanItem {
+  day: number;
+  tasks_ru: string;
+  tasks_uz: string;
+  tasks_en: string[];
+  video_url: string | null;
+}
+
+export const BROILER_PLAN_DATA: DailyPlanItem[] = [
   {
     "day": 1,
     "tasks_ru": "Подготовьте брудер. Проверьте температуру (32-33°C на уровне подстилки). Включите свет 24 часа. Напоите цыплят теплой водой (20-22°C) с глюкозой/витаминами. Через 2 часа насыпьте стартовый комбикорм на лотки/бумагу.",
     "tasks_uz": "Bruderni tayyorlang. Haroratni tekshiring (to'shak sathida 32-33°C). 24 soatlik yorug'likni yoqing. Jo'jalarga glyukoza/vitaminli iliq suv (20-22°C) bering. 2 soatdan so'ng podnos/qog'ozlarga start yemini seping.",
-    "video_url": "https://www.youtube.com/watch?v=broiler_day_1"
+    "tasks_en": [
+      "Prepare the brooder and verify floor temperature (32-33°C at litter level).",
+      "Keep 24-hour lighting on and provide warm water (20-22°C) with glucose/vitamins.",
+      "Spread starter crumble feed on trays or chick paper 2 hours after placement."
+    ],
+    "video_url": "https://www.youtube.com/results?search_query=broiler+day+1+brooding+setup"
   },
   {
     "day": 2,
     "tasks_ru": "Контроль температуры (32°C). Проверьте наполненность зобов у 50 цыплят (должно быть 95%+ с мягким кормом и водой). Чистите поилки, обновляйте воду.",
     "tasks_uz": "Harorat nazorati (32°C). 50 ta jo'janing jig'ildonini tekshiring (95%+ yumshoq yem va suv bilan to'lgan bo'lishi kerak). Sug'orgichlarni tozalang, suvni yangilang.",
+    "tasks_en": [
+      "Maintain floor temperature at 32°C.",
+      "Check crop fill on 50 random chicks (at least 95% should have soft feed and water).",
+      "Clean drinkers and refresh water."
+    ],
     "video_url": null
   },
   {
     "day": 3,
     "tasks_ru": "Температура 31-32°C. Влажность 60-70%. Начните приучать к бункерным кормушкам. Осмотрите слабых цыплят. Контролируйте вентиляцию без сквозняков.",
     "tasks_uz": "Harorat 31-32°C. Namlik 60-70%. Bunkyerli yemdonlarga o'rgatishni boshlang. Kuchsiz jo'jalarni ajrating. Qoralamasiz (skvoznyaksiz) shamollatishni nazorat qiling.",
+    "tasks_en": [
+      "Maintain temperature at 31-32°C and relative humidity at 60-70%.",
+      "Begin transitioning chicks to pan/hopper feeders and inspect weak chicks.",
+      "Ensure minimum ventilation without floor-level drafts."
+    ],
     "video_url": null
   },
   {
     "day": 4,
     "tasks_ru": "Температура 30-31°C. Переход на постоянные кормушки. Контрольное взвешивание выборки цыплят. Запишите расход корма и падёж в дневник.",
     "tasks_uz": "Harorat 30-31°C. Doimiy yemdonlarga o'tish. Namuna jo'jalarni nazorat taroziga tortish. Kunlik yem sarfi va nobudgarchilikni kundalikka yozing.",
+    "tasks_en": [
+      "Keep temperature at 30-31°C and transition chicks to permanent feeders.",
+      "Weigh a sample of chicks and record daily feed consumption and mortality in the diary."
+    ],
     "video_url": null
   },
   {
     "day": 5,
     "tasks_ru": "Температура 30°C. Проверьте подстилку возле поилок, при необходимости подсыпьте сухие опилки. Курс витаминов по схеме ветеринара.",
     "tasks_uz": "Harorat 30°C. Sug'orgichlar atrofidagi to'shakni tekshiring, zarur bo'lsa quruq qipiq seping. Veterinariya sxemasi bo'yicha vitamin berish.",
+    "tasks_en": [
+      "Maintain temperature at 30°C.",
+      "Inspect litter around drinkers and top-dress with dry wood shavings if needed.",
+      "Continue vitamin supplementation per your veterinarian's schedule."
+    ],
     "video_url": null
   },
   {
     "day": 6,
     "tasks_ru": "Температура 29-30°C. Подготовка к первой вакцинации (Ньюкасл/Бронхит или Гамборо по региональному календарю). Проверьте чистоту систем поения.",
     "tasks_uz": "Harorat 29-30°C. Birinchi emlashga tayyorgarlik (Nyukasl/Bronxit yoki Gamboro hududiy taqvim bo'yicha). Suv ta'minoti tizimi tozaligini tekshiring.",
+    "tasks_en": [
+      "Keep temperature at 29-30°C.",
+      "Prepare for the first scheduled vaccination (Newcastle/Bronchitis per regional schedule).",
+      "Inspect and flush drinking lines."
+    ],
     "video_url": null
   },
   {
     "day": 7,
-    "tasks_ru": "Конец 1-й недели. Взвешивание цыплят (норма Ross-308/Cobb-500: 180-200 г). Первая плановая вакцинация методом выпаивания. Температура 29°C.",
-    "tasks_uz": "1-hafta yakuni. Jo'jalarni tortish (Ross-308/Cobb-500 normasi: 180-200 g). Ichirish usuli bilan birinchi rejali emlash. Harorat 29°C.",
-    "video_url": "https://www.youtube.com/watch?v=broiler_week_1"
+    "tasks_ru": "Конец 1-й недели. Взвешивание цыплят (норма Ross-308/Cobb-500: 185 г). Первая плановая вакцинация методом выпаивания. Температура 29.5°C.",
+    "tasks_uz": "1-hafta yakuni. Jo'jalarni tortish (Ross-308/Cobb-500 normasi: 185 g). Ichirish usuli bilan birinchi rejali emlash. Harorat 29.5°C.",
+    "tasks_en": [
+      "End of Week 1: weigh sample chicks (Ross-308/Cobb-500 target: 185 g).",
+      "Administer first scheduled drinking-water vaccination.",
+      "Maintain temperature at 29.5°C."
+    ],
+    "video_url": "https://www.youtube.com/results?search_query=broiler+week+1+management+weighing"
   },
   {
     "day": 8,
     "tasks_ru": "Температура 28-29°C. Начните расширение зоны содержания цыплят. Введите 1 час темноты в сутки для формирования костяка и иммунитета.",
     "tasks_uz": "Harorat 28-29°C. Jo'jalar saqlanadigan joyni kengaytirishni boshlang. Suyak va immunitet rivojlanishi uchun kuniga 1 soat qorong'ilik kiriting.",
+    "tasks_en": [
+      "Keep temperature at 28-29°C and expand the brooding area.",
+      "Introduce 1 hour of darkness per day to support skeletal and immune development."
+    ],
     "video_url": null
   },
   {
     "day": 9,
     "tasks_ru": "Температура 28°C. Проверьте вентиляцию: аммиачный запах не должен ощущаться. Контроль расхода воды (должен быть в 1.8-2 раза больше веса съеденного корма).",
     "tasks_uz": "Harorat 28°C. Shamollatishni tekshiring: ammiak hidi bo'lmasligi kerak. Suv sarfini nazorat qiling (yeyilgan yem og'irligidan 1.8-2 baravar ko'p bo'lishi kerak).",
+    "tasks_en": [
+      "Maintain temperature at 28°C and check ventilation (no ammonia odor should be present).",
+      "Monitor water intake (should be 1.8 to 2.0 times the weight of feed consumed)."
+    ],
     "video_url": null
   },
   {
     "day": 10,
     "tasks_ru": "Температура 27-28°C. Проверьте высоту поилок и кормушек — поднимите на уровень спины птицы. Осмотрите помёт на отсутствие кокцидиоза (кровавых следов).",
     "tasks_uz": "Harorat 27-28°C. Sug'orgich va yemdonlar balandligini qushning orqa qismi balandligiga moslang. Axlatni qon izlari (koksidioz) yo'qligiga tekshiring.",
+    "tasks_en": [
+      "Maintain temperature at 27-28°C.",
+      "Adjust drinker and feeder height to match bird back level.",
+      "Inspect droppings for any signs of coccidiosis (bloody traces)."
+    ],
     "video_url": null
   },
   {
     "day": 11,
     "tasks_ru": "Температура 27°C. Увеличение темнового периода до 2 часов. Контроль качества подстилки, рыхление слежавшихся мест.",
     "tasks_uz": "Harorat 27°C. Qorong'i davrni 2 soatga uzaytiring. To'shak sifatini nazorat qiling, qotib qolgan joylarni yumshating.",
+    "tasks_en": [
+      "Keep temperature at 27°C and increase the dark period to 2 hours.",
+      "Check litter quality and rake any caked spots."
+    ],
     "video_url": null
   },
   {
     "day": 12,
     "tasks_ru": "Температура 26-27°C. Подготовка ко второй вакцинации (болезнь Гамборо). За 2 часа до вакцинации перекройте воду для формирования жажды.",
     "tasks_uz": "Harorat 26-27°C. Ikkinchi emlashga tayyorgarlik (Gamboro kasalligi). Emlashdan 2 soat oldin chanqash hosil qilish uchun suvni to'xtating.",
+    "tasks_en": [
+      "Maintain temperature at 26-27°C.",
+      "Prepare for the second vaccination (Gumboro/IBD); withdraw water 2 hours prior to build thirst."
+    ],
     "video_url": null
   },
   {
     "day": 13,
     "tasks_ru": "Температура 26°C. План вакцинации Гамборо через воду с нейтрализатором хлора (молочный порошок или спец. таблетка).",
     "tasks_uz": "Harorat 26°C. Gamboro vaksinasini xlor neytrallovchi (sut kukuni yoki maxsus tabletka) qo'shilgan suv orqali berish.",
+    "tasks_en": [
+      "Keep temperature at 26°C.",
+      "Administer Gumboro (IBD) vaccine via drinking water stabilized with skim milk powder or chlorine neutralizer."
+    ],
     "video_url": null
   },
   {
     "day": 14,
-    "tasks_ru": "Конец 2-й недели. Взвешивание (норма: 450-480 г). Начало плавного перехода со Стартера на Ростовой комбикорм (75% старт / 25% рост).",
-    "tasks_uz": "2-hafta yakuni. Taroziga tortish (norma: 450-480 g). Start yemdan O'sish (Grover) yemiga bosqichma-bosqich o'tish (75% start / 25% o'sish).",
-    "video_url": "https://www.youtube.com/watch?v=broiler_week_2"
+    "tasks_ru": "Конец 2-й недели. Взвешивание (норма: 510 г). Начало плавного перехода со Стартера на Ростовой комбикорм (75% старт / 25% рост).",
+    "tasks_uz": "2-hafta yakuni. Taroziga tortish (norma: 510 g). Start yemdan O'sish (Grover) yemiga bosqichma-bosqich o'tish (75% start / 25% o'sish).",
+    "tasks_en": [
+      "End of Week 2: weigh sample birds (target: 510 g).",
+      "Begin gradual transition from Starter to Grower feed (75% Starter / 25% Grower)."
+    ],
+    "video_url": "https://www.youtube.com/results?search_query=broiler+week+2+feed+transition+grower"
   },
   {
     "day": 15,
     "tasks_ru": "Температура 25-26°C. Переход корма: 50% Старт / 50% Рост. Проверьте активность стада и однородность поголовья.",
     "tasks_uz": "Harorat 25-26°C. Yem o'tishi: 50% Start / 50% O'sish. Gala faolligi va bir xil o'sayotganini tekshiring.",
+    "tasks_en": [
+      "Maintain temperature at 25-26°C.",
+      "Feed transition day 2: mix 50% Starter / 50% Grower.",
+      "Check flock activity and uniformity."
+    ],
     "video_url": null
   },
   {
     "day": 16,
     "tasks_ru": "Температура 25°C. Переход корма: 25% Старт / 75% Рост. Контроль влажности подстилки — удалите мокрые участки.",
     "tasks_uz": "Harorat 25°C. Yem o'tishi: 25% Start / 75% O'sish. To'shak namligini tekshiring — namlangan joylarni olib tashlang.",
+    "tasks_en": [
+      "Keep temperature at 25°C.",
+      "Feed transition day 3: mix 25% Starter / 75% Grower.",
+      "Monitor litter moisture and remove wet patches."
+    ],
     "video_url": null
   },
   {
     "day": 17,
     "tasks_ru": "Температура 24-25°C. Полный переход на 100% Ростовой комбикорм (гранула 2.5-3 мм). Увеличьте вентиляцию по мере роста живой массы.",
     "tasks_uz": "Harorat 24-25°C. To'liq 100% O'sish (Grover) yemiga o'tish (2.5-3 mm granula). Tirik vazn oshishi bilan shamollatish quvvatini oshiring.",
+    "tasks_en": [
+      "Maintain temperature at 24-25°C.",
+      "Complete transition to 100% Grower feed (2.5-3 mm pellets).",
+      "Increase ventilation rate as total flock biomass grows."
+    ],
     "video_url": null
   },
   {
     "day": 18,
     "tasks_ru": "Температура 24°C. Темновой режим: 4 часа темноты (для здорового сердца и конечностей). Проверка давления в линии ниппелей.",
     "tasks_uz": "Harorat 24°C. Qorong'ilik rejimi: 4 soat (yurak va oyoq sog'lig'i uchun). Nippel sug'orgichlardagi bosimni tekshirish.",
+    "tasks_en": [
+      "Keep temperature at 24°C and provide 4 hours of darkness for cardiovascular and leg health.",
+      "Check water pressure in nipple drinker lines."
+    ],
     "video_url": null
   },
   {
     "day": 19,
     "tasks_ru": "Температура 23-24°C. Профилактика респираторных болезней (эфирные масла или щадящая аэрозольная дезинфекция в присутствии птицы).",
     "tasks_uz": "Harorat 23-24°C. Nafas yo'llari kasalliklarining oldini olish (efir moylari yoki parrandalar borligida yumshoq aerozol dezinfeksiya).",
+    "tasks_en": [
+      "Maintain temperature at 23-24°C.",
+      "Perform respiratory health checks and maintain clean air quality."
+    ],
     "video_url": null
   },
   {
     "day": 20,
     "tasks_ru": "Температура 23°C. Проверьте плотность посадки. Если птичник позволяет, откройте всю оставшуюся площадь помещения.",
     "tasks_uz": "Harorat 23°C. Zichlikni tekshiring. Agar bino imkon bersa, xonaning qolgan barcha maydonini to'liq oching.",
+    "tasks_en": [
+      "Keep temperature at 23°C.",
+      "Check stocking density and open the full house area if not already done."
+    ],
     "video_url": null
   },
   {
     "day": 21,
-    "tasks_ru": "Конец 3-й недели. Контрольное взвешивание (норма: 900-1000 г). Ревакцинация против Ньюкасла (по рекомендации ветврача).",
-    "tasks_uz": "3-hafta yakuni. Nazorat tortish (norma: 900-1000 g). Nyukaslga qarshi qayta emlash (veterinar tavsiyasiga ko'ra).",
-    "video_url": "https://www.youtube.com/watch?v=broiler_week_3"
+    "tasks_ru": "Конец 3-й недели. Контрольное взвешивание (норма: 1055 г). Ревакцинация против Ньюкасла (по рекомендации ветврача).",
+    "tasks_uz": "3-hafta yakuni. Nazorat tortish (norma: 1055 g). Nyukaslga qarshi qayta emlash (veterinar tavsiyasiga ko'ra).",
+    "tasks_en": [
+      "End of Week 3: weigh sample birds (target: 1055 g).",
+      "Administer booster vaccination against Newcastle disease as advised by your veterinarian."
+    ],
+    "video_url": "https://www.youtube.com/results?search_query=broiler+week+3+management+ventilation"
   },
   {
     "day": 22,
     "tasks_ru": "Температура 22-23°C. Контроль потребления воды. В жаркую погоду охлаждайте поступающую воду (оптимум 16-18°C).",
     "tasks_uz": "Harorat 22-23°C. Suv ichilishini nazorat qiling. Issiq havoda berilayotgan suvni salqin tuting (optimal 16-18°C).",
+    "tasks_en": [
+      "Maintain temperature at 22-23°C.",
+      "Monitor water intake and keep drinking water cool (16-18°C) during warm weather."
+    ],
     "video_url": null
   },
   {
     "day": 23,
     "tasks_ru": "Температура 22°C. Проверка лап птицы на пододерматит (натоптыши). Если влажно под ногами — добавьте известь-пушонку и свежую подстилку.",
     "tasks_uz": "Harorat 22°C. Oyoq panjalarini pododermatitga tekshiring. Agar to'shak nam bo'lsa — so'ndirilgan ohak va yangi to'shak seping.",
+    "tasks_en": [
+      "Keep temperature at 22°C.",
+      "Inspect footpads for pododermatitis; if litter is damp, add fresh dry bedding and improve airflow."
+    ],
     "video_url": null
   },
   {
     "day": 24,
     "tasks_ru": "Температура 21-22°C. Контроль скорости воздуха на уровне птицы: не допускать прямого обдува холодным воздухом.",
     "tasks_uz": "Harorat 21-22°C. Qushlar sathida havo harakati tezligini nazorat qiling: sovuq havo to'g'ridan-to'g'ri urilishiga yo'l qo'ymang.",
+    "tasks_en": [
+      "Maintain temperature at 21-22°C.",
+      "Check air velocity at bird height and prevent cold incoming air from dropping directly onto the flock."
+    ],
     "video_url": null
   },
   {
     "day": 25,
     "tasks_ru": "Температура 21°C. Проверьте конверсию корма (FCR). Очистка ламп и плафонов от птичьей пыли для поддержания светового потока.",
     "tasks_uz": "Harorat 21°C. Yem konversiyasini (FCR) hisoblang. Yorug'lik tushishini ta'minlash uchun chiroqlarni changdan tozalang.",
+    "tasks_en": [
+      "Keep temperature at 21°C and calculate feed conversion ratio (FCR).",
+      "Wipe dust from light fixtures to maintain proper illumination."
+    ],
     "video_url": null
   },
   {
     "day": 26,
     "tasks_ru": "Температура 21°C. Осмотр птиц: проверьте дыхание (хрипы, вытягивание шеи). При признаках болезни обратитесь к ветеринару.",
     "tasks_uz": "Harorat 21°C. Qushlarni ko'zdan kechiring: nafas olishni tekshiring (xirillash, bo'yin cho'zish). Kasallik belgilarida veterinar chaqiring.",
+    "tasks_en": [
+      "Maintain temperature at 21°C.",
+      "Listen and observe for respiratory signs (rales, gasping); consult your veterinarian immediately if observed."
+    ],
     "video_url": null
   },
   {
     "day": 27,
     "tasks_ru": "Температура 20-21°C. Подготовка к переходу на Финишный комбикорм. Проверьте запасы корма на складе.",
     "tasks_uz": "Harorat 20-21°C. Finish yemiga o'tishga tayyorgarlik. Omborxonada yem zaxirasini tekshiring.",
+    "tasks_en": [
+      "Keep temperature at 20-21°C.",
+      "Prepare for transitioning to Finisher feed and verify feed storage inventory."
+    ],
     "video_url": null
   },
   {
     "day": 28,
-    "tasks_ru": "Конец 4-й недели. Взвешивание (норма: 1500-1600 г). Начало перехода с Роста на Финиш (гранула 3.5-4 мм, 70% Рост / 30% Финиш).",
-    "tasks_uz": "4-hafta yakuni. Taroziga tortish (norma: 1500-1600 g). Groverdan Finishga o'tishni boshlash (granula 3.5-4 mm, 70% O'sish / 30% Finish).",
-    "video_url": "https://www.youtube.com/watch?v=broiler_week_4"
+    "tasks_ru": "Конец 4-й недели. Взвешивание (норма: 1745 г). Начало перехода с Роста на Финиш (гранула 3.5-4 мм, 70% Рост / 30% Финиш).",
+    "tasks_uz": "4-hafta yakuni. Taroziga tortish (norma: 1745 g). Groverdan Finishga o'tishni boshlash (granula 3.5-4 mm, 70% O'sish / 30% Finish).",
+    "tasks_en": [
+      "End of Week 4: weigh sample birds (target: 1745 g).",
+      "Start transitioning from Grower to Finisher pellets (3.5-4 mm, 70% Grower / 30% Finisher)."
+    ],
+    "video_url": "https://www.youtube.com/results?search_query=broiler+week+4+finisher+feed+management"
   },
   {
     "day": 29,
     "tasks_ru": "Температура 20°C. Переход корма: 50% Рост / 50% Финиш. Обеспечьте бесперебойную подачу свежей воды.",
     "tasks_uz": "Harorat 20°C. Yem o'tishi: 50% O'sish / 50% Finish. Toza suvning to'xtovsiz berilishini ta'minlang.",
+    "tasks_en": [
+      "Maintain temperature at 20°C.",
+      "Feed transition day 2: mix 50% Grower / 50% Finisher and ensure uninterrupted fresh water."
+    ],
     "video_url": null
   },
   {
     "day": 30,
     "tasks_ru": "Температура 20°C. Переход корма: 25% Рост / 75% Финиш. Проверьте работу аварийных вентиляторов или генератора.",
     "tasks_uz": "Harorat 20°C. Yem o'tishi: 25% O'sish / 75% Finish. Avariya ventilyatorlari va generatorning ishlashini tekshiring.",
+    "tasks_en": [
+      "Keep temperature at 20°C.",
+      "Feed transition day 3: mix 25% Grower / 75% Finisher.",
+      "Test backup fans and emergency power generator."
+    ],
     "video_url": null
   },
   {
     "day": 31,
     "tasks_ru": "Температура 19-20°C. 100% Финишный комбикорм. Прекращение выпойки антибиотиков и кокцидиостатиков (период выведения до убоя).",
     "tasks_uz": "Harorat 19-20°C. 100% Finish yemi. Antibiotik va koksidiostatiklarni ichirishni to'xtatish (so'yishdan oldingi tozalanish davri).",
+    "tasks_en": [
+      "Maintain temperature at 19-20°C and feed 100% Finisher ration.",
+      "Observe strict withdrawal periods for any medications or coccidiostats prior to harvest."
+    ],
     "video_url": null
   },
   {
     "day": 32,
     "tasks_ru": "Температура 19°C. Контроль перегрева: если на улице жара >30°C, включайте туманообразование или смачивание крыши.",
     "tasks_uz": "Harorat 19°C. Qizib ketishdan saqlash: tashqarida havo >30°C bo'lsa, tumanlagichlar yoki tomga suv sepishni yoqing.",
+    "tasks_en": [
+      "Keep temperature at 19°C.",
+      "Guard against heat stress: if outdoor temperature exceeds 30°C, activate cooling pads or roof sprinkling."
+    ],
     "video_url": null
   },
   {
     "day": 33,
     "tasks_ru": "Температура 19°C. Проверьте состояние перьевого покрова и кожных покровов. Не допускайте столпотворения птицы у кормушек.",
     "tasks_uz": "Harorat 19°C. Pat qoplami va teri holatini tekshiring. Yemdonlar atrofida qushlar tiqilinchini oldini oling.",
+    "tasks_en": [
+      "Maintain temperature at 19°C.",
+      "Inspect feather cover and skin condition; prevent crowding around feeders."
+    ],
     "video_url": null
   },
   {
     "day": 34,
     "tasks_ru": "Температура 18-19°C. Поднимите кормушки до уровня груди птицы, чтобы минимизировать рассыпание корма.",
     "tasks_uz": "Harorat 18-19°C. Yem isrof bo'lishini kamaytirish uchun yemdonlarni qushning ko'krak sathigacha ko'taring.",
+    "tasks_en": [
+      "Keep temperature at 18-19°C.",
+      "Raise feeders to bird breast height to minimize feed spillage."
+    ],
     "video_url": null
   },
   {
     "day": 35,
-    "tasks_ru": "Конец 5-й недели. Контрольное взвешивание (норма: 2100-2300 г). Оценка готовности к первому прореживанию стада (если планируется).",
-    "tasks_uz": "5-hafta yakuni. Nazorat tortish (norma: 2100-2300 g). Podani birinchi siyraklatishga tayyorligini baholang (agar rejalashtirilgan bo'lsa).",
-    "video_url": "https://www.youtube.com/watch?v=broiler_week_5"
+    "tasks_ru": "Конец 5-й недели. Контрольное взвешивание (норма: 2480 г). Оценка готовности к первому прореживанию стада (если планируется).",
+    "tasks_uz": "5-hafta yakuni. Nazorat tortish (norma: 2480 g). Podani birinchi siyraklatishga tayyorligini baholang (agar rejalashtirilgan bo'lsa).",
+    "tasks_en": [
+      "End of Week 5: weigh sample birds (target: 2480 g).",
+      "Assess flock readiness for partial thinning if planned."
+    ],
+    "video_url": "https://www.youtube.com/results?search_query=broiler+week+5+weighing+thinning"
   },
   {
     "day": 36,
     "tasks_ru": "Температура 18-19°C. Контроль влажности воздуха (оптимум 55-65%). Максимальное проветривание в дневное время.",
     "tasks_uz": "Harorat 18-19°C. Havo namligini nazorat qilish (optimal 55-65%). Kunduzgi vaqtda maksimal shamollatish.",
+    "tasks_en": [
+      "Maintain temperature at 18-19°C and relative humidity at 55-65%.",
+      "Run maximum daytime ventilation to remove heat and moisture."
+    ],
     "video_url": null
   },
   {
     "day": 37,
     "tasks_ru": "Температура 18°C. Проверка чистоты воды. Подготовка тары/ящиков для будущей отгрузки и дезинфекция транспорта.",
     "tasks_uz": "Harorat 18°C. Suv tozaligini tekshiring. Bo'lajak sotish/tashish uchun yashiklarni tayyorlash va transportni dezinfeksiya qilish.",
+    "tasks_en": [
+      "Keep temperature at 18°C and verify water cleanliness.",
+      "Prepare and disinfect transport crates and vehicles for upcoming harvest."
+    ],
     "video_url": null
   },
   {
     "day": 38,
     "tasks_ru": "Температура 18°C. Мониторинг аппетита и подвижности. Запись данных по приросту и расходу корма в дневник.",
     "tasks_uz": "Harorat 18°C. Ishtaha va harakatchanlikni kuzatish. Kundalikka vazn qo'shilishi va yem sarfini qayd etish.",
+    "tasks_en": [
+      "Maintain temperature at 18°C.",
+      "Monitor flock appetite and mobility; log weight gain and feed intake in the diary."
+    ],
     "video_url": null
   },
   {
     "day": 39,
-    "tasks_ru": "Температура 18°C. Проверьте соответствие веса рыночным требованиям покупателей (оптимум 2.5 - 2.8 кг).",
-    "tasks_uz": "Harorat 18°C. Qushlar vazni xaridorlarning bozor talabiga mosligini tekshiring (optimal 2.5 - 2.8 kg).",
+    "tasks_ru": "Температура 18°C. Проверьте соответствие веса рыночным требованиям покупателей (оптимум 2.8 - 3.0 кг).",
+    "tasks_uz": "Harorat 18°C. Qushlar vazni xaridorlarning bozor talabiga mosligini tekshiring (optimal 2.8 - 3.0 kg).",
+    "tasks_en": [
+      "Keep temperature at 18°C.",
+      "Check average bird weight against buyer market targets (2.8 - 3.0 kg)."
+    ],
     "video_url": null
   },
   {
     "day": 40,
     "tasks_ru": "Температура 18°C. Подготовка к завершению цикла: согласуйте график отгрузки с закупщиками или убойным цехом.",
     "tasks_uz": "Harorat 18°C. Siklni yakunlashga tayyorgarlik: xaridorlar yoki kushxona bilan topshirish vaqtini kelishib oling.",
+    "tasks_en": [
+      "Maintain temperature at 18°C.",
+      "Prepare for cycle completion and confirm pickup schedule with buyers or processing plant."
+    ],
     "video_url": null
   },
   {
     "day": 41,
     "tasks_ru": "Температура 18°C. За 8-10 часов до отлова прекратите подачу корма для опорожнения кишечника. Воду НЕ отключать до самого начала отлова!",
     "tasks_uz": "Harorat 18°C. Qushlarni ushlashdan 8-10 soat oldin ichaklarni bo'shatish uchun yem berishni to'xtating. Suvni ushlash boshlanguncha UZMANG!",
+    "tasks_en": [
+      "Keep temperature at 18°C.",
+      "Withdraw feed 8-10 hours before catching to clear the digestive tract; keep water available until catching begins."
+    ],
     "video_url": null
   },
   {
     "day": 42,
     "tasks_ru": "Финальный день (42 дня). Отлов при синем/приглушенном свете без травм. Итоговое взвешивание, фиксация FCR и сохранности партии в AgroZen.",
     "tasks_uz": "Yakuniy kun (42 kun). Shikast yetkazmaslik uchun ko'k/xira chiroqda ushlash. Yakuniy taroziga tortish, AgroZen ilovasida partiyani yakunlash.",
-    "video_url": "https://www.youtube.com/watch?v=broiler_finish"
+    "tasks_en": [
+      "Final Day (Day 42): catch birds calmly under dim or blue light to prevent bruising.",
+      "Complete final weighing and record batch FCR and livability in AgroZen."
+    ],
+    "video_url": "https://www.youtube.com/results?search_query=broiler+harvesting+catching+best+practices"
   }
 ];
 
@@ -863,8 +1119,24 @@ export function retrieveRelevantKnowledge(
   language: 'uz' | 'ru' | 'en' = 'uz',
   maxArticles = 3
 ): { topics: string[]; contextText: string } {
-  const articles = language === 'ru' ? KNOWLEDGE_ARTICLES_RU : (language === 'en' ? KNOWLEDGE_ARTICLES_RU : KNOWLEDGE_ARTICLES_UZ);
+  const articles =
+    language === 'ru'
+      ? KNOWLEDGE_ARTICLES_RU
+      : language === 'en'
+        ? KNOWLEDGE_ARTICLES_EN
+        : KNOWLEDGE_ARTICLES_UZ;
   const queryTokens = tokenize(query);
+  const queryLower = query.toLowerCase();
+
+  // English / Uzbek / Russian domain stem hints mapped to article filenames
+  const stemHints: Record<string, string[]> = {
+    'temperature.md': ['temp', 'heat', 'cold', 'brood', 'degree', 'humidity', 'chill', 'pant', 'huddle', 'harorat', 'issiq', 'sovuq', 'температур', 'тепл', 'холод'],
+    'feed.md': ['feed', 'starter', 'grower', 'finisher', 'protein', 'crumb', 'pellet', 'fcr', 'ration', 'weight', 'yem', 'oqsil', 'корм', 'белок', 'протеин'],
+    'water.md': ['water', 'drink', 'nipple', 'flush', 'chlorin', 'thirst', 'dehydrat', 'suv', 'ichimlik', 'вод', 'поил', 'ниппел'],
+    'diseases.md': ['diseas', 'sick', 'mortal', 'dead', 'coccid', 'newcastle', 'gumboro', 'bronchit', 'vaccin', 'dropp', 'blood', 'kasal', 'vaksina', 'болезн', 'вакцин', 'падеж'],
+    'sanitation.md': ['sanit', 'clean', 'disinfect', 'biosecur', 'litter', 'shaving', 'bedding', 'lime', 'tozalik', 'dezinfeksiya', 'санитар', 'дезинфекц', 'подстилк'],
+    'ventilation.md': ['ventil', 'air', 'fan', 'ammonia', 'draft', 'tunnel', 'oxygen', 'cooling', 'shamol', 'havo', 'вентиляц', 'воздух', 'аммиак'],
+  };
 
   const scored = articles.map((article) => {
     let score = 0;
@@ -877,6 +1149,13 @@ export function retrieveRelevantKnowledge(
       }
       if (contentLower.includes(token)) {
         score += 2;
+      }
+    }
+
+    const hints = stemHints[article.filename] ?? [];
+    for (const stem of hints) {
+      if (queryLower.includes(stem)) {
+        score += 4;
       }
     }
 
@@ -897,20 +1176,25 @@ export function retrieveRelevantKnowledge(
   );
 
   // Check if norms are relevant
-  const queryLower = query.toLowerCase();
   const normsKeywords = [
     'norma', 'normasi', 'ogirlik', 'vazn', 'harorat', 'temperatura', 'gradus',
     'yem', 'sarfi', 'suv', 'hafta', 'kun', 'jadval', 'ross', 'cobb',
     'норма', 'вес', 'масса', 'температура', 'градус', 'корм', 'расход', 'вода', 'неделя', 'день',
-    'norm', 'norms', 'weight', 'target', 'temperature', 'feed', 'consumption', 'water', 'week', 'day'
+    'norm', 'norms', 'weight', 'target', 'temperature', 'feed', 'consumption', 'water', 'week', 'day',
+    'gram', 'chart', 'schedule', 'growth'
   ];
 
   const mentionsNorms = normsKeywords.some((kw) => queryLower.includes(kw));
   if (mentionsNorms) {
     topics.push('norms.json');
+    const normsHeader =
+      language === 'en'
+        ? '### Ross-308 / Cobb-500 Weekly Norms Table:\n'
+        : language === 'ru'
+          ? '### Таблица еженедельных норм Ross-308 / Cobb-500:\n'
+          : '### Ross-308 / Cobb-500 haftalik me\'yorlar jadvali (Weekly Norms):\n';
     contextParts.push(
-      '### Ross-308 / Cobb-500 normolari jadvali (Weekly Norms):\n' +
-      JSON.stringify(NORMS_DATA.weekly_norms, null, 2)
+      normsHeader + JSON.stringify(NORMS_DATA.weekly_norms, null, 2)
     );
   }
 
@@ -919,3 +1203,6 @@ export function retrieveRelevantKnowledge(
     contextText: contextParts.join('\n\n---\n\n'),
   };
 }
+
+export const retrieveRelevantArticles = retrieveRelevantKnowledge;
+

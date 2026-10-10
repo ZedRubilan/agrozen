@@ -29,12 +29,14 @@ class DiaryScreen extends StatefulWidget {
 
 class _DiaryScreenState extends State<DiaryScreen> {
   String _lang = 'uz';
+  Locale? _observedLocale;
   int _initialCount = 500;
   int _currentCount = 495;
+  int _batchDay = 1;
   int _todayMortality = 0;
   double _todayFeed = 0.0;
   double _lastWeight = 0.0;
-  AlertResult? _activeAlert;
+  List<AlertResult> _alerts = [];
   Map<String, dynamic>? _vet;
   bool _isLoading = true;
 
@@ -46,15 +48,45 @@ class _DiaryScreenState extends State<DiaryScreen> {
     _loadDiary();
   }
 
-  Future<void> _loadDiary() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentLocale = Localizations.maybeLocaleOf(context);
+    if (_observedLocale != null && currentLocale != _observedLocale) {
+      _observedLocale = currentLocale;
+      _loadDiary(localeOverride: currentLocale?.languageCode);
+    } else {
+      _observedLocale = currentLocale;
+      _checkLanguageChange();
+    }
+  }
+
+  Future<void> _checkLanguageChange() async {
+    final prefs = await DailyCounters.rolled();
+    final savedLang = prefs.getString('app_language') ?? 'uz';
+    if (savedLang != _lang && mounted) {
+      _loadDiary();
+    }
+  }
+
+  Future<void> _loadDiary({String? localeOverride}) async {
     setState(() => _isLoading = true);
     final prefs = await DailyCounters.rolled();
-    _lang = prefs.getString('app_language') ?? 'uz';
+    _lang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
     _initialCount = prefs.getInt('initial_count') ?? 500;
     _currentCount = prefs.getInt('current_count') ?? _initialCount;
     _todayMortality = DailyCounters.getMortality(prefs);
     _todayFeed = DailyCounters.getFeed(prefs);
     _lastWeight = prefs.getDouble('last_weight') ?? 0.0;
+
+    final arrivalStr = prefs.getString('arrival_date');
+    if (arrivalStr != null) {
+      final parsed = DateTime.tryParse(arrivalStr);
+      if (parsed != null) {
+        final diff = DateTime.now().difference(parsed).inDays + 1;
+        _batchDay = diff.clamp(1, 42);
+      }
+    }
 
     final district = prefs.getString('farmer_district') ?? 'Toshkent';
     final vets = await _knowledgeRepo.getVetByDistrict(district);
@@ -62,16 +94,31 @@ class _DiaryScreenState extends State<DiaryScreen> {
       _vet = vets.first;
     }
 
+    final norms = await _knowledgeRepo.getParsedNorms();
+    final engine = AlertEngine(norms);
+    final triggered = <AlertResult>[];
+
     if (_todayMortality > 0) {
-      final norms = await _knowledgeRepo.getParsedNorms();
-      final engine = AlertEngine(norms);
-      _activeAlert = engine.checkMortality(
+      final mortalityAlert = engine.checkMortality(
         deaths: _todayMortality,
-        currentCount: _currentCount,
+        currentCount: _currentCount + _todayMortality,
       );
-    } else {
-      _activeAlert = null;
+      if (mortalityAlert != null) {
+        triggered.add(mortalityAlert);
+      }
     }
+
+    if (_lastWeight > 0) {
+      final weightAlert = engine.checkWeight(
+        weightGrams: _lastWeight,
+        batchDay: _batchDay,
+      );
+      if (weightAlert != null) {
+        triggered.add(weightAlert);
+      }
+    }
+
+    _alerts = triggered;
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -113,18 +160,20 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ),
                   const SizedBox(height: 18),
 
-                  // Active Alert if any
-                  if (_activeAlert != null) ...[
-                    StaggeredSlideFade(
-                      index: 2,
-                      child: AlertCard.fromAlertResult(
-                        alert: _activeAlert!,
-                        locale: _lang,
-                        vetName: _vet?['name'] as String?,
-                        vetPhone: _vet?['phone'] as String?,
+                  // Active Alerts if any
+                  if (_alerts.isNotEmpty) ...[
+                    for (final alert in _alerts) ...[
+                      StaggeredSlideFade(
+                        index: 2,
+                        child: AlertCard.fromAlertResult(
+                          alert: alert,
+                          locale: _lang,
+                          vetName: _vet?['name'] as String?,
+                          vetPhone: _vet?['phone'] as String?,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
+                    ],
                   ],
 
                   // 2. Log Action Cards (Yangi yozuv kiritish)
@@ -274,38 +323,40 @@ class _DiaryScreenState extends State<DiaryScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppStrings.tr(
-                lang: _lang,
-                uz: 'Partiya kundaligi',
-                ru: 'Дневник партии',
-                en: 'Flock Diary',
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppStrings.tr(
+                  lang: _lang,
+                  uz: 'Partiya kundaligi',
+                  ru: 'Дневник партии',
+                  en: 'Flock Diary',
+                ),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.textPrimary,
+                  letterSpacing: -0.4,
+                ),
               ),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: AppTheme.textPrimary,
-                letterSpacing: -0.4,
+              const SizedBox(height: 2),
+              Text(
+                AppStrings.tr(
+                  lang: _lang,
+                  uz: "Kunlik sarf, nobodlik va vazn nazorati",
+                  ru: "Ежедневный учёт корма, падежа и веса",
+                  en: "Daily mortality, feed and weight records",
+                ),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: AppTheme.textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              AppStrings.tr(
-                lang: _lang,
-                uz: "Kunlik sarf, nobodlik va vazn nazorati",
-                ru: "Ежедневный учёт корма, падежа и веса",
-                en: "Daily mortality, feed and weight records",
-              ),
-              style: const TextStyle(
-                fontSize: 12.5,
-                color: AppTheme.textMuted,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         if (!widget.isEmbeddedInPageView && Navigator.canPop(context))
           Container(
@@ -325,6 +376,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
   /// Photographic Hero Status Card for the Flock
   Widget _buildCinematicFlockHeroCard() {
+    final gramUnit = _lang == 'en' ? 'g' : 'г';
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTheme.radiusXl),
@@ -402,15 +454,24 @@ class _DiaryScreenState extends State<DiaryScreen> {
                           ],
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(100),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                        ),
-                        child: Text(
-                          "Boshlang'ich: $_initialCount",
-                          style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withAlpha(100),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                          ),
+                          child: Text(
+                            AppStrings.tr(
+                              lang: _lang,
+                              uz: "Boshlang'ich: $_initialCount",
+                              ru: 'Начальное: $_initialCount',
+                              en: 'Initial: $_initialCount',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ],
@@ -441,7 +502,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       Expanded(
                         child: _buildFlockHeroMetric(
                           label: AppStrings.tr(lang: _lang, uz: "O'rtacha vazn", ru: 'Вес (ср.)', en: 'Avg Weight'),
-                          value: _lastWeight > 0 ? '${_lastWeight.toInt()} г' : '-',
+                          value: _lastWeight > 0 ? '${_lastWeight.toInt()} $gramUnit' : '-',
                           color: Colors.white,
                           icon: Icons.scale_rounded,
                         ),
@@ -667,7 +728,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 borderRadius: BorderRadius.circular(AppTheme.radiusPill),
               ),
               child: Text(
-                _lastWeight > 0 ? '${_lastWeight.toStringAsFixed(0)} г' : '-',
+                _lastWeight > 0 ? '${_lastWeight.toStringAsFixed(0)} ${_lang == 'en' ? 'g' : 'г'}' : '-',
                 style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF0F766E), fontSize: 13),
               ),
             ),

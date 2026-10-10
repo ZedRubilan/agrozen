@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import '../config/supabase_config.dart';
 import '../core/localization/app_strings.dart';
 
@@ -35,11 +35,10 @@ class PoultryVisionAnalyzer {
     final lang = language.toLowerCase();
 
     // 1. If Supabase cloud is configured, attempt Gemini Vision multimodal invocation
-    if (SupabaseConfig.isConfigured) {
+    if (SupabaseConfig.isConfigured && imagePath.trim().isNotEmpty) {
       try {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          final bytes = await file.readAsBytes();
+        final bytes = await XFile(imagePath).readAsBytes();
+        if (bytes.isNotEmpty) {
           final base64Image = base64Encode(bytes);
 
           final response = await SupabaseConfig.client.functions.invoke(

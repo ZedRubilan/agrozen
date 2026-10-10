@@ -50,7 +50,7 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
-    final weightGrams = double.parse(_controller.text.trim());
+    final weightGrams = double.parse(_controller.text.trim().replaceAll(',', '.'));
     final prefs = await DailyCounters.rolled();
     await prefs.setDouble('last_weight', weightGrams);
 
@@ -115,7 +115,7 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
   }
 
   void _addQuick(double delta) {
-    final current = double.tryParse(_controller.text.trim()) ?? 0.0;
+    final current = double.tryParse(_controller.text.trim().replaceAll(',', '.')) ?? 0.0;
     final next = current + delta;
     _controller.text = next % 1 == 0 ? next.toInt().toString() : next.toStringAsFixed(1);
   }
@@ -210,7 +210,7 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                           ? 'Enter weight'
                           : (isRu ? 'Введите вес' : 'Vaznni kiriting');
                     }
-                    final n = double.tryParse(v.trim());
+                    final n = double.tryParse(v.trim().replaceAll(',', '.'));
                     if (n == null || n <= 0) {
                       return isEn
                           ? 'Value must be greater than 0'
@@ -220,8 +220,10 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
                   children: [
                     _buildQuickChip(isEn ? '+50 g' : (isRu ? '+50 г' : '+50 g'), () => _addQuick(50)),
                     _buildQuickChip(isEn ? '+100 g' : (isRu ? '+100 г' : '+100 g'), () => _addQuick(100)),

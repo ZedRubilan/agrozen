@@ -40,57 +40,121 @@ class LocalRag {
     'ventilation',
   ];
 
-  /// Aliases so farmers writing in either language or in plain speech still
+  /// Mapping of canonical numbered topic names to Uzbek file names in `knowledge/broilers/uz/`.
+  static const Map<String, String> _uzTopicMap = {
+    '01_preparation': '01_tayyorgarlik',
+    '02_first_days': '02_birinchi_kunlar',
+    '03_temperature': '03_harorat',
+    '04_ventilation': '04_shamollatish',
+    '05_feeding': '05_oziqlantirish',
+    '06_water': '06_suv',
+    '07_vaccination': '07_emlash',
+    '08_diseases': '08_kasalliklar',
+  };
+
+  /// Maps legacy summary topic names to their full numbered counterparts so we
+  /// only fall back to the legacy summary when the numbered file is absent.
+  static const Map<String, String> _legacyToNumbered = {
+    'temperature': '03_temperature',
+    'ventilation': '04_ventilation',
+    'feed': '05_feeding',
+    'vaccination': '07_vaccination',
+  };
+
+  /// Aliases so farmers writing in any supported language or plain speech still
   /// hit the right article.
   static const Map<String, List<String>> _aliases = {
     'temperature': [
       'harorat', 'issiq', 'sovuq', 'temperatura', 'gradus', 'цельс',
-      'температур', 'холод', 'жар', 'qizib', 'xona',
+      'температур', 'холод', 'жар', 'qizib', 'xona', 'temperature',
+      'heat', 'cold', 'warm', 'brooder', 'degree', 'celsius', 'humidity',
+      'namlik', 'влажност',
+    ],
+    '03_temperature': [
+      'harorat', 'issiq', 'sovuq', 'temperatura', 'gradus', 'цельс',
+      'температур', 'холод', 'жар', 'qizib', 'xona', 'temperature',
+      'heat', 'cold', 'warm', 'brooder', 'degree', 'celsius', 'humidity',
+      'namlik', 'влажност',
     ],
     'feed': [
       'yem', 'ovqat', 'korm', 'корм', 'кормлен', 'granula', 'granul',
       'start', 'finish', 'protein', 'oqsil', 'белок', 'aralash',
+      'feed', 'feeding', 'starter', 'grower', 'finisher', 'pellet',
+      'crumble', 'ration', 'nutrition',
+    ],
+    '05_feeding': [
+      'yem', 'ovqat', 'korm', 'корм', 'кормлен', 'granula', 'granul',
+      'start', 'finish', 'protein', 'oqsil', 'белок', 'aralash',
+      'feed', 'feeding', 'starter', 'grower', 'finisher', 'pellet',
+      'crumble', 'ration', 'nutrition',
     ],
     'vaccination': [
       'emlash', 'vaktsina', 'вакцин', 'прививк', 'nyukasl', 'новорос',
       'gamboro', 'гамборо', 'kasall', 'болез', 'dori', 'антибиот',
-      'antibiotic', 'tashxis', 'диагноз', 'симптом',
+      'antibiotic', 'tashxis', 'диагноз', 'симптом', 'vaccin',
+      'newcastle', 'bronchitis', 'immun',
+    ],
+    '07_vaccination': [
+      'emlash', 'vaktsina', 'вакцин', 'прививк', 'nyukasl', 'новорос',
+      'gamboro', 'гамборо', 'kasall', 'болез', 'vaccin',
+      'newcastle', 'bronchitis', 'immun',
     ],
     'ventilation': [
       'shamol', 'shamollatish', 'вентиляц', 'havo', 'ammiak', 'аммиак',
-      'свежий воздух', 'prito', 'приток',
+      'свежий воздух', 'prito', 'приток', 'ventilat', 'airflow', 'ammonia',
+      'draft', 'tunnel', 'fan', 'oxygen',
+    ],
+    '04_ventilation': [
+      'shamol', 'shamollatish', 'вентиляц', 'havo', 'ammiak', 'аммиак',
+      'свежий воздух', 'prito', 'приток', 'ventilat', 'airflow', 'ammonia',
+      'draft', 'tunnel', 'fan', 'oxygen',
     ],
     '06_water': [
       'suv', 'vod', 'вод', 'пойлок', 'пилки', 'поениц', 'nipplet', 'ниппел',
-      'obihidrat', 'обезвож',
+      'obihidrat', 'обезвож', 'water', 'drinker', 'nipple', 'dehydrat',
+      'flushing',
     ],
     '01_preparation': [
       'tayyor', 'подготов', 'dezinfek', 'дезинфекц', 'bruder', 'брудер',
-      'to\'shama', 'подстил', 'завоз',
+      "to'shama", 'подстил', 'завоз', 'prepar', 'disinfect', 'bedding',
+      'litter', 'shavings', 'preheat',
     ],
     '02_first_days': [
-      'birinchi kun', 'первые', 'zob', 'зоб', 'soat', 'jo\'ja', 'joja',
-      'цыпленок', 'цыплят',
+      'birinchi kun', 'первые', 'zob', 'зоб', 'soat', "jo'ja", 'joja',
+      'цыпленок', 'цыплят', 'first day', 'chick', 'crop fill', 'arrival',
+      'placement',
     ],
     '08_diseases': [
       'kasallik', 'симптом', 'priznak', 'признак', 'coccid', 'кокцид',
       'ascite', 'асцит', 'nafas', 'дыхан', 'holsiz', 'вялост',
+      'disease', 'symptom', 'illness', 'sick', 'droppings', 'diarrhea',
+      'letharg',
     ],
   };
 
-  /// Normalizes a question for keyword matching.
+  /// Normalizes text for keyword matching.
   ///
-  /// Lowercases and folds Russian `ё` -> `е`, so «Падёж» matches the stem
-  /// «падеж». Without this a farmer writing ё would silently miss every rule.
-  static String _norm(String s) => s.toLowerCase().replaceAll('ё', 'е');
+  /// Lowercases, folds Russian `ё` -> `е` so «Падёж» matches «падеж», and
+  /// normalizes Uzbek curly/modifier apostrophes (`’`, `‘`, `ʻ`, `` ` ``) to `'`.
+  static String _norm(String s) => s
+      .toLowerCase()
+      .replaceAll('ё', 'е')
+      .replaceAll(RegExp(r"[’‘ʻ`]"), "'");
+
+  /// Strips HTML comments (`<!-- ... -->`) so author metadata never leaks into
+  /// scoring or farmer-visible snippets.
+  static String _stripHtmlComments(String s) =>
+      s.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
 
   /// Keywords that mean the farmer is describing an emergency.
   /// These are STEMS, not full words, so «падёж», «падежа» and «падежом» all
   /// match.
   static const List<String> _emergencyKeywords = [
-    'olim', 'olum', 'nobod', 'массов', 'гиб', 'gib', 'padej', 'падеж',
-    'tuyuk', 'туя', 'oqish', 'понос', 'ishit',
+    'olim', "o'lim", 'olum', "o'lum", 'nobod', 'массов', 'гиб', 'gib',
+    'padej', 'падеж', 'tuyuk', 'туя', 'oqish', 'понос', 'ishit',
     'задыха', 'zayix', 'душн', 'тепловой стресс',
+    'dying', 'dead', 'mortality', 'suffocat', 'gasping', 'panting',
+    'diarrhea', 'bloody', 'paralyz', 'newcastle', 'coccidiosis', 'convuls',
   ];
 
   /// Human-readable titles shown to the farmer, keyed by file name.
@@ -106,12 +170,22 @@ class LocalRag {
       'uz': 'Harorat va namlik',
       'en': 'Temperature and Humidity',
     },
+    '03_harorat': {
+      'ru': 'Температура и влажность',
+      'uz': 'Harorat va namlik',
+      'en': 'Temperature and Humidity',
+    },
     'feed': {
       'ru': 'Фазы кормления',
       'uz': 'Oziqlantirish bosqichlari',
       'en': 'Feeding Phases',
     },
     '05_feeding': {
+      'ru': 'Фазы кормления',
+      'uz': 'Oziqlantirish bosqichlari',
+      'en': 'Feeding Phases',
+    },
+    '05_oziqlantirish': {
       'ru': 'Фазы кормления',
       'uz': 'Oziqlantirish bosqichlari',
       'en': 'Feeding Phases',
@@ -126,6 +200,11 @@ class LocalRag {
       'uz': 'Emlash',
       'en': 'Vaccination',
     },
+    '07_emlash': {
+      'ru': 'Вакцинация',
+      'uz': 'Emlash',
+      'en': 'Vaccination',
+    },
     'ventilation': {
       'ru': 'Вентиляция и микроклимат',
       'uz': 'Shamollatish va mikroiqlim',
@@ -136,7 +215,17 @@ class LocalRag {
       'uz': 'Shamollatish va mikroiqlim',
       'en': 'Ventilation & Microclimate',
     },
+    '04_shamollatish': {
+      'ru': 'Вентиляция и микроклимат',
+      'uz': 'Shamollatish va mikroiqlim',
+      'en': 'Ventilation & Microclimate',
+    },
     '06_water': {
+      'ru': 'Вода и поилки',
+      'uz': 'Suv va suv berish',
+      'en': 'Water & Drinkers',
+    },
+    '06_suv': {
       'ru': 'Вода и поилки',
       'uz': 'Suv va suv berish',
       'en': 'Water & Drinkers',
@@ -146,12 +235,27 @@ class LocalRag {
       'uz': 'Xonani tayyorlash',
       'en': 'Barn Preparation Prior to Arrival',
     },
+    '01_tayyorgarlik': {
+      'ru': 'Подготовка помещения до завоза',
+      'uz': 'Xonani tayyorlash',
+      'en': 'Barn Preparation Prior to Arrival',
+    },
     '02_first_days': {
       'ru': 'Приём цыплят и первые 3 дня',
       'uz': "Jo'jalarni qabul qilish va birinchi kunlar",
       'en': 'Chick Placement & First 3 Days',
     },
+    '02_birinchi_kunlar': {
+      'ru': 'Приём цыплят и первые 3 дня',
+      'uz': "Jo'jalarni qabul qilish va birinchi kunlar",
+      'en': 'Chick Placement & First 3 Days',
+    },
     '08_diseases': {
+      'ru': 'Признаки болезни — когда нужен ветеринар',
+      'uz': 'Kasallik belgilari — qachon veterinar kerak',
+      'en': 'Disease Signs & Veterinary Referral',
+    },
+    '08_kasalliklar': {
       'ru': 'Признаки болезни — когда нужен ветеринар',
       'uz': 'Kasallik belgilari — qachon veterinar kerak',
       'en': 'Disease Signs & Veterinary Referral',
@@ -167,32 +271,56 @@ class LocalRag {
     return byTopic[lang] ?? byTopic['uz'] ?? topic;
   }
 
+  Future<String?> _loadTopicForLanguage(String lang, String topic) async {
+    final normalizedLang = lang.trim().toLowerCase();
+    if (normalizedLang == 'uz' && _uzTopicMap.containsKey(topic)) {
+      try {
+        final uzContent = await _repo.getTopicContent(lang, _uzTopicMap[topic]!);
+        if (uzContent.trim().isNotEmpty) return uzContent;
+      } catch (_) {
+        // Fall through to canonical topic name (e.g. in unit tests with _FakeBundle)
+      }
+    }
+    try {
+      final content = await _repo.getTopicContent(lang, topic);
+      if (content.trim().isNotEmpty) return content;
+    } catch (_) {}
+    return null;
+  }
+
   /// Scores articles for [question] and returns the top [max] matches.
   Future<List<_Match>> _retrieve(
     String question,
     String lang,
     int max,
   ) async {
-    final tokens = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9]+')
-        .allMatches(question.toLowerCase())
-        .map((m) => (m.group(0) ?? '').toLowerCase())
+    final normalizedQuestion = _norm(question);
+    final tokens = RegExp(r"[a-zA-Zа-яА-ЯёЁ0-9']+")
+        .allMatches(normalizedQuestion)
+        .map((m) => (m.group(0) ?? '').replaceAll(RegExp(r"^'+|'+$"), ''))
         .where((t) => t.length > 2)
         .toList();
 
     if (tokens.isEmpty) return const [];
 
     final scored = <_Match>[];
+    final loadedTopics = <String>{};
 
     for (final topic in _topics) {
-      String content;
-      try {
-        content = await _repo.getTopicContent(lang, topic);
-      } catch (_) {
-        continue; // topic not present in this build
+      // Skip legacy summary duplicate if its full numbered article already loaded.
+      final numberedCounterpart = _legacyToNumbered[topic];
+      if (numberedCounterpart != null &&
+          loadedTopics.contains(numberedCounterpart)) {
+        continue;
       }
 
+      final rawContent = await _loadTopicForLanguage(lang, topic);
+      if (rawContent == null) continue;
+      loadedTopics.add(topic);
+
+      final content = _stripHtmlComments(rawContent);
       var score = 0;
-      final haystack = content.toLowerCase();
+      final haystack = _norm(content);
       final aliases = _aliases[topic] ?? const <String>[];
 
       for (final token in tokens) {
@@ -302,7 +430,7 @@ class LocalRag {
   /// Stems, so «дозу», «доза» and «дозировка» all match.
   static const List<String> _medicalKeywords = [
     'dori', 'антибиот', 'antibiot', 'doz', 'доз', 'tashxis', 'диагноз',
-    'davol', 'леч', 'tablet', 'таблет', 'prick', 'колот', 'привив',
+    'davol', 'леч', 'tablet', 'таблет', 'prick', 'колот',
     'сироп', 'suspens', 'порош', 'kukun', 'medicine', 'drug', 'dose',
     'treatment', 'cure',
   ];
@@ -335,21 +463,27 @@ class LocalRag {
   }
 
   String _bestParagraph(String content, String question) {
-    final tokens = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9]+')
-        .allMatches(question.toLowerCase())
-        .map((m) => (m.group(0) ?? '').toLowerCase())
+    final normalizedQuestion = _norm(question);
+    final tokens = RegExp(r"[a-zA-Zа-яА-ЯёЁ0-9']+")
+        .allMatches(normalizedQuestion)
+        .map((m) => (m.group(0) ?? '').replaceAll(RegExp(r"^'+|'+$"), ''))
         .where((t) => t.length > 2)
         .toSet();
 
-    final paragraphs = content.split(RegExp(r'\n\s*\n'));
+    final sanitized = _stripHtmlComments(content);
+    final paragraphs = sanitized.split(RegExp(r'\n\s*\n'));
     var best = '';
     var bestScore = 0;
 
     for (final para in paragraphs) {
       final clean = para.trim();
-      if (clean.isEmpty || clean.startsWith('#')) continue;
+      if (clean.isEmpty ||
+          clean.startsWith('#') ||
+          RegExp(r'^[-*_]{3,}$').hasMatch(clean)) {
+        continue;
+      }
       var score = 0;
-      final lower = clean.toLowerCase();
+      final lower = _norm(clean);
       for (final t in tokens) {
         if (lower.contains(t)) score++;
       }
@@ -363,7 +497,11 @@ class LocalRag {
     if (best.isEmpty) {
       for (final para in paragraphs) {
         final clean = para.trim();
-        if (clean.isEmpty || clean.startsWith('#')) continue;
+        if (clean.isEmpty ||
+            clean.startsWith('#') ||
+            RegExp(r'^[-*_]{3,}$').hasMatch(clean)) {
+          continue;
+        }
         best = clean;
         break;
       }

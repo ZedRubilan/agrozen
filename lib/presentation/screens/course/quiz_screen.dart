@@ -37,18 +37,21 @@ class _QuizScreenState extends State<QuizScreen> {
             'question': 'To what temperature should the barn be preheated 24 hours before chick arrival?',
             'options': ['20-22°C', '26-28°C', '33-34°C', '40°C'],
             'correct': 2,
+            'explanation': 'Day-old chicks cannot regulate their own body temperature; preheating the barn floor and air to 33-34°C prevents chilling and early mortality.',
           };
         } else if (lang == 'ru') {
           return {
             'question': 'До какой температуры необходимо прогреть птичник за 24 часа до завоза цыплят?',
             'options': ['20-22°C', '26-28°C', '33-34°C', '40°C'],
             'correct': 2,
+            'explanation': 'Суточные цыплята еще не могут сами удерживать тепло тела; прогрев пола и воздуха до 33-34°C защищает их от переохлаждения.',
           };
         } else {
           return {
             'question': "Jo'jalar kelishidan 24 soat oldin xonani qanday haroratgacha qizdirish lozim?",
             'options': ['20-22°C', '26-28°C', '33-34°C', '40°C'],
             'correct': 2,
+            'explanation': "Bir kunlik jo'jalar tana haroratini mustaqil boshqara olmaydi; xona va to'shamani 33-34°C gacha qizdirish ularni shamollashdan asraydi.",
           };
         }
       case 2:
@@ -57,18 +60,21 @@ class _QuizScreenState extends State<QuizScreen> {
             'question': 'What percentage of chicks must have found water and feed within the first 8 hours?',
             'options': ['At least 80%', 'Around 40%', 'Does not matter', 'Only 20%'],
             'correct': 0,
+            'explanation': 'According to Ross-308 standards, at least 80% of chicks should have full, soft crops 8 hours after placement to ensure uniform growth.',
           };
         } else if (lang == 'ru') {
           return {
             'question': 'Какой процент цыплят должен найти воду и корм в первые 8 часов?',
             'options': ['Не менее 80%', 'Около 40%', 'Не имеет значения', 'Только 20%'],
             'correct': 0,
+            'explanation': 'По стандарту Ross-308 через 8 часов после посадки минимум у 80% цыплят зоб должен быть мягким и наполненным кормом и водой.',
           };
         } else {
           return {
             'question': "Dastlabki 8 soat ichida jo'jalarning necha foizi suv va yemni topishi shart?",
             'options': ["Kamida 80%", 'Taxminan 40%', "Farqi yo'q", 'Faqat 20%'],
             'correct': 0,
+            'explanation': "Ross-308 standartiga ko'ra, 8 soatdan so'ng kamida 80% jo'janing jig'ildoni yumshoq va to'la bo'lishi bir tekis o'sishni ta'minlaydi.",
           };
         }
       case 3:
@@ -77,18 +83,21 @@ class _QuizScreenState extends State<QuizScreen> {
             'question': 'What is the primary risk of improper ventilation in the barn?',
             'options': ['Increased appetite', 'Ammonia buildup and ascites (water belly)', 'Cold feet', 'No negative impact'],
             'correct': 1,
+            'explanation': 'Poor air exchange traps ammonia and carbon dioxide, damaging the respiratory tract and causing ascites (water belly) in fast-growing broilers.',
           };
         } else if (lang == 'ru') {
           return {
             'question': 'К чему в первую очередь приводит отсутствие правильной вентиляции?',
             'options': ['К улучшению аппетита', 'К накоплению аммиака и асциту (водянке)', 'К переохлаждению ног', 'Ни к чему'],
             'correct': 1,
+            'explanation': 'Плохой воздухообмен приводит к скоплению аммиака и углекислого газа, что вызывает ожоги дыхательных путей и асцит (водянку).',
           };
         } else {
           return {
             'question': "To'g'ri shamollatish yo'qligi birinchi navbatda nimaga olib keladi?",
             'options': ["Ishtaha ochilishiga", "Ammiak to'planishi va suv yig'ilishiga (assit)", "Oyoqlari sovushiga", "Hech narsaga"],
             'correct': 1,
+            'explanation': "Havo almashinuvi yomon bo'lsa, ammiak va karbonat angidrid to'planib, nafas yo'llarini zararlaydi hamda assit (qorinda suv yig'ilishi) kelib chiqadi.",
           };
         }
       case 4:
@@ -97,18 +106,21 @@ class _QuizScreenState extends State<QuizScreen> {
             'question': 'How many main feeding phases are used in standard broiler production?',
             'options': ['1 phase', '3 phases (Starter, Grower, Finisher)', '5 phases', 'Phases are optional'],
             'correct': 1,
+            'explanation': 'Broilers require 3 distinct nutritional phases: Starter (high protein for organs/skeleton), Grower (muscle growth), and Finisher (energy for final weight).',
           };
         } else if (lang == 'ru') {
           return {
             'question': 'Сколько основных фаз кормления используется при выращивании бройлеров?',
             'options': ['1 фаза', '3 фазы (Старт, Рост, Финиш)', '5 фаз', 'Фазы не нужны'],
             'correct': 1,
+            'explanation': 'Применяются 3 фазы: Старт (высокий протеин для скелета и иммунитета), Рост (набор мышечной массы) и Финиш (энергия для убойного веса).',
           };
         } else {
           return {
             'question': "Broylerlarni boqishda nechta asosiy oziqlantirish fazasi qo'llaniladi?",
             'options': ['1 ta faza', "3 ta faza (Start, O'sish, Finish)", '5 ta faza', "Faza kerak emas"],
             'correct': 1,
+            'explanation': "Broylerlar 3 bosqichda oziqlantiriladi: Start (skelet va immunitet uchun yuqori oqsil), O'sish (mushak massasi) va Finish (yakuniy vazn uchun energiya).",
           };
         }
       default:
@@ -117,18 +129,21 @@ class _QuizScreenState extends State<QuizScreen> {
             'question': 'What emergency action should be taken if daily mortality exceeds 1%?',
             'options': ['Administer antibiotics without consultation', 'Immediately isolate the barn and call the veterinarian', 'Just wait it out', 'Increase barn lighting'],
             'correct': 1,
+            'explanation': 'Daily mortality above 1% is a critical red alert indicating potential infectious outbreak or acute climate failure; immediate veterinary intervention is mandatory.',
           };
         } else if (lang == 'ru') {
           return {
             'question': 'Что необходимо сделать при превышении суточного падежа в 1%?',
             'options': ['Самостоятельно дать антибиотики', 'Срочно изолировать птичник и позвонить ветеринару', 'Просто подождать', 'Увеличить свет'],
             'correct': 1,
+            'explanation': 'Суточный падеж выше 1% — критический сигнал возможной инфекции или сбоя микроклимата; требуется немедленная изоляция и вызов ветеринара.',
           };
         } else {
           return {
             'question': "Sutkalik nobodlik 1% dan oshganda nima qilish zarur?",
             'options': ["Mustaqil antibiotik berish", "Hududni darhol cheklab, veterinarga murojaat qilish", "Kutish", "Chiroqni kuchaytirish"],
             'correct': 1,
+            'explanation': "Kunlik nobodlik 1% dan oshishi xavfli infeksiya yoki mikroiqlim buzilishidan darak beradi; darhol binoni izolyatsiya qilib, veterinarni chaqirish shart.",
           };
         }
     }
@@ -157,6 +172,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final quiz = _getQuizData(widget.lessonId, _lang);
     final options = quiz['options'] as List<String>;
     final correctIndex = quiz['correct'] as int;
+    final explanation = quiz['explanation'] as String? ?? '';
 
     final titleText = _lang == 'en'
         ? 'Quiz: Lesson ${widget.lessonId}'
@@ -310,6 +326,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 )
               else
                 Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(18),
@@ -321,34 +338,51 @@ class _QuizScreenState extends State<QuizScreen> {
                           width: 1.5,
                         ),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            _isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                            color: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFDC2626),
-                            size: 26,
+                          Row(
+                            children: [
+                              Icon(
+                                _isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                color: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFDC2626),
+                                size: 26,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _isCorrect
+                                      ? (_lang == 'en'
+                                          ? 'Correct! Lesson completed successfully.'
+                                          : (_lang == 'ru'
+                                              ? 'Правильно! Урок успешно сдан.'
+                                              : 'To\'g\'ri! Dars muvaffaqiyatli topshirildi.'))
+                                      : (_lang == 'en'
+                                          ? 'Incorrect. Please try again!'
+                                          : (_lang == 'ru'
+                                              ? 'Неверно. Попробуйте еще раз!'
+                                              : 'Noto\'g\'ri. Yana bir bor urinib ko\'ring!')),
+                                  style: TextStyle(
+                                    color: _isCorrect ? const Color(0xFF1B5E20) : const Color(0xFF991B1B),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _isCorrect
-                                  ? (_lang == 'en'
-                                      ? 'Correct! Lesson completed successfully.'
-                                      : (_lang == 'ru'
-                                          ? 'Правильно! Урок успешно сдан.'
-                                          : 'To\'g\'ri! Dars muvaffaqiyatli topshirildi.'))
-                                  : (_lang == 'en'
-                                      ? 'Incorrect. Please try again!'
-                                      : (_lang == 'ru'
-                                          ? 'Неверно. Попробуйте еще раз!'
-                                          : 'Noto\'g\'ri. Yana bir bor urinib ko\'ring!')),
-                              style: TextStyle(
-                                color: _isCorrect ? const Color(0xFF1B5E20) : const Color(0xFF991B1B),
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
+                          if (explanation.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              explanation,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                height: 1.45,
+                                color: Color(0xFF334155),
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),

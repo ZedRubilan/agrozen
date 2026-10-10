@@ -49,11 +49,13 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
     final deaths = int.parse(_controller.text.trim());
     final prefs = await DailyCounters.rolled();
 
-    // Mortality % must be measured against the flock size BEFORE today's
-    // deaths are removed, otherwise the rate is inflated.
-    final countBeforeToday = prefs.getInt('current_count') ?? _currentCount;
-    final newTodayDeaths = DailyCounters.getMortality(prefs) + deaths;
-    final updatedCurrent = (countBeforeToday - deaths).clamp(0, 999999);
+    // Mortality % must be measured against the flock size at the start of the
+    // day before today's deaths are removed, otherwise the rate is inflated.
+    final currentBefore = prefs.getInt('current_count') ?? _currentCount;
+    final previousTodayDeaths = DailyCounters.getMortality(prefs);
+    final startOfDayCount = currentBefore + previousTodayDeaths;
+    final newTodayDeaths = previousTodayDeaths + deaths;
+    final updatedCurrent = (currentBefore - deaths).clamp(0, 999999);
 
     await DailyCounters.addMortality(prefs, deaths);
     await prefs.setInt('current_count', updatedCurrent);
@@ -63,7 +65,7 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
     final engine = AlertEngine(norms);
     final alert = engine.checkMortality(
       deaths: newTodayDeaths,
-      currentCount: countBeforeToday,
+      currentCount: startOfDayCount,
     );
 
     if (!mounted) return;
@@ -176,6 +178,7 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
@@ -232,8 +235,10 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
                 ),
                 const SizedBox(height: 12),
                 // Quick Increment Chips for dirty hands
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
                   children: [
                     _buildQuickChip('+1', () => _addQuick(1)),
                     _buildQuickChip('+2', () => _addQuick(2)),

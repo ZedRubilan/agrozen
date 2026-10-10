@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../core/localization/app_strings.dart';
 
@@ -164,17 +165,29 @@ class _OrganicImageInspectorState extends State<OrganicImageInspector>
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.file(
-                  File(widget.imagePath),
-                  height: 220,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 220,
-                    color: Colors.grey.shade200,
-                    child: const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
-                  ),
-                ),
+                child: kIsWeb
+                    ? Image.network(
+                        widget.imagePath,
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 220,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
+                        ),
+                      )
+                    : Image.file(
+                        File(widget.imagePath),
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 220,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
+                        ),
+                      ),
               ),
 
               // Soft vignette overlay

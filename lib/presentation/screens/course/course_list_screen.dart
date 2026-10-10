@@ -22,6 +22,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
   String _lang = 'uz';
   List<int> _completedLessons = [];
   bool _isLoading = true;
+  Locale? _observedLocale;
 
   final List<Map<String, String>> _lessons = [
     {
@@ -77,12 +78,27 @@ class _CourseListScreenState extends State<CourseListScreen> {
     _loadState();
   }
 
-  Future<void> _loadState() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentLocale = Localizations.maybeLocaleOf(context);
+    if (_observedLocale != null &&
+        currentLocale != null &&
+        currentLocale != _observedLocale) {
+      _observedLocale = currentLocale;
+      _loadState(localeOverride: currentLocale.languageCode);
+    } else {
+      _observedLocale = currentLocale;
+    }
+  }
+
+  Future<void> _loadState({String? localeOverride}) async {
     setState(() => _isLoading = true);
     final prefs = await SharedPreferences.getInstance();
-    _lang = prefs.getString('app_language') ?? 'uz';
+    _lang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
     final completed = prefs.getStringList('completed_lessons') ?? [];
     _completedLessons = completed.map((e) => int.tryParse(e) ?? 0).toList();
+    if (!mounted) return;
     setState(() => _isLoading = false);
   }
 
@@ -110,39 +126,46 @@ class _CourseListScreenState extends State<CourseListScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: 'Kreditdan oldingi kurs',
-                              ru: 'Курс до кредита',
-                              en: 'Pre-Credit Course',
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Kreditdan oldingi kurs',
+                                ru: 'Курс до кредита',
+                                en: 'Pre-Credit Course',
+                              ),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 20,
+                                color: AppTheme.textPrimary,
+                                letterSpacing: -0.4,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 20,
-                              color: AppTheme.textPrimary,
-                              letterSpacing: -0.4,
+                            const SizedBox(height: 2),
+                            Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Ross-308 parrandachilik akademiyasi',
+                                ru: 'Академия птицеводства Ross-308',
+                                en: 'Ross-308 Poultry Academy',
+                              ),
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppTheme.textMuted,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: 'Ross-308 parrandachilik akademiyasi',
-                              ru: 'Академия птицеводства Ross-308',
-                              en: 'Ross-308 Poultry Academy',
-                            ),
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              color: AppTheme.textMuted,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
@@ -360,7 +383,12 @@ class _CourseListScreenState extends State<CourseListScreen> {
                         ),
                       ),
                       Text(
-                        '5 ta modul',
+                        AppStrings.tr(
+                          lang: _lang,
+                          uz: '5 ta modul',
+                          ru: '5 модулей',
+                          en: '5 modules',
+                        ),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

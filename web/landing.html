@@ -1435,11 +1435,35 @@
     }
 
     @media (max-width: 768px) {
+      .nav-container {
+        position: relative;
+        flex-wrap: wrap;
+        border-radius: var(--radius-lg);
+      }
       .nav-links {
         display: none;
+        order: 3;
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 8px 8px 8px;
+        margin-top: 12px;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .nav-links.mobile-open {
+        display: flex;
       }
       .mobile-menu-btn {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-card-subtle);
+        font-size: 18px;
       }
       .hero-headline {
         font-size: 38px;
@@ -1492,31 +1516,36 @@
           <span>AgroZen</span>
         </a>
 
-        <ul class="nav-links">
-          <li><a href="#telemetry" class="nav-link" data-i18n="nav_telemetry">Telemetriya</a></li>
-          <li><a href="#fields" class="nav-link" data-i18n="nav_fields">Dala & Poda</a></li>
-          <li><a href="#certification" class="nav-link" data-i18n="nav_certification">Kredit Sertifikati</a></li>
-          <li><a href="#actions" class="nav-link" data-i18n="nav_actions">Tezkor Amallar</a></li>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#telemetry" class="nav-link" onclick="closeMobileMenu()" data-i18n="nav_telemetry">Telemetriya</a></li>
+          <li><a href="#fields" class="nav-link" onclick="closeMobileMenu()" data-i18n="nav_fields">Dala & Poda</a></li>
+          <li><a href="#certification" class="nav-link" onclick="closeMobileMenu()" data-i18n="nav_certification">Kredit Sertifikati</a></li>
+          <li><a href="#actions" class="nav-link" onclick="closeMobileMenu()" data-i18n="nav_actions">Tezkor Amallar</a></li>
         </ul>
 
         <div class="nav-actions">
           <!-- Trilingual Toggle -->
-          <select id="langSelect" class="pill-select" onchange="changeLanguage(this.value)">
+          <select id="langSelect" class="pill-select" aria-label="Language" onchange="changeLanguage(this.value)">
             <option value="uz" selected>🇺🇿 UZ</option>
             <option value="ru">🇷🇺 RU</option>
             <option value="en">🇬🇧 EN</option>
           </select>
 
           <!-- Day/Night Mode Toggle -->
-          <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="Rejimni o'zgartirish">
+          <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="Rejimni o'zgartirish" aria-label="Toggle theme">
             ☀️
           </button>
 
           <!-- Launch App Pill -->
-          <a href="/?app=true" class="btn-launch-app">
+          <a href="./?app=true" class="btn-launch-app">
             <span data-i18n="btn_launch_app">Dasturni Ochish</span>
             <span>↗</span>
           </a>
+
+          <!-- Mobile Hamburger Menu Toggle -->
+          <button id="mobileMenuBtn" class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu" aria-expanded="false">
+            ☰
+          </button>
         </div>
       </nav>
     </header>
@@ -1541,7 +1570,7 @@
           </p>
 
           <div class="hero-cta-group">
-            <a href="/?app=true" class="btn-pill-primary">
+            <a href="./?app=true" class="btn-pill-primary">
               <span class="arrow-circle">→</span>
               <span data-i18n="hero_cta">Boshlash >>></span>
             </a>
@@ -1588,7 +1617,7 @@
             <div class="pill-icon-box icon-box-gold">☀️</div>
             <div class="pill-info">
               <span class="pill-sub" data-i18n="pill_weather_label">Ob-havo</span>
-              <span class="pill-val">Quyoshli • 28°C</span>
+              <span class="pill-val" data-i18n="pill_weather_val">Quyoshli • 28°C</span>
             </div>
           </div>
         </div>
@@ -1616,7 +1645,7 @@
                 <span class="bento-icon">🌤️</span>
                 <div>
                   <div class="bento-title" data-i18n="card_climate_title">Ob-havo & Iqlim</div>
-                  <div class="bento-val-large" id="liveTempDisplay">28°C Quyoshli</div>
+                  <div class="bento-val-large" id="liveTempDisplay" data-i18n="card_climate_val">28°C Quyoshli</div>
                 </div>
               </div>
               <span class="status-tag tag-healthy" data-i18n="tag_healthy">ME'YORIDA</span>
@@ -1625,7 +1654,7 @@
             <div class="bento-subgrid">
               <div class="bento-sub-metric">
                 <span class="sub-metric-label" data-i18n="label_humidity">Namlik</span>
-                <span class="sub-metric-val">85%</span>
+                <span class="sub-metric-val">60%</span>
               </div>
               <div class="bento-sub-metric">
                 <span class="sub-metric-label" data-i18n="label_wind">Shamol Tezligi</span>
@@ -1658,7 +1687,7 @@
           <div class="bento-subgrid">
             <div class="bento-sub-metric">
               <span class="sub-metric-label" data-i18n="label_ammonia">Ammiak (NH3)</span>
-              <span class="sub-metric-val">8 ppm <small style="font-size: 11px; color:#22C55E;">(Xavfsiz)</small></span>
+              <span class="sub-metric-val">8 ppm <small style="font-size: 11px; color:#22C55E;" data-i18n="label_safe">(Xavfsiz)</small></span>
             </div>
             <div class="bento-sub-metric">
               <span class="sub-metric-label" data-i18n="label_co2">Karbonat Angidrid (CO2)</span>
@@ -1708,7 +1737,7 @@
               <span class="bento-icon">🛸</span>
               <div>
                 <div class="bento-title" data-i18n="card_area_title">Umumiy Maydon & Kutilma</div>
-                <div class="bento-val-large">12 Gektar • 500 Bosh</div>
+                <div class="bento-val-large" data-i18n="card_area_val">12 Gektar • 500 Bosh</div>
               </div>
             </div>
             <span class="status-tag tag-optimal" data-i18n="tag_active">FAOLLASHTIRILGAN</span>
@@ -1717,11 +1746,11 @@
           <div class="bento-subgrid">
             <div class="bento-sub-metric">
               <span class="sub-metric-label" data-i18n="label_yield">Hosil / Go'sht Prognozi</span>
-              <span class="sub-metric-val">15 Tonna / 1.25 t</span>
+              <span class="sub-metric-val" data-i18n="val_yield">15 Tonna / 1.25 t</span>
             </div>
             <div class="bento-sub-metric">
               <span class="sub-metric-label" data-i18n="label_market">Bozorga Tayyorgarlik</span>
-              <span class="sub-metric-val" style="color: #22C55E;">98% A'lo</span>
+              <span class="sub-metric-val" style="color: #22C55E;" data-i18n="val_market">98% A'lo</span>
             </div>
           </div>
         </div>
@@ -1730,8 +1759,7 @@
 
     <!-- ==========================================================================
          SECTION 3: CHOOSE YOUR FARM & FLOCK
-         ========================================================================== */
-    -->
+         ========================================================================== -->
     <section id="fields" class="section-spacing">
       <div class="section-header">
         <h2 class="section-title" data-i18n="fields_title">O'z xo'jaligingiz va podangizni tanlang</h2>
@@ -1761,7 +1789,7 @@
           </div>
           <div class="farm-card-content">
             <div class="farm-title-row">
-              <div class="farm-title">Green Valley Farm — Sabzavotlar</div>
+              <div class="farm-title" data-i18n="farm_card_1_title">Green Valley Farm — Sabzavotlar</div>
               <div class="dots-indicator">
                 <span class="dot-item active"></span>
                 <span class="dot-item active"></span>
@@ -1790,7 +1818,7 @@
           </div>
           <div class="farm-card-content">
             <div class="farm-title-row">
-              <div class="farm-title">Sunrise Fields — Don & Hosil</div>
+              <div class="farm-title" data-i18n="farm_card_2_title">Sunrise Fields — Don & Hosil</div>
               <div class="dots-indicator">
                 <span class="dot-item active"></span>
                 <span class="dot-item active"></span>
@@ -1819,7 +1847,7 @@
           </div>
           <div class="farm-card-content">
             <div class="farm-title-row">
-              <div class="farm-title">Riverbend Broiler — Bino #1</div>
+              <div class="farm-title" data-i18n="farm_card_3_title">Riverbend Broiler — Bino #1</div>
               <div class="dots-indicator">
                 <span class="dot-item active"></span>
                 <span class="dot-item active"></span>
@@ -1861,8 +1889,8 @@
             </div>
 
             <div class="tier-points-display" style="margin-top: 20px;">
-              <div class="tier-points-num" id="tierPtsDisplay">3,120 Pts</div>
-              <div class="tier-points-sub" data-i18n="tier_next_goal">Premium maqomgacha 125 ball qoldi</div>
+              <div class="tier-points-num" id="tierPtsDisplay">3,120 Ball</div>
+              <div class="tier-points-sub" id="tierNextGoal" data-i18n="tier_next_goal">Premium maqomgacha 125 ball qoldi</div>
             </div>
 
             <!-- Dot Matrix Indicator (40 dots) -->
@@ -1873,7 +1901,7 @@
 
           <div class="tier-actions-row">
             <button class="btn-earn-points" onclick="earnMorePoints()" data-i18n="btn_earn_points">Ball To'plash +50</button>
-            <button class="btn-claim-benefits" onclick="alert('Kredit imtiyozlari tasdiqlandi! AgroBank tekshiruv kodini qabul qildi.')" data-i18n="btn_claim_benefits">Imtiyozlarni Olish</button>
+            <button class="btn-claim-benefits" onclick="claimBenefits()" data-i18n="btn_claim_benefits">Imtiyozlarni Olish</button>
           </div>
         </div>
 
@@ -1887,7 +1915,7 @@
               </div>
               <div class="cert-title-huge" data-i18n="cert_doc_title">Raqamli Sertifikat</div>
             </div>
-            <div class="gold-wax-seal">
+            <div class="gold-wax-seal" id="waxSealText">
               TASDIQ<br>94%<br>VERIFIED
             </div>
           </div>
@@ -1908,7 +1936,7 @@
             </div>
 
             <div>
-              <a href="/?app=true" class="btn-pill-primary" style="padding: 10px 18px; font-size: 12.5px;">
+              <a href="./?app=true" class="btn-pill-primary" style="padding: 10px 18px; font-size: 12.5px;">
                 <span data-i18n="cert_view_btn">Ko'rish</span>
               </a>
             </div>
@@ -1960,7 +1988,7 @@
             Broyler patlari, ko'zlari yoki axlat suratini yuklab 3 soniyada tashxis oling.
           </div>
           <div class="toggle-row">
-            <a href="/?app=true" class="btn-pill-outline" style="padding: 8px 16px; font-size: 13px;" data-i18n="act_vision_btn">
+            <a href="./?app=true" class="btn-pill-outline" style="padding: 8px 16px; font-size: 13px;" data-i18n="act_vision_btn">
               Suratni Tekshirish ↗
             </a>
           </div>
@@ -1971,11 +1999,11 @@
           <div class="action-icon-circle">📋</div>
           <div class="action-title" data-i18n="act_tasks_title">Kunlik Ish Vazifalari</div>
           <div class="action-desc" data-i18n="act_tasks_desc">
-            Suv idishlarini yuvish, yem dozasini 510g/bosh me'yoriga ko'tarish (14-kun).
+            Suv idishlarini yuvish, 14-kun me'yori: 510g vazn va 54g/bosh kunlik yem.
           </div>
           <div class="toggle-row">
             <span style="font-size: 12.5px; font-weight: 800; color: #22C55E;" data-i18n="act_tasks_badge">3 tadan 2 tasi bajarildi</span>
-            <a href="/?app=true" class="circle-arrow-btn">↗</a>
+            <a href="./?app=true" class="circle-arrow-btn">↗</a>
           </div>
         </div>
       </div>
@@ -1993,7 +2021,7 @@
       </div>
 
       <div class="banner-cta-group">
-        <a href="/?app=true" class="btn-banner-white">
+        <a href="./?app=true" class="btn-banner-white">
           <span data-i18n="banner_btn_app">AgroZen Ilovasini Ochish</span>
           <span>→</span>
         </a>
@@ -2019,7 +2047,7 @@
         <li><a href="#telemetry" class="footer-link" data-i18n="nav_telemetry">Telemetriya</a></li>
         <li><a href="#fields" class="footer-link" data-i18n="nav_fields">Dala & Poda</a></li>
         <li><a href="#certification" class="footer-link" data-i18n="nav_certification">Kredit Sertifikati</a></li>
-        <li><a href="/?app=true" class="footer-link" data-i18n="btn_launch_app">Ilovaga O'tish</a></li>
+        <li><a href="./?app=true" class="footer-link" data-i18n="btn_launch_app">Ilovaga O'tish</a></li>
       </ul>
     </div>
   </footer>
@@ -2047,10 +2075,12 @@
         pill_soil_label: "Tuproq & Bino Holati",
         pill_soil_val: "A'lo darajada (Healthy)",
         pill_weather_label: "Ob-havo",
+        pill_weather_val: "Quyoshli • 28°C",
         bento_eyebrow: "JONLI TELEMETRIYA",
         bento_title: "Har Bir Maydon & Katak Bo'yicha Aniq Intellekt",
         bento_subtitle: "Atrof-muhit sensorlari, Ross-308 me'yorlari va AI tahlili uzluksiz real vaqt ma'lumotlarini taqdim etadi.",
         card_climate_title: "Ob-havo & Iqlim",
+        card_climate_val: "28°C Quyoshli",
         tag_healthy: "ME'YORIDA",
         label_humidity: "Namlik",
         label_wind: "Shamol Tezligi",
@@ -2059,15 +2089,19 @@
         card_barn_val: "Toza & Xavfsiz",
         tag_clean: "TOZA",
         label_ammonia: "Ammiak (NH3)",
+        label_safe: "(Xavfsiz)",
         label_co2: "Karbonat Angidrid (CO2)",
         card_health_title: "Parranda & Ekin Salomatligi",
         tag_optimal: "OPTIMAL",
         gauge_headline: "42 Kunlik Tsikl (14-kun)",
         gauge_loss: "Yo'qotish darajasi: 0.8% (Me'yor 1.2%)",
         card_area_title: "Umumiy Maydon & Kutilma",
+        card_area_val: "12 Gektar • 500 Bosh",
         tag_active: "FAOLLASHTIRILGAN",
         label_yield: "Hosil / Go'sht Prognozi",
+        val_yield: "15 Tonna / 1.56 t",
         label_market: "Bozorga Tayyorgarlik",
+        val_market: "98% A'lo",
         fields_title: "O'z xo'jaligingiz va podangizni tanlang",
         fields_subtitle: "Issiqxonalar, broyler binolari va ochiq maydonlar bo'yicha avtomatlashtirilgan telemetrik boshqaruv.",
         filter_all: "Hammasi (3)",
@@ -2075,6 +2109,9 @@
         filter_veg: "Sabzavotlar & Issiqxona",
         filter_grains: "Don & G'alla",
         badge_pts: "ball",
+        farm_card_1_title: "Green Valley Farm — Sabzavotlar",
+        farm_card_2_title: "Sunrise Fields — Don & Hosil",
+        farm_card_3_title: "Riverbend Broiler — Bino #1",
         tag_vegetable: "Sabzavot",
         tag_open_field: "Ochiq Dala",
         tag_grains: "Don Ekinlari",
@@ -2102,7 +2139,7 @@
         act_vision_desc: "Broyler patlari, ko'zlari yoki axlat suratini yuklab 3 soniyada tashxis oling.",
         act_vision_btn: "Suratni Tekshirish ↗",
         act_tasks_title: "Kunlik Ish Vazifalari",
-        act_tasks_desc: "Suv idishlarini yuvish, yem dozasini 510g/bosh me'yoriga ko'tarish (14-kun).",
+        act_tasks_desc: "Suv idishlarini yuvish, 14-kun me'yori: 510g vazn va 54g/bosh kunlik yem.",
         act_tasks_badge: "3 tadan 2 tasi bajarildi",
         banner_title: "Parrandachilik va Fermangizni Bugunoq Yuksaltiring",
         banner_desc: "AgroZen veb-platformasi orqali jonli telemetriyani oching, kundalik qaydlarni yuriting va imtiyozli kredit sertifikatiga ega bo'ling.",
@@ -2127,10 +2164,12 @@
         pill_soil_label: "Почва & Птичник",
         pill_soil_val: "Отлично (Здорово)",
         pill_weather_label: "Погода",
+        pill_weather_val: "Солнечно • 28°C",
         bento_eyebrow: "ЖИВАЯ ТЕЛЕМЕТРИЯ",
         bento_title: "Точный Интеллект На Каждом Гектаре и в Птичнике",
         bento_subtitle: "Датчики микроклимата, стандарты Ross-308 и ИИ-анализ непрерывно передают статус фермы.",
         card_climate_title: "Погода & Микроклимат",
+        card_climate_val: "28°C Солнечно",
         tag_healthy: "В НОРМЕ",
         label_humidity: "Влажность",
         label_wind: "Скорость Ветра",
@@ -2139,15 +2178,19 @@
         card_barn_val: "Чисто & Безопасно",
         tag_clean: "ЧИСТО",
         label_ammonia: "Аммиак (NH3)",
+        label_safe: "(Безопасно)",
         label_co2: "Углекислый Газ (CO2)",
         card_health_title: "Здоровье Птицы & Посевов",
         tag_optimal: "ОПТИМАЛЬНО",
         gauge_headline: "42-дневный цикл (14-й день)",
         gauge_loss: "Падеж: 0.8% (Норма 1.2%)",
         card_area_title: "Площадь & Прогноз",
+        card_area_val: "12 Гектаров • 500 Голов",
         tag_active: "АКТИВНО",
         label_yield: "Прогноз Мяса / Урожая",
+        val_yield: "15 Тонн / 1.56 т",
         label_market: "Готовность к Рынку",
+        val_market: "98% Отлично",
         fields_title: "Выберите Хозяйство и Птичник",
         fields_subtitle: "Автоматизированный телеметрический контроль теплиц, бройлерных корпусов и открытых угодий.",
         filter_all: "Все (3)",
@@ -2155,6 +2198,9 @@
         filter_veg: "Овощи & Теплицы",
         filter_grains: "Зерно & Урожай",
         badge_pts: "очков",
+        farm_card_1_title: "Green Valley Farm — Овощи",
+        farm_card_2_title: "Sunrise Fields — Зерно & Урожай",
+        farm_card_3_title: "Riverbend Broiler — Корпус #1",
         tag_vegetable: "Овощи",
         tag_open_field: "Открытый Грунт",
         tag_grains: "Зерновые",
@@ -2182,7 +2228,7 @@
         act_vision_desc: "Загрузите фото оперения или помета для моментальной ветеринарной оценки.",
         act_vision_btn: "Проверить Фото ↗",
         act_tasks_title: "Задачи Дня",
-        act_tasks_desc: "Промывка поилок, повышение нормы корма до 510г/голову (14 день).",
+        act_tasks_desc: "Промывка поилок, норма 14-го дня: вес 510г и 54г корма на голову в сутки.",
         act_tasks_badge: "Выполнено 2 из 3",
         banner_title: "Улучшите Вашу Ферму Уже Сегодня",
         banner_desc: "Откройте живую телеметрию AgroZen, ведите дневник птицы и получите сертификат на льготный кредит.",
@@ -2207,10 +2253,12 @@
         pill_soil_label: "Soil & Coop Condition",
         pill_soil_val: "Optimal & Healthy",
         pill_weather_label: "Weather",
+        pill_weather_val: "Sunny • 28°C",
         bento_eyebrow: "REAL-TIME TELEMETRY",
         bento_title: "Precision Intelligence Across Every Acre & Coop",
         bento_subtitle: "Environmental sensors, Ross-308 benchmarks, and computer vision provide continuous operational feedback.",
         card_climate_title: "Weather & Microclimate",
+        card_climate_val: "28°C Sunny",
         tag_healthy: "HEALTHY",
         label_humidity: "Humidity",
         label_wind: "Wind Speed",
@@ -2219,15 +2267,19 @@
         card_barn_val: "Clean & Safe",
         tag_clean: "CLEAN",
         label_ammonia: "Ammonia (NH3)",
+        label_safe: "(Safe)",
         label_co2: "Carbon Dioxide (CO2)",
         card_health_title: "Flock & Plant Health",
         tag_optimal: "OPTIMAL",
         gauge_headline: "42-Day Growth Cycle (Day 14)",
         gauge_loss: "Mortality Rate: 0.8% (Threshold 1.2%)",
         card_area_title: "Total Acreage & Yield",
+        card_area_val: "12 Hectares • 500 Birds",
         tag_active: "ACTIVE",
         label_yield: "Projected Meat / Yield",
+        val_yield: "15 Tons / 1.56 t",
         label_market: "Market Readiness",
+        val_market: "98% Prime",
         fields_title: "Choose Your Farm & Flock",
         fields_subtitle: "Granular operational tracking for greenhouses, broiler coops, and open fields with automated health telemetry.",
         filter_all: "All (3)",
@@ -2235,6 +2287,9 @@
         filter_veg: "Vegetables & Greenhouse",
         filter_grains: "Grains & Harvest",
         badge_pts: "pts",
+        farm_card_1_title: "Green Valley Farm — Vegetables",
+        farm_card_2_title: "Sunrise Fields — Grains & Harvest",
+        farm_card_3_title: "Riverbend Broilers — House #1",
         tag_vegetable: "Vegetables",
         tag_open_field: "Open Field",
         tag_grains: "Grains",
@@ -2262,7 +2317,7 @@
         act_vision_desc: "Upload photo of broiler feathers or droppings for immediate 3-second diagnostic report.",
         act_vision_btn: "Test Vision ↗",
         act_tasks_title: "Daily Tasks",
-        act_tasks_desc: "Water drinker flush, increase feed allowance to 510g/bird target (Day 14).",
+        act_tasks_desc: "Water drinker flush, Day 14 target: 510g body weight and 54g/bird daily feed.",
         act_tasks_badge: "2 of 3 Completed",
         banner_title: "Upgrade Your Farm Operations Today",
         banner_desc: "Experience AgroZen's live telemetry, log daily farm entries, and earn certified bank credit eligibility.",
@@ -2273,6 +2328,34 @@
     };
 
     let currentLang = 'uz';
+    let currentPoints = 3120;
+    const TARGET_PREMIUM_POINTS = 3245;
+
+    function formatTierPoints(pts, lang) {
+      const unit = lang === 'en' ? 'Pts' : lang === 'ru' ? 'Очков' : 'Ball';
+      return pts.toLocaleString() + ' ' + unit;
+    }
+
+    function updateTierGoalText() {
+      const remaining = Math.max(0, TARGET_PREMIUM_POINTS - currentPoints);
+      const goalEl = document.getElementById('tierNextGoal');
+      if (!goalEl) return;
+      if (remaining === 0) {
+        goalEl.textContent =
+          currentLang === 'en'
+            ? 'Premium Tier Unlocked!'
+            : currentLang === 'ru'
+              ? 'Статус Премиум разблокирован!'
+              : 'Premium maqom faollashtirildi!';
+      } else {
+        goalEl.textContent =
+          currentLang === 'en'
+            ? `${remaining} points to Premium Tier`
+            : currentLang === 'ru'
+              ? `До статуса Премиум осталось ${remaining} очков`
+              : `Premium maqomgacha ${remaining} ball qoldi`;
+      }
+    }
 
     function changeLanguage(lang) {
       currentLang = lang;
@@ -2284,6 +2367,43 @@
         }
       });
       document.documentElement.setAttribute('lang', lang);
+      document.getElementById('tierPtsDisplay').textContent = formatTierPoints(currentPoints, lang);
+      updateTierGoalText();
+      const sealEl = document.getElementById('waxSealText');
+      if (sealEl) {
+        sealEl.innerHTML =
+          lang === 'en'
+            ? 'VERIFIED<br>94%<br>APPROVED'
+            : lang === 'ru'
+              ? 'ОДОБРЕНО<br>94%<br>VERIFIED'
+              : 'TASDIQ<br>94%<br>VERIFIED';
+      }
+      const sliderEl = document.getElementById('tempSlider');
+      if (sliderEl) {
+        updateTempSim(sliderEl.value);
+      }
+    }
+
+    // Mobile Menu Toggle
+    function toggleMobileMenu() {
+      const navLinks = document.getElementById('navLinks');
+      const btn = document.getElementById('mobileMenuBtn');
+      if (!navLinks || !btn) return;
+      const isOpen = navLinks.classList.toggle('mobile-open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+      btn.textContent = isOpen ? '✕' : '☰';
+    }
+
+    function closeMobileMenu() {
+      const navLinks = document.getElementById('navLinks');
+      const btn = document.getElementById('mobileMenuBtn');
+      if (navLinks && navLinks.classList.contains('mobile-open')) {
+        navLinks.classList.remove('mobile-open');
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+          btn.textContent = '☰';
+        }
+      }
     }
 
     // 2. Day/Night Mode Switcher
@@ -2296,7 +2416,6 @@
     }
 
     // 3. Dot Matrix Progress Render
-    let currentPoints = 3120;
     function renderDotMatrix(filledCount) {
       const container = document.getElementById('dotMatrix');
       container.innerHTML = '';
@@ -2309,21 +2428,52 @@
     }
     renderDotMatrix(32); // 32 out of 40 dots
 
-    function earnMorePoints() {
-      currentPoints += 50;
-      document.getElementById('tierPtsDisplay').textContent = currentPoints.toLocaleString() + ' Pts';
-      renderDotMatrix(36);
+    function showToast(message) {
       const toast = document.createElement('div');
       toast.style.cssText = 'position:fixed; bottom:24px; right:24px; background:#22C55E; color:#fff; padding:12px 24px; border-radius:9999px; font-weight:800; box-shadow:0 10px 30px rgba(0,0,0,0.2); z-index:999; animation:gentleFloat 0.5s ease;';
-      toast.textContent = '+50 Ball Qo\'shildi! (AgroBank balli yangilandi)';
+      toast.textContent = message;
       document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2500);
+      setTimeout(() => toast.remove(), 2600);
+    }
+
+    function earnMorePoints() {
+      currentPoints += 50;
+      document.getElementById('tierPtsDisplay').textContent = formatTierPoints(currentPoints, currentLang);
+      const filledDots = Math.min(40, Math.round((currentPoints / TARGET_PREMIUM_POINTS) * 40));
+      renderDotMatrix(filledDots);
+      updateTierGoalText();
+      const msg =
+        currentLang === 'en'
+          ? '+50 Points Added! (AgroBank readiness updated)'
+          : currentLang === 'ru'
+            ? '+50 очков добавлено! (Рейтинг АгроБанка обновлён)'
+            : '+50 Ball Qo\'shildi! (AgroBank balli yangilandi)';
+      showToast(msg);
+    }
+
+    function claimBenefits() {
+      const msg =
+        currentLang === 'en'
+          ? 'Credit benefits verified! AgroBank accepted your readiness code.'
+          : currentLang === 'ru'
+            ? 'Кредитные льготы подтверждены! АгроБанк принял код проверки.'
+            : 'Kredit imtiyozlari tasdiqlandi! AgroBank tekshiruv kodini qabul qildi.';
+      showToast(msg);
     }
 
     // 4. Interactive Temp Simulation
     function updateTempSim(val) {
-      document.getElementById('sliderValLabel').textContent = val + '°C';
-      document.getElementById('liveTempDisplay').textContent = val + '°C ' + (val > 30 ? 'Issiq' : val < 22 ? 'Salqin' : 'Quyoshli');
+      const numVal = Number(val);
+      document.getElementById('sliderValLabel').textContent = numVal + '°C';
+      let condition = '';
+      if (currentLang === 'en') {
+        condition = numVal > 30 ? 'Hot' : numVal < 22 ? 'Cool' : 'Sunny';
+      } else if (currentLang === 'ru') {
+        condition = numVal > 30 ? 'Жарко' : numVal < 22 ? 'Прохладно' : 'Солнечно';
+      } else {
+        condition = numVal > 30 ? 'Issiq' : numVal < 22 ? 'Salqin' : 'Quyoshli';
+      }
+      document.getElementById('liveTempDisplay').textContent = numVal + '°C ' + condition;
     }
 
     // 5. Farm Cards Filter

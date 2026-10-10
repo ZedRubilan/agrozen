@@ -20,7 +20,7 @@ import 'package:agrozen/presentation/screens/course/quiz_screen.dart';
 import 'package:agrozen/presentation/screens/course/certificate_screen.dart';
 import 'package:agrozen/presentation/screens/settings_screen.dart';
 import 'package:agrozen/services/daily_counters.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:agrozen/presentation/widgets/alert_card.dart';
 
 Widget createTestApp(Widget child) {
   final router = GoRouter(
@@ -393,17 +393,6 @@ void main() {
       expect(shareBtn, findsOneWidget);
       await tester.tap(shareBtn);
       await tester.pump();
-
-      // The platform resolves the sheet asynchronously; we must NOT await the
-      // real Share.share() here because widget-test harnesses never surface
-      // the native UI and it would block the fixture forever. A real launch
-      // request is still made and the text is passed to it.
-      Share.share(
-        'AgroZen - Sertifikat ready for the bank or partners\n'
-        'Fermer: Rustamjon Qodirov (Andijon)\n'
-        'Tasdiqlaydi: broyler bo\'yicha tayyorgarlik kursi. Sana: TODAY',
-      );
-      await tester.pump();
     });
 
     testWidgets('15. Settings Screen enables language toggle and batch reset', (tester) async {
@@ -426,6 +415,115 @@ void main() {
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('app_language'), 'ru');
+    });
+
+    testWidgets('16. Batch Setup when already onboarded routes directly to /home (Batch Reset Flow)', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'is_onboarded': true,
+        'app_language': 'uz',
+      });
+
+      await tester.pumpWidget(createTestApp(const BatchSetupScreen()));
+      await tester.pumpAndSettle();
+
+      final nameField = find.widgetWithText(TextFormField, 'Ismingiz / Ferma nomi');
+      final countField = find.widgetWithText(TextFormField, "Jo'jalar soni (bosh)");
+
+      await tester.enterText(nameField, 'Otabek Fermer');
+      await tester.enterText(countField, '750');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Keyingisi'));
+      await tester.pumpAndSettle();
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('farmer_name'), 'Otabek Fermer');
+      expect(prefs.getInt('initial_count'), 750);
+      expect(prefs.getInt('current_count'), 750);
+      expect(find.text('HomeMock'), findsOneWidget);
+      expect(find.text('DisclaimerMock'), findsNothing);
+    });
+
+    testWidgets('17. Diary Screen evaluates underweight alert and accurate start-of-day mortality rate', (tester) async {
+      final day14Arrival = DateTime.now().subtract(const Duration(days: 13));
+
+      // Part A: 1 death out of 100 start-of-day birds (current_count: 99, today_mortality: 1 -> 1.0% <= 1.0% threshold)
+      SharedPreferences.setMockInitialValues({
+        'counters_date': DailyCounters.todayStamp(),
+        'app_language': 'uz',
+        'initial_count': 100,
+        'current_count': 99,
+        'today_mortality': 1,
+        'last_weight': 0.0,
+        'arrival_date': day14Arrival.toIso8601String(),
+      });
+
+      await tester.pumpWidget(createTestApp(const DiaryScreen()));
+      await tester.pumpAndSettle();
+
+      // Should NOT trigger a false-positive high-mortality alert
+      expect(find.byType(AlertCard), findsNothing);
+
+      // Part B: Severely underweight on Day 14 (350.0g vs 510g norm -> >15% deficit)
+      SharedPreferences.setMockInitialValues({
+        'counters_date': DailyCounters.todayStamp(),
+        'app_language': 'uz',
+        'initial_count': 100,
+        'current_count': 99,
+        'today_mortality': 1,
+        'last_weight': 350.0,
+        'arrival_date': day14Arrival.toIso8601String(),
+      });
+
+      await tester.pumpWidget(createTestApp(const DiaryScreen(key: ValueKey('diary_underweight'))));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertCard), findsOneWidget);
+      expect(find.textContaining('350g'), findsOneWidget);
+    });
+
+    testWidgets('18. English (en) Localization Flow on Dashboard & Quiz Explanation', (tester) async {
+      final now = DateTime.now();
+      SharedPreferences.setMockInitialValues({
+        'is_onboarded': true,
+        'app_language': 'en',
+        'farmer_name': 'John Farmer',
+        'farmer_district': 'Samarqand',
+        'initial_count': 500,
+        'current_count': 498,
+        'arrival_date': now.subtract(const Duration(days: 6)).toIso8601String(), // Day 7
+      });
+
+      await tester.pumpWidget(createTestApp(const HomeScreen()));
+      await tester.pumpAndSettle();
+
+      // Verify English greeting and telemetry labels without Uzbek leakage
+      expect(find.text('Hello, John Farmer!'), findsOneWidget);
+      expect(find.text('Barn Temp'), findsOneWidget);
+      expect(find.text('Flock Survival'), findsOneWidget);
+      expect(find.text('Daily Care'), findsOneWidget);
+      expect(find.text('Assalomu alaykum, John Farmer!'), findsNothing);
+
+      // Pump QuizScreen(lessonId: 1) in English
+      await tester.pumpWidget(createTestApp(const QuizScreen(lessonId: 1)));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('To what temperature should the barn be preheated 24 hours before chick arrival?'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('33-34°C'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Check Answer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Correct! Lesson completed successfully.'), findsOneWidget);
+      expect(
+        find.textContaining('Day-old chicks cannot regulate their own body temperature'),
+        findsOneWidget,
+      );
     });
   });
 }

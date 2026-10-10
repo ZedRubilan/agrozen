@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS question_logs (
     question TEXT NOT NULL,
     answer TEXT,
     topics_used TEXT[],
-    language TEXT NOT NULL DEFAULT 'uz' CHECK (language IN ('uz', 'ru')),
+    language TEXT NOT NULL DEFAULT 'uz' CHECK (language IN ('uz', 'ru', 'en')),
     source TEXT NOT NULL DEFAULT 'text' CHECK (source IN ('text', 'voice')),
     transcribed_text TEXT,
     created_at TIMESTAMPTZ DEFAULT now()

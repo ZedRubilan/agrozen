@@ -74,61 +74,101 @@ serve(async (req: Request) => {
     }
 
     const supabase = getSupabaseClient();
-    const today = new Date().toISOString().split('T')[0];
+    // Uzbekistan local date (Asia/Tashkent, UTC+5)
+    const today = new Date(Date.now() + 5 * 3600_000).toISOString().split('T')[0];
 
     let remainingQuestions = MAX_DAILY_QUESTIONS;
 
-    // Check & update daily question count if farmer_id is provided
-    if (farmer_id) {
-      const { data: farmer, error: farmerError } = await supabase
-        .from('farmers')
-        .select('id, daily_question_count, last_question_date')
-        .eq('id', farmer_id)
-        .maybeSingle();
+    const buildLimitExceededResponse = () => {
+      const limitMsg =
+        lang === 'en'
+          ? 'You have reached the daily limit of questions (30 per day). Please return tomorrow or contact your district veterinarian directly.'
+          : lang === 'ru'
+            ? 'Вы достигли дневного лимита вопросов (30 в день). Пожалуйста, вернитесь завтра или обратитесь напрямую к ветеринару.'
+            : 'Siz kunlik savollar limitiga (30 ta) yetdingiz. Iltimos, ertaga davom eting yoki zudlik bilan veterinarga murojaat qiling.';
 
-      if (farmerError) {
-        console.error('Error fetching farmer profile:', farmerError);
-      } else if (farmer) {
-        let currentCount = farmer.daily_question_count || 0;
-        const lastDate = farmer.last_question_date;
-
-        if (lastDate !== today) {
-          currentCount = 0;
+      return new Response(
+        JSON.stringify({
+          error: limitMsg,
+          answer: limitMsg,
+          sources_used: [],
+          remaining_questions: 0,
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
+      );
+    };
 
-        if (currentCount >= MAX_DAILY_QUESTIONS) {
-          const limitMsg =
-            lang === 'en'
-              ? 'You have reached the daily limit of questions (30 per day). Please return tomorrow or contact your district veterinarian directly.'
-              : lang === 'ru'
-                ? 'Вы достигли дневного лимита вопросов (30 в день). Пожалуйста, вернитесь завтра или обратитесь напрямую к ветеринару.'
-                : 'Siz kunlik savollar limitiga (30 ta) yetdingiz. Iltimos, ertaga davom eting yoki zudlik bilan veterinarga murojaat qiling.';
+    // Check & update daily question count atomically via RPC if farmer_id is provided
+    if (farmer_id) {
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'check_and_increment_daily_questions',
+        {
+          p_farmer_id: farmer_id,
+          p_daily_limit: MAX_DAILY_QUESTIONS,
+        }
+      );
 
-          return new Response(
-            JSON.stringify({
-              error: limitMsg,
-              answer: limitMsg,
-              sources_used: [],
-              remaining_questions: 0,
-            }),
-            {
-              status: 429,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
+      if (!rpcError && rpcResult !== null && rpcResult !== undefined) {
+        if (typeof rpcResult === 'object' && 'allowed' in rpcResult) {
+          if (!rpcResult.allowed) {
+            return buildLimitExceededResponse();
+          }
+          remainingQuestions =
+            typeof rpcResult.remaining === 'number'
+              ? rpcResult.remaining
+              : Math.max(0, MAX_DAILY_QUESTIONS - (rpcResult.current_count ?? 1));
+        } else if (typeof rpcResult === 'number') {
+          if (rpcResult < 0) {
+            return buildLimitExceededResponse();
+          }
+          remainingQuestions = Math.max(0, MAX_DAILY_QUESTIONS - rpcResult);
+        }
+      } else {
+        if (rpcError) {
+          console.warn(
+            'RPC check_and_increment_daily_questions failed, falling back to select/update:',
+            rpcError.message
           );
         }
-
-        remainingQuestions = MAX_DAILY_QUESTIONS - (currentCount + 1);
-
-        // Update farmer daily count
-        await supabase
+        const { data: farmer, error: farmerError } = await supabase
           .from('farmers')
-          .update({
-            daily_question_count: currentCount + 1,
-            last_question_date: today,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', farmer_id);
+          .select('id, daily_question_count, last_question_date')
+          .eq('id', farmer_id)
+          .maybeSingle();
+
+        if (farmerError) {
+          console.error('Error fetching farmer profile:', farmerError);
+        } else if (farmer) {
+          let currentCount = farmer.daily_question_count || 0;
+          const lastDate = farmer.last_question_date;
+
+          if (lastDate !== today) {
+            currentCount = 0;
+          }
+
+          if (currentCount >= MAX_DAILY_QUESTIONS) {
+            return buildLimitExceededResponse();
+          }
+
+          remainingQuestions = MAX_DAILY_QUESTIONS - (currentCount + 1);
+
+          // Update farmer daily count
+          const { error: updateError } = await supabase
+            .from('farmers')
+            .update({
+              daily_question_count: currentCount + 1,
+              last_question_date: today,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', farmer_id);
+
+          if (updateError) {
+            console.error('Error updating farmer daily question count:', updateError);
+          }
+        }
       }
     }
 
@@ -260,26 +300,30 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
 
     if (geminiApiKey) {
       try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${preferredModel}:generateContent?key=${geminiApiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${preferredModel}:generateContent`;
+        const geminiPayload = JSON.stringify({
+          system_instruction: {
+            parts: [{ text: systemInstruction }],
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userPrompt }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 1024,
+          },
+        });
 
         const geminiResponse = await fetch(geminiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: systemInstruction }],
-            },
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: userPrompt }],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 1024,
-            },
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': geminiApiKey,
+          },
+          body: geminiPayload,
         });
 
         if (geminiResponse.ok) {
@@ -290,29 +334,19 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
             generatedAnswer = textCandidate.trim();
           }
         } else {
-          // If gemini-2.5-flash returns 404/error, fallback to gemini-1.5-flash
+          // If preferred model returns 404/error, fallback to gemini-2.0-flash
           console.warn(
-            `Gemini API returned status ${geminiResponse.status}. Attempting fallback to gemini-1.5-flash...`
+            `Gemini API returned status ${geminiResponse.status}. Attempting fallback to gemini-2.0-flash...`
           );
-          const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+          const fallbackUrl =
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
           const fallbackResponse = await fetch(fallbackUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              system_instruction: {
-                parts: [{ text: systemInstruction }],
-              },
-              contents: [
-                {
-                  role: 'user',
-                  parts: [{ text: userPrompt }],
-                },
-              ],
-              generationConfig: {
-                temperature: 0.2,
-                maxOutputTokens: 1024,
-              },
-            }),
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': geminiApiKey,
+            },
+            body: geminiPayload,
           });
 
           if (fallbackResponse.ok) {
@@ -345,7 +379,7 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
 
     // 4. Save interaction to question_logs table
     try {
-      await supabase.from('question_logs').insert({
+      const { error: logError } = await supabase.from('question_logs').insert({
         farmer_id: farmer_id ?? null,
         question: question.trim(),
         answer: generatedAnswer,
@@ -354,6 +388,9 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
         source: 'text',
         created_at: new Date().toISOString(),
       });
+      if (logError) {
+        console.error('Failed to insert question_log:', logError);
+      }
     } catch (logErr) {
       console.error('Error saving to question_logs:', logErr);
     }

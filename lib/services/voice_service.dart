@@ -22,6 +22,7 @@ class VoiceService {
   final Future<SupabaseClient> Function()? _clientFactory;
   final WebSpeechRecognitionDelegate _webSpeech = WebSpeechRecognitionDelegate();
   String? _lastWebTranscript;
+  String? _lastRecordingPath;
 
   VoiceService({AudioRecorder? recorder, this._clientFactory})
       : _recorder = recorder ?? AudioRecorder();
@@ -42,6 +43,7 @@ class VoiceService {
   /// On Web, initializes native Chrome/Safari SpeechRecognition alongside the audio recorder.
   Future<String> startRecording({String language = 'uz'}) async {
     _lastWebTranscript = null;
+    _lastRecordingPath = null;
 
     if (kIsWeb && _webSpeech.isSupported) {
       final started = await _webSpeech.startListening(
@@ -82,6 +84,7 @@ class VoiceService {
         final dir = await getTemporaryDirectory();
         final stamp = DateTime.now().millisecondsSinceEpoch;
         final path = '${dir.path}/agrozen_$stamp.m4a';
+        _lastRecordingPath = path;
 
         await _recorder.start(
           const RecordConfig(encoder: AudioEncoder.aacLc),
@@ -111,91 +114,129 @@ class VoiceService {
 
     try {
       final path = await _recorder.stop();
-      return path ?? (kIsWeb ? 'web_audio' : null);
+      return path ?? _lastRecordingPath ?? (kIsWeb ? 'web_audio' : null);
     } catch (e) {
       debugPrint('VoiceService.stopRecording: $e');
-      return kIsWeb ? 'web_audio' : null;
+      return _lastRecordingPath ?? (kIsWeb ? 'web_audio' : null);
     }
   }
 
-  /// Discards the current recording.
+  /// Convenience helper: stops active recording and transcribes it in one step.
+  Future<String> stopAndTranscribe({required String language}) async {
+    final path = await stopRecording();
+    if (path == null) {
+      throw const VoiceUnavailable(
+        'Recording file is missing.',
+        reason: VoiceUnavailableReason.noAudio,
+      );
+    }
+    return transcribe(path, language: language);
+  }
+
+  /// Discards the current recording and deletes any temporary audio file.
   Future<void> cancelRecording() async {
     if (kIsWeb && _webSpeech.isSupported) {
       await _webSpeech.cancelListening();
     }
     _lastWebTranscript = null;
+    final tempPath = _lastRecordingPath;
+    _lastRecordingPath = null;
     try {
       await _recorder.cancel();
     } catch (e) {
       debugPrint('VoiceService.cancelRecording: $e');
     }
+    if (!kIsWeb && tempPath != null && tempPath.isNotEmpty) {
+      try {
+        final f = File(tempPath);
+        if (await f.exists()) {
+          await f.delete();
+        }
+      } catch (_) {}
+    }
   }
+
+  static const Set<String> _serverFallbackPhrases = {
+    'не удалось распознать речь',
+    'не удалось распознать речь.',
+    "ovozli xabardagi nutqni aniqlab bo'lmadi",
+    "ovozli xabardagi nutqni aniqlab bo'lmadi.",
+    'could not recognize speech',
+    'could not recognize speech.',
+    'could not recognize the speech',
+    'could not recognize the speech.',
+  };
 
   /// Sends [audioPath] to the `transcribe-voice` Edge Function or returns
   /// native browser SpeechRecognition transcript (on Web).
   Future<String> transcribe(String audioPath, {required String language}) async {
-    final lang = language.toLowerCase() == 'ru' ? 'ru' : 'uz';
+    final norm = language.trim().toLowerCase();
+    final lang = norm.startsWith('ru')
+        ? 'ru'
+        : (norm.startsWith('en') ? 'en' : 'uz');
 
-    // 1. If Web Speech Recognition captured speech during recording on Chrome:
-    if (kIsWeb && _lastWebTranscript != null && _lastWebTranscript!.trim().isNotEmpty) {
-      final transcript = _lastWebTranscript!.trim();
-      _lastWebTranscript = null;
-      return transcript;
-    }
+    try {
+      // 1. If Web Speech Recognition captured speech during recording on Chrome:
+      if (kIsWeb &&
+          _lastWebTranscript != null &&
+          _lastWebTranscript!.trim().isNotEmpty) {
+        final transcript = _lastWebTranscript!.trim();
+        _lastWebTranscript = null;
+        return transcript;
+      }
 
-    // 2. Otherwise require configured cloud backend:
-    if (!SupabaseConfig.isConfigured && _clientFactory == null) {
-      throw const VoiceUnavailable(
-        'Voice transcription needs the cloud backend, which is not configured.',
-        reason: VoiceUnavailableReason.notConfigured,
-      );
-    }
+      // 2. Otherwise require configured cloud backend:
+      if (!SupabaseConfig.isConfigured && _clientFactory == null) {
+        throw const VoiceUnavailable(
+          'Voice transcription needs the cloud backend, which is not configured.',
+          reason: VoiceUnavailableReason.notConfigured,
+        );
+      }
 
-    List<int> bytes;
-    String mimeType = 'audio/m4a';
+      List<int> bytes;
+      String mimeType = 'audio/m4a';
 
-    if (kIsWeb) {
-      try {
-        if (audioPath.startsWith('blob:') || audioPath.startsWith('http')) {
-          final res = await http.get(Uri.parse(audioPath));
-          if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
-            bytes = res.bodyBytes;
-            mimeType = 'audio/webm';
+      if (kIsWeb) {
+        try {
+          if (audioPath.startsWith('blob:') || audioPath.startsWith('http')) {
+            final res = await http.get(Uri.parse(audioPath));
+            if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
+              bytes = res.bodyBytes;
+              mimeType = 'audio/webm';
+            } else {
+              throw const VoiceUnavailable(
+                'Recording file is missing.',
+                reason: VoiceUnavailableReason.noAudio,
+              );
+            }
           } else {
             throw const VoiceUnavailable(
               'Recording file is missing.',
               reason: VoiceUnavailableReason.noAudio,
             );
           }
-        } else {
+        } catch (e) {
+          if (e is VoiceUnavailable) rethrow;
           throw const VoiceUnavailable(
             'Recording file is missing.',
             reason: VoiceUnavailableReason.noAudio,
           );
         }
-      } catch (e) {
-        if (e is VoiceUnavailable) rethrow;
-        throw const VoiceUnavailable(
-          'Recording file is missing.',
-          reason: VoiceUnavailableReason.noAudio,
-        );
+      } else {
+        final file = File(audioPath);
+        if (!await file.exists()) {
+          throw const VoiceUnavailable(
+            'Recording file is missing.',
+            reason: VoiceUnavailableReason.noAudio,
+          );
+        }
+        bytes = await file.readAsBytes();
       }
-    } else {
-      final file = File(audioPath);
-      if (!await file.exists()) {
-        throw const VoiceUnavailable(
-          'Recording file is missing.',
-          reason: VoiceUnavailableReason.noAudio,
-        );
-      }
-      bytes = await file.readAsBytes();
-    }
 
-    final factory = _clientFactory;
-    final client =
-        factory != null ? await factory() : SupabaseConfig.client;
+      final factory = _clientFactory;
+      final client =
+          factory != null ? await factory() : SupabaseConfig.client;
 
-    try {
       final response = await client.functions.invoke(
         'transcribe-voice',
         body: {
@@ -213,7 +254,9 @@ class VoiceService {
               : null);
 
       final text = (payload?['transcribed_text'] as String?)?.trim() ?? '';
-      if (response.status != 200 || text.isEmpty) {
+      if (response.status != 200 ||
+          text.isEmpty ||
+          _serverFallbackPhrases.contains(text.toLowerCase())) {
         final serverError = payload?['error']?.toString();
         throw VoiceUnavailable(
           serverError ?? 'Could not recognize the speech.',
@@ -227,6 +270,16 @@ class VoiceService {
         'Transcription failed: $e',
         reason: VoiceUnavailableReason.transcribeFailed,
       );
+    } finally {
+      _lastRecordingPath = null;
+      if (!kIsWeb && audioPath.isNotEmpty && audioPath != 'web_audio') {
+        try {
+          final file = File(audioPath);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (_) {}
+      }
     }
   }
 

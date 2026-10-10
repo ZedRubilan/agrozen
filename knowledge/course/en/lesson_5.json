@@ -2,6 +2,7 @@
   "lesson_number": 5,
   "title": "Daily Recordkeeping and Early Warning Triggers",
   "content": "A successful farmer logs daily feed consumption, mortality, and weekly sample weights. A daily mortality spike exceeding 1% or a weight deficit surpassing 15% is an immediate prompt to isolate affected birds and contact the regional veterinarian via AgroZen, rather than attempting unauthorized antibiotic treatment.",
+  "video_url": "https://www.youtube.com/results?search_query=broiler+flock+record+keeping+fcr+mortality+management",
   "quiz": {
     "question": "What is the mandatory action when daily flock mortality spikes above 1%?",
     "options": [

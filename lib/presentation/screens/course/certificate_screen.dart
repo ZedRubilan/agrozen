@@ -161,7 +161,12 @@ class _CertificateScreenState extends State<CertificateScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              '$_district viloyati',
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: '$_district viloyati',
+                                ru: '$_district область',
+                                en: '$_district region',
+                              ),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -212,13 +217,18 @@ class _CertificateScreenState extends State<CertificateScreen> {
                                   border: Border.all(color: const Color(0xFF2D7A4C)),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   children: [
-                                    Icon(Icons.verified_rounded, size: 15, color: Color(0xFF2D7A4C)),
-                                    SizedBox(width: 4),
+                                    const Icon(Icons.verified_rounded, size: 15, color: Color(0xFF2D7A4C)),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'TASDIQLANGAN',
-                                      style: TextStyle(color: Color(0xFF2D7A4C), fontSize: 10, fontWeight: FontWeight.w900),
+                                      AppStrings.tr(
+                                        lang: _lang,
+                                        uz: 'TASDIQLANGAN',
+                                        ru: 'ПОДТВЕРЖДЕНО',
+                                        en: 'VERIFIED',
+                                      ),
+                                      style: const TextStyle(color: Color(0xFF2D7A4C), fontSize: 10, fontWeight: FontWeight.w900),
                                     ),
                                   ],
                                 ),

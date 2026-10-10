@@ -34,70 +34,73 @@ class _TactileButtonState extends State<TactileButton> {
     final effectiveDepth = _isPressed ? 0.0 : widget.depth;
     final topMargin = _isPressed ? widget.depth : 0.0;
 
-    return GestureDetector(
-      onTapDown: (_) {
-        if (widget.onPressed != null) {
-          setState(() => _isPressed = true);
-        }
-      },
-      onTapUp: (_) {
-        if (widget.onPressed != null) {
-          setState(() => _isPressed = false);
-          widget.onPressed!();
-        }
-      },
-      onTapCancel: () {
-        if (_isPressed) {
-          setState(() => _isPressed = false);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 65),
-        curve: Curves.easeOutQuad,
-        height: widget.height,
-        margin: EdgeInsets.only(top: topMargin),
-        decoration: BoxDecoration(
-          color: widget.backgroundColor,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          boxShadow: [
-            if (effectiveDepth > 0)
+    return SizedBox(
+      height: widget.height + widget.depth,
+      child: GestureDetector(
+        onTapDown: (_) {
+          if (widget.onPressed != null) {
+            setState(() => _isPressed = true);
+          }
+        },
+        onTapUp: (_) {
+          if (widget.onPressed != null) {
+            setState(() => _isPressed = false);
+            widget.onPressed!();
+          }
+        },
+        onTapCancel: () {
+          if (_isPressed) {
+            setState(() => _isPressed = false);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 65),
+          curve: Curves.easeOutQuad,
+          height: widget.height,
+          margin: EdgeInsets.only(top: topMargin, bottom: effectiveDepth),
+          decoration: BoxDecoration(
+            color: widget.backgroundColor,
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            boxShadow: [
+              if (effectiveDepth > 0)
+                BoxShadow(
+                  color: widget.shadowColor,
+                  offset: Offset(0, effectiveDepth),
+                  blurRadius: 0,
+                ),
               BoxShadow(
-                color: widget.shadowColor,
-                offset: Offset(0, effectiveDepth),
-                blurRadius: 0,
+                color: widget.shadowColor.withAlpha(50),
+                offset: const Offset(0, 4),
+                blurRadius: 10,
               ),
-            BoxShadow(
-              color: widget.shadowColor.withAlpha(50),
-              offset: const Offset(0, 4),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          child: Stack(
-            children: [
-              // Top subtle glossy sheen
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: widget.height * 0.45,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withAlpha(35),
-                        Colors.white.withAlpha(0),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            child: Stack(
+              children: [
+                // Top subtle glossy sheen
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: widget.height * 0.45,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withAlpha(35),
+                          Colors.white.withAlpha(0),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Center(child: widget.child),
-            ],
+                Center(child: widget.child),
+              ],
+            ),
           ),
         ),
       ),

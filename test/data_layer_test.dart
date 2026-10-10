@@ -10,6 +10,7 @@ import 'package:agrozen/data/models/daily_plan.dart';
 import 'package:agrozen/data/models/question_log.dart';
 import 'package:agrozen/data/models/course_progress.dart';
 import 'package:agrozen/data/models/course_lesson.dart';
+import 'package:agrozen/data/models/weather_data.dart';
 import 'package:agrozen/data/providers/ai_provider.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
 
@@ -41,7 +42,7 @@ void main() {
       expect(AppConstants.broilerCycleDays, 42);
       expect(AppConstants.timezone, 'Asia/Tashkent');
       expect(AppConstants.morningNotificationHour, 7);
-      expect(AppConstants.supportedLocales, ['uz', 'ru']);
+      expect(AppConstants.supportedLocales, ['uz', 'ru', 'en']);
       expect(AppConstants.districts.length, 13);
       expect(AppConstants.districts, contains('Namangan'));
       expect(AppConstants.districts, contains('Toshkent'));
@@ -131,21 +132,34 @@ void main() {
       expect(fromJson, entry);
     });
 
-    test('DailyPlan model translates tasks correctly', () {
+    test('DailyPlan model translates tasks correctly across uz, ru, and en', () {
       const plan = DailyPlan(
         day: 1,
         tasksRu: 'Подготовка брудера',
         tasksUz: 'Bruderni tayyorlash',
+        tasksEn: 'Prepare the brooder and verify temperature',
         videoUrl: 'https://youtube.com/v1',
       );
 
       expect(plan.getTasks('ru'), 'Подготовка брудера');
       expect(plan.getTasks('uz'), 'Bruderni tayyorlash');
+      expect(plan.getTasks('en'), 'Prepare the brooder and verify temperature');
+      expect(plan.getTasks('en'), isNot(equals(plan.tasksRu)));
+
+      // Fallback when tasksEn is omitted
+      const planWithoutEn = DailyPlan(
+        day: 1,
+        tasksRu: 'Подготовка брудера',
+        tasksUz: 'Bruderni tayyorlash',
+      );
+      expect(planWithoutEn.getTasks('en'), contains('Prepare the brooder'));
+      expect(planWithoutEn.getTasks('en'), isNot(contains('Подготовка')));
 
       final json = plan.toJson();
       expect(json['day'], 1);
       expect(json['tasks_ru'], 'Подготовка брудера');
       expect(json['tasks_uz'], 'Bruderni tayyorlash');
+      expect(json['tasks_en'], 'Prepare the brooder and verify temperature');
       expect(json['video_url'], 'https://youtube.com/v1');
 
       final fromJson = DailyPlan.fromJson(json);
@@ -173,6 +187,86 @@ void main() {
 
       final fromJson = QuestionLog.fromJson(json);
       expect(fromJson, log);
+    });
+
+    test('QuestionLog.fromJson with farmer_id: null deserializes cleanly without TypeError', () {
+      final now = DateTime.parse('2026-10-09T10:00:00.000Z');
+      final json = {
+        'id': 'log-anon-001',
+        'farmer_id': null,
+        'question': 'Suv harorati qanday bo\'lishi kerak?',
+        'answer': '18-21 gradus',
+        'topics_used': ['06_water'],
+        'language': 'uz',
+        'source': 'text',
+        'transcribed_text': null,
+        'created_at': now.toIso8601String(),
+      };
+
+      final fromJson = QuestionLog.fromJson(json);
+      expect(fromJson.id, 'log-anon-001');
+      expect(fromJson.farmerId, isNull);
+      expect(fromJson.question, 'Suv harorati qanday bo\'lishi kerak?');
+      expect(fromJson.language, 'uz');
+    });
+
+    test('WeatherData.getConditionText returns accurate localized strings for all conditions in uz, ru, en', () {
+      final now = DateTime.now();
+      WeatherData makeWeather(String cond) => WeatherData(
+            district: 'Toshkent',
+            temperature: 20.0,
+            humidity: 50,
+            windSpeed: 10.0,
+            condition: cond,
+            timestamp: now,
+          );
+
+      final snow = makeWeather('snow');
+      expect(snow.getConditionText('uz'), 'Qorli');
+      expect(snow.getConditionText('ru'), 'Снежно');
+      expect(snow.getConditionText('en'), 'Snowy');
+      expect(snow.getConditionText('uz'), isNot('Ochiq havo'));
+
+      final thunderstorm = makeWeather('thunderstorm');
+      expect(thunderstorm.getConditionText('uz'), 'Momaqaldiroq');
+      expect(thunderstorm.getConditionText('ru'), 'Гроза');
+      expect(thunderstorm.getConditionText('en'), 'Thunderstorm');
+      expect(thunderstorm.getConditionText('uz'), isNot('Ochiq havo'));
+
+      final partlyCloudy = makeWeather('partly_cloudy');
+      expect(partlyCloudy.getConditionText('uz'), 'Qisman bulutli');
+      expect(partlyCloudy.getConditionText('ru'), 'Переменная облачность');
+      expect(partlyCloudy.getConditionText('en'), 'Partly Cloudy');
+
+      final rain = makeWeather('rain');
+      expect(rain.getConditionText('uz'), "Yomg'irli");
+      expect(rain.getConditionText('ru'), 'Дождливо');
+      expect(rain.getConditionText('en'), 'Rainy');
+
+      final hot = makeWeather('hot');
+      expect(hot.getConditionText('uz'), 'Issiq / Quyoshli');
+      expect(hot.getConditionText('ru'), 'Жарко / Солнечно');
+      expect(hot.getConditionText('en'), 'Hot / Sunny');
+
+      final cold = makeWeather('cold');
+      expect(cold.getConditionText('uz'), 'Sovuq');
+      expect(cold.getConditionText('ru'), 'Холодно');
+      expect(cold.getConditionText('en'), 'Cold');
+    });
+
+    test('VideoGuide.getTitle returns localized titles including English', () {
+      const guide = VideoGuide(
+        day: 1,
+        titleRu: 'Подготовка птичника',
+        titleUz: 'Binoni tayyorlash',
+        titleEn: 'Barn Preparation and Day-Old Chick Placement',
+        url: 'https://youtube.com/v1',
+        duration: '8:25',
+      );
+
+      expect(guide.getTitle('en'), 'Barn Preparation and Day-Old Chick Placement');
+      expect(guide.getTitle('uz'), 'Binoni tayyorlash');
+      expect(guide.getTitle('ru'), 'Подготовка птичника');
     });
 
     test('CourseProgress model encodes and decodes correctly', () {

@@ -71,6 +71,54 @@ void main() {
       final day21 = (daily['21'] as Map)['temp_c'] as num;
       expect(norms.temperatureTargetForDay(21), day21.toDouble());
     });
+
+    test('feedTargetForDay returns exact daily feed norm and clamps beyond day 42', () {
+      final daily = rawNorms['daily_norms'] as Map<String, dynamic>;
+      for (final entry in daily.entries) {
+        final day = int.parse(entry.key);
+        final expected = ((entry.value as Map)['feed_g'] as num).toDouble();
+        expect(
+          norms.feedTargetForDay(day),
+          expected,
+          reason: 'day $day should return exact daily feed norm',
+        );
+      }
+      expect(norms.feedTargetForDay(45), norms.feedTargetForDay(42));
+      expect(norms.feedTargetForDay(45), 215.0);
+    });
+
+    test('weightTargetForDay(45) clamps to Day 42 (3125g) instead of dropping to 2900g', () {
+      expect(norms.weightTargetForDay(42), 3125.0);
+      expect(norms.weightTargetForDay(45), 3125.0);
+      expect(norms.weightTargetForDay(45), isNot(2900.0));
+    });
+
+    test('weekly_norms and daily_norms match on days 7, 14, 21, 28, 35, 42', () {
+      final daily = rawNorms['daily_norms'] as Map<String, dynamic>;
+      final weekly = rawNorms['weekly_norms'] as List;
+
+      for (final day in [7, 14, 21, 28, 35, 42]) {
+        final weekNum = day ~/ 7;
+        final weekEntry = weekly.firstWhere((e) => (e as Map)['week'] == weekNum) as Map;
+        final dailyEntry = daily['$day'] as Map;
+
+        expect(
+          (weekEntry['target_weight_g'] as num).toDouble(),
+          (dailyEntry['weight_g'] as num).toDouble(),
+          reason: 'weekly_norms week $weekNum target_weight_g must match daily_norms day $day weight_g',
+        );
+        expect(
+          (weekEntry['daily_feed_g'] as num).toDouble(),
+          (dailyEntry['feed_g'] as num).toDouble(),
+          reason: 'weekly_norms week $weekNum daily_feed_g must match daily_norms day $day feed_g',
+        );
+        expect(
+          (weekEntry['temperature_c'] as num).toDouble(),
+          (dailyEntry['temp_c'] as num).toDouble(),
+          reason: 'weekly_norms week $weekNum temperature_c must match daily_norms day $day temp_c',
+        );
+      }
+    });
   });
 
   group('NormsData is defensive against malformed input', () {

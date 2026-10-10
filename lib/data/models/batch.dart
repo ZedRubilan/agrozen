@@ -12,6 +12,8 @@ class Batch extends Equatable {
   final int? currentCount;
   final String status;
   final DateTime createdAt;
+  @JsonKey(name: 'updated_at')
+  final DateTime? updatedAt;
 
   const Batch({
     required this.id,
@@ -21,6 +23,7 @@ class Batch extends Equatable {
     this.currentCount,
     this.status = 'active',
     required this.createdAt,
+    this.updatedAt,
   });
 
   factory Batch.fromJson(Map<String, dynamic> json) => _$BatchFromJson(json);
@@ -35,6 +38,7 @@ class Batch extends Equatable {
     int? currentCount,
     String? status,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Batch(
       id: id ?? this.id,
@@ -44,6 +48,7 @@ class Batch extends Equatable {
       currentCount: currentCount ?? this.currentCount,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -56,5 +61,6 @@ class Batch extends Equatable {
         currentCount,
         status,
         createdAt,
+        updatedAt,
       ];
 }

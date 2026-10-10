@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 import '../../app.dart';
 import '../../services/daily_counters.dart';
+import '../../services/flock_context_service.dart';
 import '../widgets/language_selector.dart';
 import '../widgets/animated_entry.dart';
 
@@ -26,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   String _district = 'Toshkent';
   int _currentCount = 500;
   bool _isLoading = true;
+  Locale? _observedLocale;
 
   @override
   void initState() {
@@ -33,10 +35,25 @@ class _SettingsScreenState extends State<SettingsScreen>
     _loadState();
   }
 
-  Future<void> _loadState() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentLocale = Localizations.maybeLocaleOf(context);
+    if (_observedLocale != null &&
+        currentLocale != null &&
+        currentLocale != _observedLocale) {
+      _observedLocale = currentLocale;
+      _loadState(localeOverride: currentLocale.languageCode);
+    } else {
+      _observedLocale = currentLocale;
+    }
+  }
+
+  Future<void> _loadState({String? localeOverride}) async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
-      _lang = prefs.getString('app_language') ?? 'uz';
+      _lang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
       _name = prefs.getString('farmer_name') ?? 'Fermer';
       _district = prefs.getString('farmer_district') ?? 'Toshkent';
       _currentCount = prefs.getInt('current_count') ?? 500;
@@ -87,7 +104,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (confirm == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('arrival_date');
+      await prefs.remove('last_weight');
       await DailyCounters.resetAll(prefs);
+      FlockContextService().clearHistory();
       if (!mounted) return;
       context.go('/onboarding/batch');
     }
@@ -118,30 +137,36 @@ class _SettingsScreenState extends State<SettingsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isRu ? 'Настройки' : (isEn ? 'Settings' : 'Sozlamalar'),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 20,
-                            color: AppTheme.textPrimary,
-                            letterSpacing: -0.4,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isRu ? 'Настройки' : (isEn ? 'Settings' : 'Sozlamalar'),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 20,
+                              color: AppTheme.textPrimary,
+                              letterSpacing: -0.4,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isRu
-                              ? 'Профиль и параметры фермы'
-                              : (isEn ? 'Farm profile and preferences' : 'Ferma profili va sozlamalar'),
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            color: AppTheme.textMuted,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 2),
+                          Text(
+                            isRu
+                                ? 'Профиль и параметры фермы'
+                                : (isEn ? 'Farm profile and preferences' : 'Ferma profili va sozlamalar'),
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: AppTheme.textMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

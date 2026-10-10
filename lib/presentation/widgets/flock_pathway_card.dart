@@ -319,37 +319,44 @@ class FlockPathwayCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryGreen.withAlpha(25),
-                            shape: BoxShape.circle,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryGreen.withAlpha(25),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.checklist_rounded,
+                              size: 16,
+                              color: AppTheme.primaryGreen,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.checklist_rounded,
-                            size: 16,
-                            color: AppTheme.primaryGreen,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              AppStrings.tr(
+                                lang: language,
+                                uz: "Kunlik parvarish rejasini ko'rish",
+                                ru: "Открыть ежедневный план ухода",
+                                en: "Open daily checklist & tasks",
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primaryGreenDark,
+                                letterSpacing: 0.1,
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          AppStrings.tr(
-                            lang: language,
-                            uz: "Kunlik parvarish rejasini ko'rish",
-                            ru: "Открыть ежедневный план ухода",
-                            en: "Open daily checklist & tasks",
-                          ),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primaryGreenDark,
-                            letterSpacing: 0.1,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     const Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 13,

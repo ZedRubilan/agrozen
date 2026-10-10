@@ -23,31 +23,66 @@ CREATE INDEX IF NOT EXISTS idx_diary_entries_batch_date_type ON diary_entries(ba
 CREATE OR REPLACE FUNCTION sync_batch_current_count()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_batch_id UUID;
     v_total_mortality NUMERIC;
     v_initial_count INT;
 BEGIN
     IF TG_OP = 'DELETE' THEN
-        v_batch_id := OLD.batch_id;
-    ELSE
-        v_batch_id := NEW.batch_id;
-    END IF;
+        IF OLD.entry_type = 'mortality' THEN
+            SELECT initial_count INTO v_initial_count FROM batches WHERE id = OLD.batch_id;
+            IF FOUND THEN
+                SELECT COALESCE(SUM(value), 0) INTO v_total_mortality
+                FROM diary_entries
+                WHERE batch_id = OLD.batch_id AND entry_type = 'mortality';
 
-    -- Only proceed if the entry affects mortality
-    IF (TG_OP = 'DELETE' AND OLD.entry_type = 'mortality')
-       OR (TG_OP IN ('INSERT', 'UPDATE') AND NEW.entry_type = 'mortality') THEN
+                UPDATE batches
+                SET current_count = GREATEST(0, v_initial_count - v_total_mortality::INT),
+                    updated_at = now()
+                WHERE id = OLD.batch_id;
+            END IF;
+        END IF;
+    ELSIF TG_OP = 'INSERT' THEN
+        IF NEW.entry_type = 'mortality' THEN
+            SELECT initial_count INTO v_initial_count FROM batches WHERE id = NEW.batch_id;
+            IF FOUND THEN
+                SELECT COALESCE(SUM(value), 0) INTO v_total_mortality
+                FROM diary_entries
+                WHERE batch_id = NEW.batch_id AND entry_type = 'mortality';
 
-        SELECT initial_count INTO v_initial_count FROM batches WHERE id = v_batch_id;
+                UPDATE batches
+                SET current_count = GREATEST(0, v_initial_count - v_total_mortality::INT),
+                    updated_at = now()
+                WHERE id = NEW.batch_id;
+            END IF;
+        END IF;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF OLD.entry_type = 'mortality' OR NEW.entry_type = 'mortality' THEN
+            -- Recalculate NEW.batch_id
+            SELECT initial_count INTO v_initial_count FROM batches WHERE id = NEW.batch_id;
+            IF FOUND THEN
+                SELECT COALESCE(SUM(value), 0) INTO v_total_mortality
+                FROM diary_entries
+                WHERE batch_id = NEW.batch_id AND entry_type = 'mortality';
 
-        IF FOUND THEN
-            SELECT COALESCE(SUM(value), 0) INTO v_total_mortality
-            FROM diary_entries
-            WHERE batch_id = v_batch_id AND entry_type = 'mortality';
+                UPDATE batches
+                SET current_count = GREATEST(0, v_initial_count - v_total_mortality::INT),
+                    updated_at = now()
+                WHERE id = NEW.batch_id;
+            END IF;
 
-            UPDATE batches
-            SET current_count = GREATEST(0, v_initial_count - v_total_mortality::INT),
-                updated_at = now()
-            WHERE id = v_batch_id;
+            -- If batch_id changed, also recalculate OLD.batch_id
+            IF OLD.batch_id IS DISTINCT FROM NEW.batch_id THEN
+                SELECT initial_count INTO v_initial_count FROM batches WHERE id = OLD.batch_id;
+                IF FOUND THEN
+                    SELECT COALESCE(SUM(value), 0) INTO v_total_mortality
+                    FROM diary_entries
+                    WHERE batch_id = OLD.batch_id AND entry_type = 'mortality';
+
+                    UPDATE batches
+                    SET current_count = GREATEST(0, v_initial_count - v_total_mortality::INT),
+                        updated_at = now()
+                    WHERE id = OLD.batch_id;
+                END IF;
+            END IF;
         END IF;
     END IF;
 
