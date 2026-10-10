@@ -187,8 +187,12 @@ class _LessonScreenState extends State<LessonScreen> {
         : (_lang == 'ru' ? 'Урок ${widget.lessonId}' : '${widget.lessonId}-dars');
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
-        title: Text(lessonBadge),
+        title: Text(
+          lessonBadge,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -198,65 +202,90 @@ class _LessonScreenState extends State<LessonScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _lang == 'en'
-                            ? 'PRACTICAL GUIDE'
-                            : (_lang == 'ru' ? 'ПРАКТИЧЕСКОЕ РУКОВОДСТВО' : 'AMALIY TAVSIYA'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                          letterSpacing: 0.5,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withAlpha(25),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: theme.colorScheme.primary.withAlpha(50)),
+                          ),
+                          child: Text(
+                            _lang == 'en'
+                                ? 'PRACTICAL GUIDE'
+                                : (_lang == 'ru' ? 'ПРАКТИЧЕСКОЕ РУКОВОДСТВО' : 'AMALIY TAVSIYA'),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: theme.colorScheme.primary,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
                       data['title']!,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, height: 1.3),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E293B),
+                        height: 1.3,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(8),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: SingleChildScrollView(
                           child: Text(
                             data['content']!,
-                            style: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF222222)),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              height: 1.65,
+                              color: Color(0xFF334155),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 20),
                     TactileButton(
-                      height: 52,
-                      depth: 3,
-                      borderRadius: 16,
+                      height: 56,
+                      depth: 4,
+                      borderRadius: 18,
                       backgroundColor: theme.colorScheme.primary,
                       shadowColor: const Color(0xFF1B4E31),
                       onPressed: () => context.push('/course/${widget.lessonId}/quiz'),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.quiz_outlined, color: Colors.white, size: 20),
-                          const SizedBox(width: 8),
+                          const Icon(Icons.quiz_rounded, color: Colors.white, size: 22),
+                          const SizedBox(width: 10),
                           Text(
                             _lang == 'en'
                                 ? 'Take Lesson Quiz'
                                 : (_lang == 'ru' ? 'Пройти тест урока' : 'Dars testini topshirish'),
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
                           ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_rounded, color: Colors.white70, size: 18),
                         ],
                       ),
                     ),

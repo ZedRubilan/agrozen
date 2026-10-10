@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/theme.dart';
 import '../../app.dart';
 import '../../services/daily_counters.dart';
 import '../widgets/language_selector.dart';
+import '../widgets/animated_entry.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool isEmbeddedInPageView;
+
+  const SettingsScreen({
+    super.key,
+    this.isEmbeddedInPageView = false,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -93,36 +100,105 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     final birdsSuffix = isRu ? 'голов' : (isEn ? 'birds' : 'bosh');
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isRu ? 'Настройки' : (isEn ? 'Settings' : 'Sozlamalar')),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                // Profile Section
-                Container(
-                  padding: const EdgeInsets.all(16.0),
+    final bodyContent = _isLoading
+        ? const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryGreen),
+            ),
+          )
+        : ListView(
+            padding: EdgeInsets.only(
+              left: 18.0,
+              right: 18.0,
+              top: widget.isEmbeddedInPageView ? 8.0 : 16.0,
+              bottom: widget.isEmbeddedInPageView ? 110.0 : 30.0,
+            ),
+            children: [
+              if (widget.isEmbeddedInPageView) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isRu ? 'Настройки' : (isEn ? 'Settings' : 'Sozlamalar'),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 20,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isRu
+                              ? 'Профиль и параметры фермы'
+                              : (isEn ? 'Farm profile and preferences' : 'Ferma profili va sozlamalar'),
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: AppTheme.textMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+              ],
+
+              // Profile Section with real Photo Avatar
+              StaggeredSlideFade(
+                index: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(18.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(8),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+                    border: Border.all(color: AppTheme.cardBorder, width: 1.2),
+                    boxShadow: AppTheme.cardShadow,
                   ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(25),
-                        child: Icon(Icons.person_rounded, size: 32, color: Theme.of(context).colorScheme.primary),
+                      Stack(
+                        children: [
+                          Container(
+                            width: 58,
+                            height: 58,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFF22C55E), width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF22C55E).withAlpha(50),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: Image.asset(
+                                'assets/images/farmer_avatar.jpg',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF22C55E),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -131,12 +207,28 @@ class _SettingsScreenState extends State<SettingsScreen>
                           children: [
                             Text(
                               _name,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.textPrimary,
+                                letterSpacing: -0.2,
+                              ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              '$_district | $_currentCount $birdsSuffix',
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5ED),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                              ),
+                              child: Text(
+                                '$_district | $_currentCount $birdsSuffix',
+                                style: const TextStyle(
+                                  color: Color(0xFF1B5E20),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -144,86 +236,109 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 16),
 
                 // Language Setting Section
-                Container(
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(8),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.language_rounded, color: Theme.of(context).colorScheme.primary, size: 22),
-                          const SizedBox(width: 10),
-                          Text(
-                            isRu ? 'Язык приложения' : (isEn ? 'App Language' : 'Ilova tili'),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Center(
-                        child: LanguageSelector(
-                          currentLanguage: _lang,
-                          onLanguageChanged: _changeLanguage,
+                StaggeredSlideFade(
+                  index: 1,
+                  child: Container(
+                    padding: const EdgeInsets.all(18.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFE2EBE4), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(6),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2D7A4C).withAlpha(25),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.language_rounded, color: Color(0xFF1B5E20), size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              isRu ? 'Язык приложения' : (isEn ? 'App Language' : 'Ilova tili'),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15.5,
+                                color: Color(0xFF1B2A1E),
+                                letterSpacing: -0.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: LanguageSelector(
+                            currentLanguage: _lang,
+                            onLanguageChanged: _changeLanguage,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 // Reset batch
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.orange.shade200, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(6),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          shape: BoxShape.circle,
+                StaggeredSlideFade(
+                  index: 2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.orange.withAlpha(70), width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withAlpha(10),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                        child: const Icon(Icons.restart_alt_rounded, color: Colors.orange, size: 22),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        leading: Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.restart_alt_rounded, color: Color(0xFFE65100), size: 22),
+                        ),
+                        title: Text(
+                          isRu ? 'Начать новую партию' : (isEn ? 'Start New Flock' : 'Yangi partiya boshlash'),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: Color(0xFF1B2A1E)),
+                        ),
+                        subtitle: Text(
+                          isRu
+                              ? 'Сбросить дату завоза и счетчики'
+                              : (isEn ? 'Reset chick arrival date and counters' : "Keltirilgan sana va hisoblagichlarni yangilash"),
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                        onTap: _resetBatch,
                       ),
-                      title: Text(
-                        isRu ? 'Начать новую партию' : (isEn ? 'Start New Flock' : 'Yangi partiya boshlash'),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        isRu
-                            ? 'Сбросить дату завоза и счетчики'
-                            : (isEn ? 'Reset chick arrival date and counters' : "Keltirilgan sana va hisoblagichlarni yangilash"),
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                      ),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
-                      onTap: _resetBatch,
                     ),
                   ),
                 ),
@@ -283,7 +398,18 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
               ],
-            ),
+            );
+
+    if (widget.isEmbeddedInPageView) {
+      return bodyContent;
+    }
+
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundLight,
+      appBar: AppBar(
+        title: Text(isRu ? 'Настройки' : (isEn ? 'Settings' : 'Sozlamalar')),
+      ),
+      body: bodyContent,
     );
   }
 }

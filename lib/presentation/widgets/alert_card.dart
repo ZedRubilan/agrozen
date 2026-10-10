@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 import '../../domain/alerts/alert_models.dart';
 import '../../services/external_actions.dart';
 
@@ -42,61 +43,70 @@ class AlertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCritical = severity == AlertSeverity.critical;
-    final bgColor = isCritical ? const Color(0xFFFFEBEE) : const Color(0xFFFFF8E1);
-    final borderColor = isCritical ? Colors.red.shade700 : Colors.amber.shade800;
-    final iconColor = isCritical ? Colors.red.shade700 : Colors.amber.shade800;
+    final bgColor = isCritical ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
+    final borderColor = isCritical ? const Color(0xFFFCA5A5) : const Color(0xFFFCD34D);
+    final iconColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
+    final buttonColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor, width: 1.5),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        border: Border.all(color: borderColor, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: borderColor.withAlpha(30),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: iconColor.withAlpha(25),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(18.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  isCritical ? Icons.error_rounded : Icons.warning_amber_rounded,
-                  color: iconColor,
-                  size: 28,
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: iconColor.withAlpha(20),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isCritical ? Icons.error_rounded : Icons.warning_amber_rounded,
+                    color: iconColor,
+                    size: 24,
+                  ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     isCritical ? 'XAVF! / ОПАСНОСТЬ!' : 'OGOHLANTIRISH / ПРЕДУПРЕЖДЕНИЕ',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
                       color: iconColor,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade900,
-                height: 1.4,
+                color: AppTheme.textPrimary,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
               ),
             ),
             if (vetPhone != null || onCallVet != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -125,16 +135,18 @@ class AlertCard extends StatelessWidget {
                         );
                       },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isCritical ? Colors.red.shade700 : Colors.amber.shade900,
+                    backgroundColor: buttonColor,
                     foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                     ),
                   ),
                   icon: const Icon(Icons.phone_in_talk, size: 18),
                   label: Text(
                     vetPhone != null ? "Qo'ng'iroq: $vetPhone" : "Veterinarga qo'ng'iroq",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
                 ),
               ),

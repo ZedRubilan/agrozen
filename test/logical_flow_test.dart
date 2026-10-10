@@ -326,6 +326,17 @@ void main() {
       expect(find.textContaining('darhol tumaningiz veterinariga murojaat qiling'), findsOneWidget);
     });
 
+    testWidgets('12b. AskScreen startInFieldMode builds safely without empty list exceptions', (tester) async {
+      SharedPreferences.setMockInitialValues({'app_language': 'uz'});
+
+      await tester.pumpWidget(createTestApp(const AskScreen(startInFieldMode: true)));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('AgroZen AI Maslahatchi'), findsOneWidget);
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
+    });
+
     testWidgets('13. Pre-Credit Course & Quiz Flow awards completion', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',

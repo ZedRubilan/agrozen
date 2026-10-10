@@ -68,44 +68,95 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAF7),
+      appBar: AppBar(
+        title: Text(
+          isRu ? 'Предупреждение' : (_lang == 'en' ? 'Disclaimer' : 'Ogohlantirish'),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 20),
+              // Step Progress Badge
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD97706).withAlpha(25),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      isRu ? 'ШАГ 4 ИЗ 4 • ЗАВЕРШЕНИЕ' : (_lang == 'en' ? 'STEP 4 OF 4 • FINAL' : '4-BOSQICH • YAKUNIY'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFD97706),
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               Center(
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: 76,
+                  height: 76,
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFD97706).withAlpha(40),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.health_and_safety_rounded,
-                    size: 48,
-                    color: Colors.amber.shade900,
+                    size: 44,
+                    color: Color(0xFFB45309),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Text(
                 isRu
                     ? 'Важное предупреждение'
                     : (_lang == 'en' ? 'Important Disclaimer' : 'Muhim ogohlantirish'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E293B),
+                  letterSpacing: -0.3,
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(8),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: SingleChildScrollView(
                     child: Column(
@@ -126,10 +177,11 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
                                     "2. Har qanday kasallik alomatlari, to'satdan yuz bergan nobodlik yoki lohaslikda — darhol ilovadagi tugma orqali tumaningiz veterinari bilan bog'laning.\n\n"
                                     "3. AgroZen mustaqil ravishda antibiotiklar, vaksinalar yoki dorilarni tayinlamaydi. Barcha davolash me'yorlari faqat mutaxassis tomonidan belgilanadi.\n\n"
                                     "4. Barcha ko'rsatkichlar Ross-308 / Cobb-500 standartlari va O'zbekiston parrandachilik amaliyotiga asoslangan."),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
-                            height: 1.6,
-                            color: Colors.grey.shade800,
+                            height: 1.65,
+                            color: Color(0xFF334155),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -137,19 +189,26 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               TactileButton(
-                height: 52,
-                depth: 3,
-                borderRadius: 16,
+                height: 56,
+                depth: 4,
+                borderRadius: 18,
                 backgroundColor: theme.colorScheme.primary,
                 shadowColor: const Color(0xFF1B5E20),
                 onPressed: _acceptAndFinish,
-                child: Text(
-                  isRu
-                      ? 'Я согласен, начать работу'
-                      : (_lang == 'en' ? 'I Understand & Agree' : 'Tushundim va roziman'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      isRu
+                          ? 'Я согласен, начать работу'
+                          : (_lang == 'en' ? 'I Understand & Agree' : 'Tushundim va roziman'),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),

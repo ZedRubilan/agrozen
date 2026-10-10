@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -37,21 +38,40 @@ class VoiceService {
   Future<String> startRecording() async {
     final permitted = await _recorder.hasPermission();
     if (!permitted) {
-      throw VoiceUnavailable(
+      throw const VoiceUnavailable(
         'Microphone permission was not granted.',
         reason: VoiceUnavailableReason.permissionDenied,
       );
     }
 
-    final dir = await getTemporaryDirectory();
-    final stamp = DateTime.now().millisecondsSinceEpoch;
-    final path = '${dir.path}/agrozen_$stamp.m4a';
+    try {
+      if (kIsWeb) {
+        // On web, path_provider's getTemporaryDirectory throws MissingPluginException.
+        // Record package on web supports recording without a file path.
+        await _recorder.start(
+          const RecordConfig(encoder: AudioEncoder.opus),
+          path: '',
+        );
+        return 'web_audio';
+      } else {
+        final dir = await getTemporaryDirectory();
+        final stamp = DateTime.now().millisecondsSinceEpoch;
+        final path = '${dir.path}/agrozen_$stamp.m4a';
 
-    await _recorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc),
-      path: path,
-    );
-    return path;
+        await _recorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: path,
+        );
+        return path;
+      }
+    } catch (e) {
+      if (e is VoiceUnavailable) rethrow;
+      debugPrint('VoiceService.startRecording error: $e');
+      throw VoiceUnavailable(
+        'Could not start recording: $e',
+        reason: VoiceUnavailableReason.transcribeFailed,
+      );
+    }
   }
 
   /// Stops capturing and returns the file path, or null if there was no
@@ -87,12 +107,44 @@ class VoiceService {
       );
     }
 
-    final file = File(audioPath);
-    if (!await file.exists()) {
-      throw const VoiceUnavailable(
-        'Recording file is missing.',
-        reason: VoiceUnavailableReason.noAudio,
-      );
+    List<int> bytes;
+    String mimeType = 'audio/m4a';
+
+    if (kIsWeb) {
+      try {
+        if (audioPath.startsWith('blob:') || audioPath.startsWith('http')) {
+          final res = await http.get(Uri.parse(audioPath));
+          if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
+            bytes = res.bodyBytes;
+            mimeType = 'audio/webm';
+          } else {
+            throw const VoiceUnavailable(
+              'Recording file is missing.',
+              reason: VoiceUnavailableReason.noAudio,
+            );
+          }
+        } else {
+          throw const VoiceUnavailable(
+            'Recording file is missing.',
+            reason: VoiceUnavailableReason.noAudio,
+          );
+        }
+      } catch (e) {
+        if (e is VoiceUnavailable) rethrow;
+        throw const VoiceUnavailable(
+          'Recording file is missing.',
+          reason: VoiceUnavailableReason.noAudio,
+        );
+      }
+    } else {
+      final file = File(audioPath);
+      if (!await file.exists()) {
+        throw const VoiceUnavailable(
+          'Recording file is missing.',
+          reason: VoiceUnavailableReason.noAudio,
+        );
+      }
+      bytes = await file.readAsBytes();
     }
 
     final factory = _clientFactory;
@@ -100,12 +152,11 @@ class VoiceService {
         factory != null ? await factory() : SupabaseConfig.client;
 
     try {
-      final bytes = await file.readAsBytes();
       final response = await client.functions.invoke(
         'transcribe-voice',
         body: {
           'audio_base64': base64Encode(bytes),
-          'mime_type': 'audio/m4a',
+          'mime_type': mimeType,
           'language': lang,
         },
       );

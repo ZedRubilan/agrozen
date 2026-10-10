@@ -56,59 +56,112 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.primary,
-      body: SafeArea(
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(40),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF1B5E20),
+              Color(0xFF2D7A4C),
+              Color(0xFF144D29),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Glowing concentric logo badge
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withAlpha(15),
+                        ),
+                      ),
+                      Container(
+                        width: 116,
+                        height: 116,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withAlpha(30),
+                        ),
+                      ),
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Colors.white, Color(0xFFF1F8F3)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(60),
+                              blurRadius: 24,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.egg_alt_rounded,
+                            size: 52,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.egg_alt_rounded,
-                    size: 58,
-                    color: theme.colorScheme.primary,
+                  const SizedBox(height: 28),
+                  const Text(
+                    'AgroZen',
+                    style: TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'AgroZen',
-                  style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1.2,
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(25),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withAlpha(40), width: 1),
+                    ),
+                    child: const Text(
+                      "Parrandachilik bo'yicha aqlli yordamchi",
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Parrandachilik bo'yicha aqlli yordamchi",
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w400,
+                  const SizedBox(height: 56),
+                  const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2.8,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 48),
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 3,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

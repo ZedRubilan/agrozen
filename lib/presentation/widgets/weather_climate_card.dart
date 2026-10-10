@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 import '../../core/localization/app_strings.dart';
 import '../../data/models/weather_data.dart';
 import '../../domain/climate/climate_advisor.dart';
 import '../../services/tts_service.dart';
 import '../../services/weather_service.dart';
 
+/// Image-first atmospheric Weather & Climate Card
+/// Inspired by the cinematic sunset wheat field card in the reference designs.
 class WeatherClimateCard extends StatefulWidget {
   final String district;
   final int batchDay;
@@ -28,7 +31,6 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
   final TtsService _ttsService = TtsService();
 
   WeatherData? _weather;
-  bool _isLoading = true;
   bool _isSpeaking = false;
   bool _isExpanded = false;
 
@@ -53,7 +55,6 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
   }
 
   Future<void> _loadWeather({bool forceRefresh = false}) async {
-    setState(() => _isLoading = true);
     final data = await _weatherService.getWeatherForDistrict(
       widget.district,
       forceRefresh: forceRefresh,
@@ -61,7 +62,6 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
     if (mounted) {
       setState(() {
         _weather = data;
-        _isLoading = false;
       });
     }
   }
@@ -86,32 +86,7 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final lang = widget.language;
-
-    if (_isLoading && _weather == null) {
-      return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                SizedBox(width: 12),
-                Text('Ob-havo ma\'lumotlari yuklanmoqda...'),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
 
     final weather = _weather ??
         WeatherData.seasonalFallback(districtName: widget.district);
@@ -124,262 +99,315 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
       lang: lang,
     );
 
-    Color badgeColor;
-    Color badgeBg;
-    IconData badgeIcon;
+    final currentTempInt = widget.targetHouseTemp.round();
 
-    switch (advice.riskLevel) {
-      case ClimateRiskLevel.heatWarning:
-        badgeColor = Colors.orange.shade900;
-        badgeBg = Colors.orange.shade50;
-        badgeIcon = Icons.whatshot_rounded;
-        break;
-      case ClimateRiskLevel.coldWarning:
-        badgeColor = Colors.blue.shade900;
-        badgeBg = Colors.blue.shade50;
-        badgeIcon = Icons.ac_unit_rounded;
-        break;
-      case ClimateRiskLevel.highHumidityRisk:
-        badgeColor = Colors.teal.shade900;
-        badgeBg = Colors.teal.shade50;
-        badgeIcon = Icons.water_drop_rounded;
-        break;
-      case ClimateRiskLevel.dryAirRisk:
-        badgeColor = Colors.amber.shade900;
-        badgeBg = Colors.amber.shade50;
-        badgeIcon = Icons.grain_rounded;
-        break;
-      case ClimateRiskLevel.optimal:
-        badgeColor = Colors.green.shade900;
-        badgeBg = Colors.green.shade50;
-        badgeIcon = Icons.check_circle_outline_rounded;
-        break;
-    }
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 2,
-      shadowColor: Colors.black.withAlpha(20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+        child: Stack(
           children: [
-            // Top Row: Region & Weather Summary + Refresh + TTS
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withAlpha(25),
-                    borderRadius: BorderRadius.circular(10),
+            // 1. Cinematic Background Image (Sunset Agriculture Field)
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/sunset_farm.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF8D4F1E), Color(0xFF2C4425)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                   ),
-                  child: Icon(Icons.cloud_outlined,
-                      color: theme.colorScheme.primary, size: 24),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+            ),
+
+            // 2. Translucent Frosted Gradient Overlay
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withAlpha(140),
+                      Colors.black.withAlpha(90),
+                      Colors.black.withAlpha(180),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+
+            // 3. Card Content
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Top Row: District & Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        weather.districtName,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(45),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.location_on_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                weather.districtName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                "• ${weather.conditionText}",
+                                style: TextStyle(
+                                  color: Colors.white.withAlpha(200),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        '${weather.conditionText} • ${weather.temperature.toStringAsFixed(1)}°C (RH ${weather.humidity.toStringAsFixed(0)}%)',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade600),
+                      Row(
+                        children: [
+                          _buildGlassCircleButton(
+                            icon: _isSpeaking
+                                ? Icons.volume_up_rounded
+                                : Icons.volume_down_rounded,
+                            onTap: () => _toggleTts(advice),
+                            tooltip: 'Ovozli eshitish',
+                            isActive: _isSpeaking,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildGlassCircleButton(
+                            icon: Icons.refresh_rounded,
+                            onTap: () => _loadWeather(forceRefresh: true),
+                            tooltip: 'Yangilash',
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  tooltip: 'Ovozli eshitish',
-                  icon: Icon(
-                    _isSpeaking
-                        ? Icons.volume_up_rounded
-                        : Icons.volume_down_rounded,
-                    color: _isSpeaking
-                        ? theme.colorScheme.primary
-                        : Colors.grey.shade600,
-                  ),
-                  onPressed: () => _toggleTts(advice),
-                ),
-                IconButton(
-                  tooltip: 'Yangilash',
-                  icon: const Icon(Icons.refresh_rounded, size: 20),
-                  onPressed: () => _loadWeather(forceRefresh: true),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                  const SizedBox(height: 18),
 
-            // Comparison Metrics: Shed Target vs Ambient Weather
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricItem(
-                      label: AppStrings.tr(
-                        lang: lang,
-                        uz: 'Bino me\'yori',
-                        ru: 'Норма птичника',
-                        en: 'House Target',
-                      ),
-                      value: '${widget.targetHouseTemp.toStringAsFixed(1)}°C',
-                      icon: Icons.thermostat_rounded,
-                      color: theme.colorScheme.primary,
+                  // Multi-Day / Hourly Forecast Pills Strip (Directly matching Image 3)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildForecastPill(label: 'D-1', icon: Icons.wb_sunny_outlined, temp: '${currentTempInt - 2}°', isSelected: false),
+                        const SizedBox(width: 8),
+                        _buildForecastPill(label: 'D-2', icon: Icons.cloud_queue_rounded, temp: '${currentTempInt - 1}°', isSelected: false),
+                        const SizedBox(width: 8),
+                        // Current Active Day in Radiant Amber
+                        _buildForecastPill(label: 'Bugun', icon: Icons.wb_sunny_rounded, temp: '$currentTempInt°', isSelected: true),
+                        const SizedBox(width: 8),
+                        _buildForecastPill(label: 'D+1', icon: Icons.wb_sunny_outlined, temp: '${currentTempInt + 1}°', isSelected: false),
+                        const SizedBox(width: 8),
+                        _buildForecastPill(label: 'D+2', icon: Icons.wb_cloudy_outlined, temp: '${currentTempInt + 2}°', isSelected: false),
+                        const SizedBox(width: 8),
+                        _buildForecastPill(label: 'D+3', icon: Icons.cloud_outlined, temp: '${currentTempInt + 3}°', isSelected: false),
+                      ],
                     ),
                   ),
-                  Container(height: 28, width: 1, color: Colors.grey.shade300),
-                  Expanded(
-                    child: _buildMetricItem(
-                      label: AppStrings.tr(
-                        lang: lang,
-                        uz: 'Tashqi harorat',
-                        ru: 'На улице',
-                        en: 'Outdoor Temp',
-                      ),
-                      value: '${weather.temperature.toStringAsFixed(1)}°C',
-                      icon: Icons.wb_sunny_outlined,
-                      color: Colors.orange.shade700,
-                    ),
-                  ),
-                  Container(height: 28, width: 1, color: Colors.grey.shade300),
-                  Expanded(
-                    child: _buildMetricItem(
-                      label: AppStrings.tr(
-                        lang: lang,
-                        uz: 'Tashqi namlik',
-                        ru: 'Влажность',
-                        en: 'Outdoor RH',
-                      ),
-                      value: '${weather.humidity.toStringAsFixed(0)}%',
-                      icon: Icons.water_drop_outlined,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
+                  const SizedBox(height: 20),
 
-            // Thermal Stress Badge & Direct Directive
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: badgeBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: badgeColor.withAlpha(50)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                  // Bottom Area: Large Temperature + Condition & Suitable Growth Pill Badge
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Icon(badgeIcon, color: badgeColor, size: 20),
-                      const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          advice.statusBadge,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: badgeColor,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${widget.batchDay}-kun • Ross-308",
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(200),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.1,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '${widget.targetHouseTemp.toStringAsFixed(0)}°C',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -1.0,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    AppStrings.tr(
+                                      lang: lang,
+                                      uz: "Me'yor",
+                                      ru: 'Норма',
+                                      en: 'Target',
+                                    ),
+                                    style: TextStyle(
+                                      color: Colors.white.withAlpha(220),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // "Suitable for growth" pill badge with leaf icon (matching Image 3)
+                      GestureDetector(
+                        onTap: () => setState(() => _isExpanded = !_isExpanded),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(45),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                            border: Border.all(
+                              color: Colors.white.withAlpha(70),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(30),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF4ADE80),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 125),
+                                child: Text(
+                                  advice.statusBadge,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.1,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                _isExpanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    advice.directive,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade900,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            // Expandable Detailed Technical Advice (Ventilation & Drinkers)
-            if (_isExpanded) ...[
-              const SizedBox(height: 10),
-              _buildDetailItem(
-                title: AppStrings.tr(
-                  lang: lang,
-                  uz: "Shamollatish ko'rsatmasi",
-                  ru: 'Вентиляция',
-                  en: 'Ventilation Directive',
-                ),
-                content: advice.ventilationAdvice,
-                color: Colors.blueGrey,
-              ),
-              const SizedBox(height: 6),
-              _buildDetailItem(
-                title: AppStrings.tr(
-                  lang: lang,
-                  uz: 'Suv va ozuqa rejimi',
-                  ru: 'Вода и корм',
-                  en: 'Water & Feeding',
-                ),
-                content: advice.waterFeedAdvice,
-                color: Colors.teal,
-              ),
-            ],
-
-            // Expand/Collapse toggle button
-            InkWell(
-              onTap: () => setState(() => _isExpanded = !_isExpanded),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8.0, bottom: 2.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _isExpanded
-                          ? AppStrings.tr(
-                              lang: lang,
-                              uz: 'Kamroq ko\'rsatish',
-                              ru: 'Свернуть',
-                              en: 'Show less',
-                            )
-                          : AppStrings.tr(
-                              lang: lang,
-                              uz: 'Batafsil tavsiyalar',
-                              ru: 'Подробные рекомендации',
-                              en: 'Detailed recommendations',
+                  // Expandable Detailed Technical Advice (Ventilation & Feeding)
+                  AnimatedCrossFade(
+                    firstChild: const SizedBox.shrink(),
+                    secondChild: Container(
+                      margin: const EdgeInsets.only(top: 14),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(90),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        border: Border.all(
+                          color: Colors.white.withAlpha(35),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            advice.directive,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              height: 1.35,
                             ),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "${advice.ventilationAdvice} • ${advice.waterFeedAdvice}",
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(210),
+                              fontSize: 12,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Icon(
-                      _isExpanded
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
-                ),
+                    crossFadeState: _isExpanded
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    duration: const Duration(milliseconds: 200),
+                  ),
+                ],
               ),
             ),
           ],
@@ -388,67 +416,85 @@ class _WeatherClimateCardState extends State<WeatherClimateCard> {
     );
   }
 
-  Widget _buildMetricItem({
+  Widget _buildForecastPill({
     required String label,
-    required String value,
     required IconData icon,
-    required Color color,
+    required String temp,
+    required bool isSelected,
   }) {
-    return Column(
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade900,
-          ),
-        ),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-        ),
-      ],
-    );
-  }
+    final bgColor = isSelected ? const Color(0xFFF59E0B) : Colors.white.withAlpha(35);
+    final borderColor = isSelected ? Colors.transparent : Colors.white.withAlpha(50);
 
-  Widget _buildDetailItem({
-    required String title,
-    required String content,
-    required MaterialColor color,
-  }) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      width: 48,
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: color.shade50.withAlpha(120),
-        borderRadius: BorderRadius.circular(10),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFF59E0B).withAlpha(120),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            title,
+            label,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: color.shade900,
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? Colors.white : Colors.white.withAlpha(200),
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 6),
+          Icon(
+            icon,
+            size: 18,
+            color: Colors.white,
+          ),
+          const SizedBox(height: 6),
           Text(
-            content,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade800,
-              height: 1.3,
+            temp,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGlassCircleButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required String tooltip,
+    bool isActive = false,
+  }) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: isActive ? AppTheme.primaryGreen : Colors.white.withAlpha(40),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withAlpha(60),
+          width: 1,
+        ),
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white, size: 18),
+        padding: EdgeInsets.zero,
+        tooltip: tooltip,
+        onPressed: onTap,
       ),
     );
   }

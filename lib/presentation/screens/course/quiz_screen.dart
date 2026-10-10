@@ -163,8 +163,12 @@ class _QuizScreenState extends State<QuizScreen> {
         : (_lang == 'ru' ? 'Тест: Урок ${widget.lessonId}' : 'Test: Dars ${widget.lessonId}');
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
-        title: Text(titleText),
+        title: Text(
+          titleText,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -173,30 +177,57 @@ class _QuizScreenState extends State<QuizScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(6),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withAlpha(8),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Text(
-                  quiz['question'] as String,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, height: 1.4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withAlpha(20),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _lang == 'en' ? 'QUESTION' : (_lang == 'ru' ? 'ВОПРОС' : 'SAVOL'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.primary,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      quiz['question'] as String,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E293B),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
               ...List.generate(options.length, (index) {
                 final isSelected = _selectedOption == index;
                 Color tileBg = Colors.white;
-                Color borderColor = Colors.grey.shade300;
-                IconData iconData = isSelected ? Icons.check_circle_rounded : Icons.radio_button_off;
+                Color borderColor = const Color(0xFFE2E8F0);
+                IconData iconData = isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded;
                 Color iconColor = isSelected ? theme.colorScheme.primary : Colors.grey.shade400;
 
                 if (_submitted) {
@@ -206,13 +237,13 @@ class _QuizScreenState extends State<QuizScreen> {
                     iconData = Icons.check_circle_rounded;
                     iconColor = const Color(0xFF2D7A4C);
                   } else if (isSelected && !_isCorrect) {
-                    tileBg = const Color(0xFFFFEBEE);
-                    borderColor = Colors.red.shade600;
+                    tileBg = const Color(0xFFFEF2F2);
+                    borderColor = const Color(0xFFDC2626);
                     iconData = Icons.cancel_rounded;
-                    iconColor = Colors.red.shade600;
+                    iconColor = const Color(0xFFDC2626);
                   }
                 } else if (isSelected) {
-                  tileBg = theme.colorScheme.primary.withAlpha(20);
+                  tileBg = theme.colorScheme.primary.withAlpha(18);
                   borderColor = theme.colorScheme.primary;
                   iconColor = theme.colorScheme.primary;
                 }
@@ -221,16 +252,25 @@ class _QuizScreenState extends State<QuizScreen> {
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: InkWell(
                     onTap: _submitted ? null : () => setState(() => _selectedOption = index),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                       decoration: BoxDecoration(
                         color: tileBg,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: borderColor,
-                          width: isSelected || (_submitted && index == correctIndex) ? 2 : 1,
+                          width: isSelected || (_submitted && index == correctIndex) ? 2 : 1.2,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isSelected
+                                ? theme.colorScheme.primary.withAlpha(15)
+                                : Colors.black.withAlpha(4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
@@ -242,9 +282,9 @@ class _QuizScreenState extends State<QuizScreen> {
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: isSelected || (_submitted && index == correctIndex)
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: Colors.black87,
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: const Color(0xFF1E293B),
                               ),
                             ),
                           ),
@@ -254,30 +294,30 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 );
               }),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               if (!_submitted)
                 TactileButton(
-                  height: 52,
-                  depth: 3,
-                  borderRadius: 16,
+                  height: 56,
+                  depth: 4,
+                  borderRadius: 18,
                   backgroundColor: theme.colorScheme.primary,
                   shadowColor: const Color(0xFF1B4E31),
                   onPressed: _selectedOption >= 0 ? () => _submitAnswer(correctIndex) : null,
                   child: Text(
                     _lang == 'en' ? 'Check Answer' : (_lang == 'ru' ? 'Проверить ответ' : 'Javobni tekshirish'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
                   ),
                 )
               else
                 Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: _isCorrect ? const Color(0xFFEAF5ED) : const Color(0xFFFFEBEE),
-                        borderRadius: BorderRadius.circular(14),
+                        color: _isCorrect ? const Color(0xFFEAF5ED) : const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: _isCorrect ? const Color(0xFF2D7A4C) : Colors.red.shade600,
+                          color: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFDC2626),
                           width: 1.5,
                         ),
                       ),
@@ -285,8 +325,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         children: [
                           Icon(
                             _isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                            color: _isCorrect ? const Color(0xFF2D7A4C) : Colors.red.shade600,
-                            size: 24,
+                            color: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFDC2626),
+                            size: 26,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -303,8 +343,8 @@ class _QuizScreenState extends State<QuizScreen> {
                                           ? 'Неверно. Попробуйте еще раз!'
                                           : 'Noto\'g\'ri. Yana bir bor urinib ko\'ring!')),
                               style: TextStyle(
-                                color: _isCorrect ? const Color(0xFF1B4E31) : Colors.red.shade900,
-                                fontWeight: FontWeight.bold,
+                                color: _isCorrect ? const Color(0xFF1B5E20) : const Color(0xFF991B1B),
+                                fontWeight: FontWeight.w800,
                                 fontSize: 14,
                               ),
                             ),
@@ -314,11 +354,11 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                     const SizedBox(height: 16),
                     TactileButton(
-                      height: 52,
-                      depth: 3,
-                      borderRadius: 16,
-                      backgroundColor: _isCorrect ? const Color(0xFF2D7A4C) : Colors.orange.shade800,
-                      shadowColor: _isCorrect ? const Color(0xFF1B4E31) : const Color(0xFF8B4500),
+                      height: 56,
+                      depth: 4,
+                      borderRadius: 18,
+                      backgroundColor: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFD97706),
+                      shadowColor: _isCorrect ? const Color(0xFF1B4E31) : const Color(0xFF92400E),
                       onPressed: () {
                         if (_isCorrect) {
                           context.pop();
@@ -333,7 +373,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         _isCorrect
                             ? (_lang == 'en' ? 'Done' : (_lang == 'ru' ? 'Готово' : 'Yakunlash'))
                             : (_lang == 'en' ? 'Try Again' : (_lang == 'ru' ? 'Попробовать снова' : 'Qayta urinish')),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
                       ),
                     ),
                   ],

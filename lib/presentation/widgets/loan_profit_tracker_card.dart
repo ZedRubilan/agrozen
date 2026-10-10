@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 import '../../core/localization/app_strings.dart';
 
 /// Card showing the farmer's Bank Loan Repayment & Projected Net Profit.
@@ -43,22 +44,16 @@ class LoanProfitTrackerCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         border: Border.all(
-          color: isLoanSafe ? const Color(0xFF2D7A4C).withAlpha(50) : Colors.orange.withAlpha(80),
-          width: 1.5,
+          color: isLoanSafe ? AppTheme.cardBorder : const Color(0xFFFDBA74),
+          width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(12),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -66,18 +61,25 @@ class LoanProfitTrackerCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5A338).withAlpha(30),
+                    color: AppTheme.amberSoft,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppTheme.secondaryAmber.withAlpha(60),
+                      width: 1,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.account_balance_wallet_rounded,
-                    color: Color(0xFFB8781B),
-                    size: 22,
+                  child: const Center(
+                    child: Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: Color(0xFFB8781B),
+                      size: 22,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,8 +91,14 @@ class LoanProfitTrackerCard extends StatelessWidget {
                           ru: "Агрокредит и Прогноз прибыли",
                           en: "Bank Loan & Profit Forecast",
                         ),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: -0.2,
+                        ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         AppStrings.tr(
                           lang: language,
@@ -98,33 +106,43 @@ class LoanProfitTrackerCard extends StatelessWidget {
                           ru: "Расчёт окупаемости банковского кредита",
                           en: "Loan repayment feasibility indicator",
                         ),
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isLoanSafe ? const Color(0xFFEAF5ED) : const Color(0xFFFFF7E6),
-                    borderRadius: BorderRadius.circular(10),
+                    color: isLoanSafe ? AppTheme.emeraldSoft : const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                    border: Border.all(
+                      color: isLoanSafe
+                          ? AppTheme.primaryGreen.withAlpha(40)
+                          : const Color(0xFFF97316).withAlpha(50),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        isLoanSafe ? Icons.check_circle : Icons.warning_rounded,
-                        color: isLoanSafe ? const Color(0xFF2D7A4C) : const Color(0xFFE5A338),
+                        isLoanSafe ? Icons.check_circle_rounded : Icons.warning_rounded,
+                        color: isLoanSafe ? AppTheme.primaryGreenDark : const Color(0xFFC2410C),
                         size: 14,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 5),
                       Text(
                         isLoanSafe
                             ? AppStrings.tr(lang: language, uz: "Xavfsiz", ru: "В норме", en: "Safe")
                             : AppStrings.tr(lang: language, uz: "Diqqat", ru: "Риск", en: "Caution"),
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isLoanSafe ? const Color(0xFF2D7A4C) : const Color(0xFFB8781B),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: isLoanSafe ? AppTheme.primaryGreenDark : const Color(0xFFC2410C),
                         ),
                       ),
                     ],
@@ -132,14 +150,15 @@ class LoanProfitTrackerCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
             // Financial Metrics Grid
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9F5),
-                borderRadius: BorderRadius.circular(14),
+                color: AppTheme.surfaceSubtle,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                border: Border.all(color: AppTheme.cardBorder, width: 1.0),
               ),
               child: Row(
                 children: [
@@ -147,63 +166,75 @@ class LoanProfitTrackerCard extends StatelessWidget {
                     child: _buildFinancialItem(
                       label: AppStrings.tr(lang: language, uz: "Bank krediti", ru: "Кредит", en: "Bank Loan"),
                       value: "${(bankLoanUz / 1000000).toStringAsFixed(1)} mln",
-                      color: Colors.grey.shade800,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
-                  Container(width: 1, height: 32, color: Colors.grey.shade300),
+                  Container(width: 1, height: 36, color: AppTheme.cardBorder),
                   Expanded(
                     child: _buildFinancialItem(
                       label: AppStrings.tr(lang: language, uz: "Kutilayotgan tushum", ru: "Выручка (42d)", en: "Gross Value"),
                       value: "${(totalEstimatedRevenue / 1000000).toStringAsFixed(1)} mln",
-                      color: const Color(0xFF2D7A4C),
+                      color: AppTheme.primaryGreenDark,
                     ),
                   ),
-                  Container(width: 1, height: 32, color: Colors.grey.shade300),
+                  Container(width: 1, height: 36, color: AppTheme.cardBorder),
                   Expanded(
                     child: _buildFinancialItem(
                       label: AppStrings.tr(lang: language, uz: "Sof foyda", ru: "Чистая прибыль", en: "Net Profit"),
                       value: "${netAfterLoanPayoff >= 0 ? '+' : ''}${(netAfterLoanPayoff / 1000000).toStringAsFixed(1)} mln",
-                      color: netAfterLoanPayoff >= 0 ? const Color(0xFF2D7A4C) : Colors.red.shade700,
+                      color: netAfterLoanPayoff >= 0 ? AppTheme.primaryGreenDark : const Color(0xFFDC2626),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
 
-            // Encouragement message with vector icon
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  isLoanSafe ? Icons.check_circle_outline : Icons.info_outline,
-                  size: 15,
-                  color: isLoanSafe ? Colors.green.shade800 : Colors.deepOrange.shade800,
+            // Encouragement message
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isLoanSafe ? AppTheme.emeraldSoft.withAlpha(160) : const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                border: Border.all(
+                  color: isLoanSafe ? AppTheme.primaryGreen.withAlpha(25) : const Color(0xFFFDBA74).withAlpha(60),
+                  width: 1,
                 ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    isLoanSafe
-                        ? AppStrings.tr(
-                            lang: language,
-                            uz: "Parvarish me'yorda borsa, bank krediti to'liq yopiladi va rejadagi foyda kafolatlanadi.",
-                            ru: "При соблюдении норм ухода кредит полностью окупается и выходит в стабильную прибыль.",
-                            en: "Standard flock care guarantees 100% bank debt coverage and healthy profit margins.",
-                          )
-                        : AppStrings.tr(
-                            lang: language,
-                            uz: "Nobodlikni kamaytiring — har bir yo'qotilgan jo'ja kutilayotgan foydani kamaytiradi.",
-                            ru: "Берегите поголовье — каждый сохранённый цыплёнок защищает вашу кредитную прибыль.",
-                            en: "Minimize mortality — every bird saved directly protects your net debt repayment margin.",
-                          ),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isLoanSafe ? Colors.green.shade900 : Colors.deepOrange.shade800,
-                      height: 1.3,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    isLoanSafe ? Icons.check_circle_outline_rounded : Icons.info_outline_rounded,
+                    size: 16,
+                    color: isLoanSafe ? AppTheme.primaryGreenDark : const Color(0xFFC2410C),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      isLoanSafe
+                          ? AppStrings.tr(
+                              lang: language,
+                              uz: "Parvarish me'yorda borsa, bank krediti to'liq yopiladi va rejadagi foyda kafolatlanadi.",
+                              ru: "При соблюдении норм ухода кредит полностью окупается и выходит в стабильную прибыль.",
+                              en: "Standard flock care guarantees 100% bank debt coverage and healthy profit margins.",
+                            )
+                          : AppStrings.tr(
+                              lang: language,
+                              uz: "Nobodlikni kamaytiring — har bir yo'qotilgan jo'ja kutilayotgan foydani kamaytiradi.",
+                              ru: "Берегите поголовье — каждый сохранённый цыплёнок защищает вашу кредитную прибыль.",
+                              en: "Minimize mortality — every bird saved directly protects your net debt repayment margin.",
+                            ),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isLoanSafe ? AppTheme.primaryGreenDark : const Color(0xFF9A3412),
+                        fontWeight: FontWeight.w500,
+                        height: 1.35,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -218,14 +249,26 @@ class LoanProfitTrackerCard extends StatelessWidget {
   }) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16.5,
+            fontWeight: FontWeight.w800,
+            color: color,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 3),
         Text(
           label,
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppTheme.textMuted,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="uz" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgroZen — Shaping the Future of Modern Farming</title>
+  <meta name="description" content="AgroZen is an AI-powered agrarian & poultry operating system. Real-time telemetry, crop & flock monitoring, and bank readiness certification.">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <!-- Typography: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM TOKENS (Extracted from Reference Comps)
+       ========================================================================== */
+    :root {
+      --bg-base: #F4F8F5;
+      --bg-card: #FFFFFF;
+      --bg-card-subtle: #EBF4EE;
+      --bg-pill: #275C3A;
+      --bg-pill-hover: #1F4A2E;
+      --text-headline: #0D2616;
+      --text-body: #475E50;
+      --text-muted: #738C7C;
+      --border-card: rgba(13, 38, 22, 0.08);
+      --border-subtle: rgba(13, 38, 22, 0.05);
+      --accent-green: #22C55E;
+      --accent-green-dark: #15803D;
+      --accent-green-soft: #E2F3E7;
+      --accent-gold: #E5A024;
+      --accent-gold-soft: #FEF7EA;
+      --accent-blue: #3B82F6;
+      --accent-blue-soft: #EFF6FF;
+      --shadow-sm: 0 2px 8px rgba(13, 38, 22, 0.04);
+      --shadow-card: 0 20px 40px -15px rgba(13, 38, 22, 0.07), 0 0 1px 1px rgba(13, 38, 22, 0.03);
+      --shadow-float: 0 24px 48px -12px rgba(13, 38, 22, 0.14);
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-pill: 9999px;
+      --transition-spring: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg-base: #0E1D13;
+      --bg-card: #152A1C;
+      --bg-card-subtle: #1C3524;
+      --bg-pill: #22C55E;
+      --bg-pill-hover: #16A34A;
+      --text-headline: #F0FAF3;
+      --text-body: #9DB4A5;
+      --text-muted: #6E8877;
+      --border-card: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --accent-green-soft: rgba(34, 197, 94, 0.15);
+      --accent-gold-soft: rgba(229, 160, 36, 0.15);
+      --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.45);
+      --shadow-float: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Base Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-body);
+      line-height: 1.5;
+      overflow-x: hidden;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    /* Background Ambient Gradients */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 10% 15%, rgba(34, 197, 94, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 90% 85%, rgba(229, 160, 36, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.03) 0%, transparent 60%);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ==========================================================================
+       TOP NAVIGATION BAR
+       ========================================================================== */
+    .navbar {
+      position: sticky;
+      top: 16px;
+      z-index: 100;
+      margin-top: 16px;
+      margin-bottom: 24px;
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition-spring);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-headline);
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.4px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #22C55E 0%, #15803D 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+      color: white;
+      font-size: 18px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-link {
+      color: var(--text-body);
+      text-decoration: none;
+      font-size: 14.5px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+      position: relative;
+    }
+
+    .nav-link:hover {
+      color: var(--text-headline);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Controls: Lang & Theme */
+    .pill-select {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-headline);
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition-spring);
+    }
+
+    .pill-select:hover {
+      border-color: var(--border-card);
+    }
+
+    .theme-toggle-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card-subtle);
+      color: var(--text-headline);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: var(--transition-spring);
+    }
+
+    .theme-toggle-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .btn-launch-app {
+      background: var(--bg-pill);
+      color: #FFFFFF !important;
+      padding: 10px 22px;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(39, 92, 58, 0.25);
+      transition: var(--transition-spring);
+    }
+
+    .btn-launch-app:hover {
+      background: var(--bg-pill-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(39, 92, 58, 0.35);
+    }
+
+    /* Mobile Nav Toggle */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-headline);
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       SECTION 1: HERO SECTION
+       ========================================================================== */
+    .hero-section {
+      padding: 32px 0 64px 0;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1.15fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .hero-tag {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--accent-green-soft);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--accent-green-dark);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    [data-theme="dark"] .hero-tag {
+      color: #4ADE80;
+    }
+
+    .hero-headline {
+      font-size: 54px;
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -1.8px;
+      color: var(--text-headline);
+    }
+
+    .hero-subheadline {
+      font-size: 18.5px;
+      line-height: 1.55;
+      color: var(--text-body);
+      max-width: 520px;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Pill Button from Comps: [ → Get Started >>> ] */
+    .btn-pill-primary {
+      background: #235A37;
+      color: #FFFFFF;
+      text-decoration: none;
+      padding: 14px 28px 14px 14px;
+      border-radius: var(--radius-pill);
+      font-weight: 800;
+      font-size: 15.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 8px 24px rgba(35, 90, 55, 0.3);
+      transition: var(--transition-spring);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-pill-primary .arrow-circle {
+      width: 38px;
+      height: 38px;
+      background: #4ADE80;
+      color: #0E361B;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 900;
+      transition: transform 0.25s ease;
+    }
+
+    .btn-pill-primary:hover {
+      background: #194328;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(35, 90, 55, 0.4);
+    }
+
+    .btn-pill-primary:hover .arrow-circle {
+      transform: translateX(4px);
+    }
+
+    .btn-pill-outline {
+      padding: 14px 24px;
+      border-radius: var(--radius-pill);
+      border: 1.5px solid var(--border-card);
+      background: var(--bg-card);
+      color: var(--text-headline);
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition-spring);
+      cursor: pointer;
+    }
+
+    .btn-pill-outline:hover {
+      border-color: var(--accent-green);
+      background: var(--bg-card-subtle);
+    }
+
+    /* Trust Stats Mini-Bar */
+    .hero-stats-mini {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .stat-mini-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-mini-num {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text-headline);
+      letter-spacing: -0.5px;
+    }
+
+    .stat-mini-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Right Hero Visual Showcase */
+    .hero-visual-frame {
+      position: relative;
+      width: 100%;
+      border-radius: var(--radius-xl);
+      overflow: visible;
+    }
+
+    .hero-photo-wrapper {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      border: 4px solid var(--bg-card);
+    }
+
+    .hero-photo-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hero-visual-frame:hover .hero-photo-wrapper img {
+      transform: scale(1.03);
+    }
+
+    /* Floating Pill Badge 1: Soil Condition */
+    .floating-pill {
+      position: absolute;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-float);
+      z-index: 10;
+      animation: gentleFloat 5s ease-in-out infinite;
+    }
+
+    .floating-soil {
+      bottom: -18px;
+      left: -20px;
+    }
+
+    .floating-weather {
+      top: 36px;
+      right: -24px;
+      animation-delay: -2.5s;
+    }
+
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .pill-icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .icon-box-green {
+      background: var(--accent-green-soft);
+      color: var(--accent-green-dark);
+    }
+
+    .icon-box-gold {
+      background: var(--accent-gold-soft);
+      color: var(--accent-gold);
+    }
+
+    .pill-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pill-sub {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .pill-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-headline);
+    }
+
+    /* Live Pulse Beacon Dot */
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      animation: pulseAnimation 2s infinite;
+      margin-right: 6px;
+    }
+
+    @keyframes pulseAnimation {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
+    }
+
+    /* ==========================================================================
+       SECTION 2: BENTO TELEMETRY GRID
+       ========================================================================== */
+    .section-spacing {
+      padding: 64px 0;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 48px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .section-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-headline);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-title {
+      font-size: 38px;
+      font-weight: 900;
+      line-height: 1.18;
+      letter-spacing: -1.2px;
+      color: var(--text-headline);
+    }
+
+    .section-subtitle {
+      font-size: 16.5px;
+      color: var(--text-body);
+      line-height: 1.55;
+    }
+
+    /* Bento Grid Layout */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .bento-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition-spring);
+    }
+
+    .bento-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-float);
+    }
+
+    .bento-top-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .bento-icon-label {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bento-icon {
+      font-size: 32px;
+    }
+
+    .bento-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-headline);
+    }
+
+    .bento-val-large {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--text-headline);
+      letter-spacing: -0.6px;
+    }
+
+    .status-tag {
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .tag-healthy {
+      background: #184D2B;
+      color: #FFFFFF;
+    }
+
+    .tag-clean {
+      background: #184D2B;
+      color: #FFFFFF;
+    }
+
+    .tag-optimal {
+      background: #22C55E;
+      color: #FFFFFF;
+    }
+
+    /* Bento Stat Rows */
+    .bento-subgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      background: var(--bg-card-subtle);
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+    }
+
+    .bento-sub-metric {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sub-metric-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .sub-metric-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-headline);
+    }
+
+    /* Circular SVG Gauge for Health */
+    .health-gauge-box {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .circular-progress-wrap {
+      position: relative;
+      width: 100px;
+      height: 100px;
+    }
+
+    .circular-progress-svg {
+      transform: rotate(-90deg);
+      width: 100px;
+      height: 100px;
+    }
+
+    .circular-bg {
+      fill: none;
+      stroke: var(--bg-card-subtle);
+      stroke-width: 9;
+    }
+
+    .circular-bar {
+      fill: none;
+      stroke: #22C55E;
+      stroke-width: 9;
+      stroke-linecap: round;
+      stroke-dasharray: 264;
+      stroke-dashoffset: 116; /* 56% */
+      filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.4));
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .gauge-percent-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text-headline);
+    }
+
+    .gauge-details {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dots-indicator {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin: 4px 0;
+    }
+
+    .dot-item {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #D1D5DB;
+    }
+
+    .dot-item.active {
+      background: #22C55E;
+    }
+
+    /* Live Interactive Simulator in Bento */
+    .slider-interactive-wrap {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border-card);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .range-slider {
+      flex: 1;
+      accent-color: #22C55E;
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       SECTION 3: CHOOSE YOUR FARM & FLOCK
+       ========================================================================== */
+    .filter-tabs-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      padding: 10px 22px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      color: var(--text-body);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition-spring);
+    }
+
+    .filter-pill:hover {
+      border-color: var(--accent-green);
+    }
+
+    .filter-pill.active {
+      background: #275C3A;
+      color: #FFFFFF;
+      border-color: #275C3A;
+      box-shadow: 0 4px 12px rgba(39, 92, 58, 0.25);
+    }
+
+    [data-theme="dark"] .filter-pill.active {
+      background: #22C55E;
+      color: #0E1D13;
+      border-color: #22C55E;
+    }
+
+    .cards-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .farm-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: var(--transition-spring);
+      cursor: pointer;
+    }
+
+    .farm-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-float);
+    }
+
+    .farm-photo-box {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .farm-photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+
+    .farm-card:hover .farm-photo-box img {
+      transform: scale(1.04);
+    }
+
+    .points-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 5px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #0D2616;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.1;
+    }
+
+    .points-badge span {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .farm-card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 4px;
+    }
+
+    .farm-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .farm-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-headline);
+      line-height: 1.25;
+    }
+
+    .farm-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .farm-tags-wrap {
+      display: flex;
+      gap: 6px;
+    }
+
+    .card-tag {
+      background: var(--bg-card-subtle);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-body);
+    }
+
+    .circle-arrow-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-headline);
+      font-size: 14px;
+      transition: var(--transition-spring);
+    }
+
+    .farm-card:hover .circle-arrow-btn {
+      background: #275C3A;
+      color: #FFFFFF;
+      transform: translateX(2px) translateY(-2px);
+    }
+
+    /* ==========================================================================
+       SECTION 4: TIER CERTIFICATION & ACCELERATED CAPITAL
+       ========================================================================== */
+    .tier-section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .tier-card-left {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .tier-crown-badge {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: linear-gradient(135deg, #F3B23F 0%, #D97706 100%);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 14px;
+      border-radius: var(--radius-pill);
+      box-shadow: 0 4px 14px rgba(243, 178, 63, 0.35);
+    }
+
+    .tier-points-display {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tier-points-num {
+      font-size: 46px;
+      font-weight: 900;
+      color: var(--text-headline);
+      letter-spacing: -1.2px;
+      line-height: 1;
+    }
+
+    .tier-points-sub {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Dot Matrix Progress Grid (40 dots) */
+    .dot-matrix-container {
+      display: grid;
+      grid-template-columns: repeat(20, 1fr);
+      gap: 6px;
+      margin: 14px 0;
+    }
+
+    .matrix-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #D1D5DB;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .matrix-dot.filled {
+      background: #22C55E;
+      box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
+    }
+
+    .tier-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-earn-points {
+      flex: 1;
+      padding: 12px 18px;
+      border-radius: var(--radius-pill);
+      border: 1.5px solid var(--border-card);
+      background: var(--bg-card);
+      color: var(--text-headline);
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      text-align: center;
+      transition: var(--transition-spring);
+    }
+
+    .btn-earn-points:hover {
+      border-color: var(--accent-green);
+      background: var(--bg-card-subtle);
+    }
+
+    .btn-claim-benefits {
+      flex: 1.1;
+      padding: 12px 18px;
+      border-radius: var(--radius-pill);
+      border: none;
+      background: #235A37;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 13.5px;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(35, 90, 55, 0.25);
+      transition: var(--transition-spring);
+    }
+
+    .btn-claim-benefits:hover {
+      background: #184429;
+      transform: translateY(-1px);
+    }
+
+    /* Right Certificate Card */
+    .certificate-card-right {
+      background: var(--bg-card);
+      border: 2px solid #D1A858;
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background-image: radial-gradient(circle at 100% 0%, rgba(229, 160, 36, 0.05) 0%, transparent 60%);
+    }
+
+    .cert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .cert-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-headline);
+    }
+
+    .cert-title-huge {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--text-headline);
+      margin-top: 6px;
+      letter-spacing: -0.6px;
+    }
+
+    .cert-body-grid {
+      display: grid;
+      grid-template-columns: 100px 1fr 90px;
+      gap: 20px;
+      align-items: center;
+      margin: 24px 0;
+    }
+
+    .qr-box {
+      width: 96px;
+      height: 96px;
+      background: #FFFFFF;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid #E5E7EB;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .qr-box svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .cert-readiness-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .readiness-score-num {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--text-headline);
+      letter-spacing: -1px;
+    }
+
+    .gold-wax-seal {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #FDE68A 0%, #D97706 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(217, 119, 6, 0.35);
+      border: 3px dashed #F59E0B;
+      color: #78350F;
+      font-size: 10px;
+      font-weight: 900;
+      text-align: center;
+      text-transform: uppercase;
+      line-height: 1.1;
+      padding: 6px;
+    }
+
+    .cert-partners-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--border-card);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .partner-chip {
+      background: var(--bg-card-subtle);
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      color: var(--text-headline);
+      font-size: 11.5px;
+      font-weight: 800;
+    }
+
+    /* ==========================================================================
+       SECTION 5: INSTANT ACTIONS & VISION AI
+       ========================================================================== */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .action-panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: var(--transition-spring);
+    }
+
+    .action-panel-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-float);
+    }
+
+    .action-icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: var(--accent-green-soft);
+      color: var(--accent-green-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .action-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-headline);
+    }
+
+    .action-desc {
+      font-size: 13.5px;
+      color: var(--text-body);
+      line-height: 1.5;
+    }
+
+    /* Interactive toggle switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #D1D5DB;
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #22C55E;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* ==========================================================================
+       SECTION 6: INTERACTIVE WEB WORKSPACE MODAL & FOOTER
+       ========================================================================== */
+    .interactive-banner {
+      background: linear-gradient(135deg, #153E24 0%, #0E2717 100%);
+      border-radius: var(--radius-xl);
+      padding: 48px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-float);
+      margin: 40px 0 80px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .interactive-banner::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(34, 197, 94, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .banner-text-box {
+      max-width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .banner-title {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+    }
+
+    .banner-desc {
+      font-size: 16px;
+      color: #C2DFCC;
+      line-height: 1.5;
+    }
+
+    .banner-cta-group {
+      display: flex;
+      gap: 14px;
+      z-index: 2;
+      flex-wrap: wrap;
+    }
+
+    .btn-banner-white {
+      background: #FFFFFF;
+      color: #0E2717 !important;
+      padding: 14px 28px;
+      border-radius: var(--radius-pill);
+      font-weight: 800;
+      font-size: 15px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+      transition: var(--transition-spring);
+    }
+
+    .btn-banner-white:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-banner-outline {
+      background: transparent;
+      color: #FFFFFF !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      padding: 14px 24px;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      transition: var(--transition-spring);
+    }
+
+    .btn-banner-outline:hover {
+      border-color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-card);
+      padding: 48px 0 32px 0;
+      background: var(--bg-card);
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-rights {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-link {
+      color: var(--text-body);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: var(--text-headline);
+    }
+
+    /* ==========================================================================
+       RESPONSIVE ADAPTATIONS
+       ========================================================================== */
+    @media (max-width: 1024px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+      .cards-grid-3 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .tier-section-grid {
+        grid-template-columns: 1fr;
+      }
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+      .mobile-menu-btn {
+        display: block;
+      }
+      .hero-headline {
+        font-size: 38px;
+        letter-spacing: -1px;
+      }
+      .hero-photo-wrapper {
+        height: 340px;
+      }
+      .cards-grid-3 {
+        grid-template-columns: 1fr;
+      }
+      .interactive-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 32px;
+        gap: 24px;
+      }
+      .floating-soil {
+        bottom: -10px;
+        left: 0px;
+      }
+      .floating-weather {
+        top: 10px;
+        right: 0px;
+      }
+      .cert-body-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .gold-wax-seal {
+        margin: 0 auto;
+      }
+      .qr-box {
+        margin: 0 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-bg"></div>
+
+  <div class="container">
+    <!-- ==========================================================================
+         TOP NAVIGATION BAR
+         ========================================================================== -->
+    <header class="navbar">
+      <nav class="nav-container">
+        <a href="#" class="brand-logo">
+          <div class="brand-icon">🌱</div>
+          <span>AgroZen</span>
+        </a>
+
+        <ul class="nav-links">
+          <li><a href="#telemetry" class="nav-link" data-i18n="nav_telemetry">Telemetriya</a></li>
+          <li><a href="#fields" class="nav-link" data-i18n="nav_fields">Dala & Poda</a></li>
+          <li><a href="#certification" class="nav-link" data-i18n="nav_certification">Kredit Sertifikati</a></li>
+          <li><a href="#actions" class="nav-link" data-i18n="nav_actions">Tezkor Amallar</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <!-- Trilingual Toggle -->
+          <select id="langSelect" class="pill-select" onchange="changeLanguage(this.value)">
+            <option value="uz" selected>🇺🇿 UZ</option>
+            <option value="ru">🇷🇺 RU</option>
+            <option value="en">🇬🇧 EN</option>
+          </select>
+
+          <!-- Day/Night Mode Toggle -->
+          <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="Rejimni o'zgartirish">
+            ☀️
+          </button>
+
+          <!-- Launch App Pill -->
+          <a href="/?app=true" class="btn-launch-app">
+            <span data-i18n="btn_launch_app">Dasturni Ochish</span>
+            <span>↗</span>
+          </a>
+        </div>
+      </nav>
+    </header>
+
+    <!-- ==========================================================================
+         HERO SECTION (Matching Reference Comps)
+         ========================================================================== -->
+    <section class="hero-section">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <div class="hero-tag">
+            <span class="pulse-dot"></span>
+            <span data-i18n="hero_badge">AI AGRITECH & PARRANDACHILIK OS</span>
+          </div>
+
+          <h1 class="hero-headline" data-i18n="hero_title">
+            Zamonaviy Fermerlik Kelajagini Shakllantiramiz
+          </h1>
+
+          <p class="hero-subheadline" data-i18n="hero_subtitle">
+            Ilg'or sun'iy intellekt, dron telemetriyasi va sensorlar yordamida parrandalar hamda ekinlarni yo'qotishlarsiz boshqaring.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="/?app=true" class="btn-pill-primary">
+              <span class="arrow-circle">→</span>
+              <span data-i18n="hero_cta">Boshlash >>></span>
+            </a>
+
+            <a href="#telemetry" class="btn-pill-outline">
+              <span data-i18n="hero_demo">Jonli Telemetriya</span>
+              <span>↓</span>
+            </a>
+          </div>
+
+          <div class="hero-stats-mini">
+            <div class="stat-mini-item">
+              <span class="stat-mini-num">12,500+</span>
+              <span class="stat-mini-label" data-i18n="stat_birds">Bosh Parranda Nazoratda</span>
+            </div>
+            <div class="stat-mini-item">
+              <span class="stat-mini-num">99.2%</span>
+              <span class="stat-mini-label" data-i18n="stat_accuracy">Ross-308 Me'yor Aniqligi</span>
+            </div>
+            <div class="stat-mini-item">
+              <span class="stat-mini-num">94%</span>
+              <span class="stat-mini-label" data-i18n="stat_credit">AgroBank Kredit Tayyorgarligi</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Hero Visual Showcase -->
+        <div class="hero-visual-frame">
+          <div class="hero-photo-wrapper">
+            <img src="images/hero_robot.jpg" alt="AgroZen Autonomous Agricultural Robot" onerror="this.src='images/broiler_flock.jpg'">
+          </div>
+
+          <!-- Floating Pill 1: Soil / Coop Condition -->
+          <div class="floating-pill floating-soil">
+            <div class="pill-icon-box icon-box-green">🌱</div>
+            <div class="pill-info">
+              <span class="pill-sub" data-i18n="pill_soil_label">Tuproq & Bino Holati</span>
+              <span class="pill-val" data-i18n="pill_soil_val">A'lo darajada (Healthy)</span>
+            </div>
+          </div>
+
+          <!-- Floating Pill 2: Weather & Temperature -->
+          <div class="floating-pill floating-weather">
+            <div class="pill-icon-box icon-box-gold">☀️</div>
+            <div class="pill-info">
+              <span class="pill-sub" data-i18n="pill_weather_label">Ob-havo</span>
+              <span class="pill-val">Quyoshli • 28°C</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         SECTION 2: REAL-TIME TELEMETRY BENTO GRID
+         ========================================================================== -->
+    <section id="telemetry" class="section-spacing">
+      <div class="section-header">
+        <div class="section-eyebrow" data-i18n="bento_eyebrow">JONLI TELEMETRIYA</div>
+        <h2 class="section-title" data-i18n="bento_title">Har Bir Maydon & Katak Bo'yicha Aniq Intellekt</h2>
+        <p class="section-subtitle" data-i18n="bento_subtitle">
+          Atrof-muhit sensorlari, Ross-308 me'yorlari va AI tahlili uzluksiz real vaqt ma'lumotlarini taqdim etadi.
+        </p>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Card 1: Climate & Weather -->
+        <div class="bento-card">
+          <div>
+            <div class="bento-top-row">
+              <div class="bento-icon-label">
+                <span class="bento-icon">🌤️</span>
+                <div>
+                  <div class="bento-title" data-i18n="card_climate_title">Ob-havo & Iqlim</div>
+                  <div class="bento-val-large" id="liveTempDisplay">28°C Quyoshli</div>
+                </div>
+              </div>
+              <span class="status-tag tag-healthy" data-i18n="tag_healthy">ME'YORIDA</span>
+            </div>
+
+            <div class="bento-subgrid">
+              <div class="bento-sub-metric">
+                <span class="sub-metric-label" data-i18n="label_humidity">Namlik</span>
+                <span class="sub-metric-val">85%</span>
+              </div>
+              <div class="bento-sub-metric">
+                <span class="sub-metric-label" data-i18n="label_wind">Shamol Tezligi</span>
+                <span class="sub-metric-val">13 km/h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Simulator Slider -->
+          <div class="slider-interactive-wrap">
+            <span style="font-size: 12px; font-weight: 700;" data-i18n="sim_temp">Sinov Harorati:</span>
+            <input type="range" min="18" max="38" value="28" class="range-slider" id="tempSlider" oninput="updateTempSim(this.value)">
+            <span id="sliderValLabel" style="font-size: 13px; font-weight: 800;">28°C</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Barn & Air Quality -->
+        <div class="bento-card">
+          <div class="bento-top-row">
+            <div class="bento-icon-label">
+              <span class="bento-icon">🌾</span>
+              <div>
+                <div class="bento-title" data-i18n="card_barn_title">Bino & Tuproq Sifati</div>
+                <div class="bento-val-large" data-i18n="card_barn_val">Toza & Xavfsiz</div>
+              </div>
+            </div>
+            <span class="status-tag tag-clean" data-i18n="tag_clean">TOZA</span>
+          </div>
+
+          <div class="bento-subgrid">
+            <div class="bento-sub-metric">
+              <span class="sub-metric-label" data-i18n="label_ammonia">Ammiak (NH3)</span>
+              <span class="sub-metric-val">8 ppm <small style="font-size: 11px; color:#22C55E;">(Xavfsiz)</small></span>
+            </div>
+            <div class="bento-sub-metric">
+              <span class="sub-metric-label" data-i18n="label_co2">Karbonat Angidrid (CO2)</span>
+              <span class="sub-metric-val">450 ppm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Health Index Gauge -->
+        <div class="bento-card">
+          <div class="bento-top-row">
+            <div class="bento-title" data-i18n="card_health_title">Parranda & Ekin Salomatligi</div>
+            <span class="status-tag tag-optimal" data-i18n="tag_optimal">OPTIMAL</span>
+          </div>
+
+          <div class="health-gauge-box">
+            <div class="circular-progress-wrap">
+              <svg class="circular-progress-svg" viewBox="0 0 100 100">
+                <circle class="circular-bg" cx="50" cy="50" r="42"></circle>
+                <circle class="circular-bar" cx="50" cy="50" r="42"></circle>
+              </svg>
+              <div class="gauge-percent-text">56%</div>
+            </div>
+
+            <div class="gauge-details">
+              <div style="font-size: 15px; font-weight: 800; color: var(--text-headline);" data-i18n="gauge_headline">
+                42 Kunlik Tsikl (14-kun)
+              </div>
+              <div class="dots-indicator">
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item"></span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted);" data-i18n="gauge_loss">
+                Yo'qotish darajasi: 0.8% (Me'yor 1.2%)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Area & Yield Forecast -->
+        <div class="bento-card">
+          <div class="bento-top-row">
+            <div class="bento-icon-label">
+              <span class="bento-icon">🛸</span>
+              <div>
+                <div class="bento-title" data-i18n="card_area_title">Umumiy Maydon & Kutilma</div>
+                <div class="bento-val-large">12 Gektar • 500 Bosh</div>
+              </div>
+            </div>
+            <span class="status-tag tag-optimal" data-i18n="tag_active">FAOLLASHTIRILGAN</span>
+          </div>
+
+          <div class="bento-subgrid">
+            <div class="bento-sub-metric">
+              <span class="sub-metric-label" data-i18n="label_yield">Hosil / Go'sht Prognozi</span>
+              <span class="sub-metric-val">15 Tonna / 1.25 t</span>
+            </div>
+            <div class="bento-sub-metric">
+              <span class="sub-metric-label" data-i18n="label_market">Bozorga Tayyorgarlik</span>
+              <span class="sub-metric-val" style="color: #22C55E;">98% A'lo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         SECTION 3: CHOOSE YOUR FARM & FLOCK
+         ========================================================================== */
+    -->
+    <section id="fields" class="section-spacing">
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="fields_title">O'z xo'jaligingiz va podangizni tanlang</h2>
+        <p class="section-subtitle" data-i18n="fields_subtitle">
+          Issiqxonalar, broyler binolari va ochiq maydonlar bo'yicha avtomatlashtirilgan telemetrik boshqaruv.
+        </p>
+      </div>
+
+      <!-- Filter Pills -->
+      <div class="filter-tabs-row">
+        <button class="filter-pill active" onclick="filterFarms('all', this)" data-i18n="filter_all">Hammasi (3)</button>
+        <button class="filter-pill" onclick="filterFarms('poultry', this)" data-i18n="filter_poultry">Broyler Parrandachilik</button>
+        <button class="filter-pill" onclick="filterFarms('vegetables', this)" data-i18n="filter_veg">Sabzavotlar & Issiqxona</button>
+        <button class="filter-pill" onclick="filterFarms('grains', this)" data-i18n="filter_grains">Don & G'alla</button>
+      </div>
+
+      <!-- 3 Farm Cards -->
+      <div class="cards-grid-3" id="farmsGrid">
+        <!-- Card 1: Green Valley Farm -->
+        <div class="farm-card" data-category="vegetables">
+          <div class="farm-photo-box">
+            <img src="images/sunset_farm.jpg" alt="Green Valley Farm" onerror="this.src='images/field_aerial.jpg'">
+            <div class="points-badge">
+              <strong>1300</strong>
+              <span data-i18n="badge_pts">ball</span>
+            </div>
+          </div>
+          <div class="farm-card-content">
+            <div class="farm-title-row">
+              <div class="farm-title">Green Valley Farm — Sabzavotlar</div>
+              <div class="dots-indicator">
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item"></span>
+              </div>
+            </div>
+            <div class="farm-bottom-row">
+              <div class="farm-tags-wrap">
+                <span class="card-tag" data-i18n="tag_vegetable">Sabzavot</span>
+                <span class="card-tag" data-i18n="tag_open_field">Ochiq Dala</span>
+              </div>
+              <div class="circle-arrow-btn">↗</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Sunrise Fields -->
+        <div class="farm-card" data-category="grains">
+          <div class="farm-photo-box">
+            <img src="images/field_aerial.jpg" alt="Sunrise Fields" onerror="this.src='images/tractor_hero.jpg'">
+            <div class="points-badge">
+              <strong>1200</strong>
+              <span data-i18n="badge_pts">ball</span>
+            </div>
+          </div>
+          <div class="farm-card-content">
+            <div class="farm-title-row">
+              <div class="farm-title">Sunrise Fields — Don & Hosil</div>
+              <div class="dots-indicator">
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+              </div>
+            </div>
+            <div class="farm-bottom-row">
+              <div class="farm-tags-wrap">
+                <span class="card-tag" data-i18n="tag_grains">Don Ekinlari</span>
+                <span class="card-tag" data-i18n="tag_large_field">Katta Maydon</span>
+              </div>
+              <div class="circle-arrow-btn">↗</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Riverbend Broilers -->
+        <div class="farm-card" data-category="poultry">
+          <div class="farm-photo-box">
+            <img src="images/broiler_flock.jpg" alt="Riverbend Broilers" onerror="this.src='images/chick_starter.jpg'">
+            <div class="points-badge">
+              <strong>1400</strong>
+              <span data-i18n="badge_pts">ball</span>
+            </div>
+          </div>
+          <div class="farm-card-content">
+            <div class="farm-title-row">
+              <div class="farm-title">Riverbend Broiler — Bino #1</div>
+              <div class="dots-indicator">
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+                <span class="dot-item active"></span>
+              </div>
+            </div>
+            <div class="farm-bottom-row">
+              <div class="farm-tags-wrap">
+                <span class="card-tag" data-i18n="tag_poultry">Parrandachilik</span>
+                <span class="card-tag" data-i18n="tag_smart_coop">Aqlli Bino</span>
+              </div>
+              <div class="circle-arrow-btn">↗</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         SECTION 4: TIER CERTIFICATION & ACCELERATED CAPITAL
+         ========================================================================== -->
+    <section id="certification" class="section-spacing">
+      <div class="section-header">
+        <div class="section-eyebrow" data-i18n="cert_eyebrow">FERMER TIER & MOLIYAVIY TAYYORGARLIK</div>
+        <h2 class="section-title" data-i18n="cert_title">Tasdiqlangan Amallar. Tezlashtirilgan Kapital.</h2>
+        <p class="section-subtitle" data-i18n="cert_subtitle">
+          Kundalik parvarish, telemetriya ma'lumotlari va to'ldirilgan kundalikni hamkor agroboshqarmalar uchun imtiyozli kredit sertifikatiga aylantiring.
+        </p>
+      </div>
+
+      <div class="tier-section-grid">
+        <!-- Left: Tier Card -->
+        <div class="tier-card-left">
+          <div>
+            <div class="tier-crown-badge">
+              <span>👑</span>
+              <span data-i18n="badge_premium_farmer">Premium Fermer</span>
+            </div>
+
+            <div class="tier-points-display" style="margin-top: 20px;">
+              <div class="tier-points-num" id="tierPtsDisplay">3,120 Pts</div>
+              <div class="tier-points-sub" data-i18n="tier_next_goal">Premium maqomgacha 125 ball qoldi</div>
+            </div>
+
+            <!-- Dot Matrix Indicator (40 dots) -->
+            <div class="dot-matrix-container" id="dotMatrix">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div class="tier-actions-row">
+            <button class="btn-earn-points" onclick="earnMorePoints()" data-i18n="btn_earn_points">Ball To'plash +50</button>
+            <button class="btn-claim-benefits" onclick="alert('Kredit imtiyozlari tasdiqlandi! AgroBank tekshiruv kodini qabul qildi.')" data-i18n="btn_claim_benefits">Imtiyozlarni Olish</button>
+          </div>
+        </div>
+
+        <!-- Right: Official AgroZen Digital Certificate Preview -->
+        <div class="certificate-card-right">
+          <div class="cert-header">
+            <div>
+              <div class="cert-brand">
+                <span>🌱</span>
+                <span>AgroZen</span>
+              </div>
+              <div class="cert-title-huge" data-i18n="cert_doc_title">Raqamli Sertifikat</div>
+            </div>
+            <div class="gold-wax-seal">
+              TASDIQ<br>94%<br>VERIFIED
+            </div>
+          </div>
+
+          <div class="cert-body-grid">
+            <div class="qr-box">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 0h4v2h-4v-2zm-4 0h2v4h-2v-4zm2 2h2v4h-2v-4zm2 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/>
+              </svg>
+            </div>
+
+            <div class="cert-readiness-box">
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);" data-i18n="cert_score_label">Bankka Tayyorgarlik Reytingi</div>
+              <div class="readiness-score-num">94%</div>
+              <div style="font-size: 12px; color: #22C55E; font-weight: 700;" data-i18n="cert_status">
+                ✓ Ross-308 Me'yoriga 100% Mos
+              </div>
+            </div>
+
+            <div>
+              <a href="/?app=true" class="btn-pill-primary" style="padding: 10px 18px; font-size: 12.5px;">
+                <span data-i18n="cert_view_btn">Ko'rish</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="cert-partners-row">
+            <span data-i18n="cert_partner_banks">Hamkor Banklar:</span>
+            <span class="partner-chip">AgroBank</span>
+            <span class="partner-chip">Mikrokreditbank</span>
+            <span class="partner-chip">Xalq Banki</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         SECTION 5: INSTANT ACTIONS & AI VISION
+         ========================================================================== -->
+    <section id="actions" class="section-spacing">
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="actions_title">Bir Bosishda Bajariladigan Amallar</h2>
+        <p class="section-subtitle" data-i18n="actions_subtitle">
+          Avtomatlashtirilgan boshqaruv, AI ko'rish diagnostikasi va kundalik ish vazifalari.
+        </p>
+      </div>
+
+      <div class="actions-grid">
+        <!-- Action 1 -->
+        <div class="action-panel-card">
+          <div class="action-icon-circle">⚙️</div>
+          <div class="action-title" data-i18n="act_auto_title">Tizim Avtomatizatsiyasi</div>
+          <div class="action-desc" data-i18n="act_auto_desc">
+            Binodagi ventilyatsiya, isitgich va yoritish tizimlarini masofadan nazorat qilish.
+          </div>
+          <div class="toggle-row">
+            <span style="font-size: 13px; font-weight: 700;" data-i18n="act_auto_state">Avtomatik Rejim:</span>
+            <label class="switch">
+              <input type="checkbox" checked onchange="handleAutoToggle(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Action 2 -->
+        <div class="action-panel-card">
+          <div class="action-icon-circle">📷</div>
+          <div class="action-title" data-i18n="act_vision_title">AI Ko'z & Kasallik Skanneri</div>
+          <div class="action-desc" data-i18n="act_vision_desc">
+            Broyler patlari, ko'zlari yoki axlat suratini yuklab 3 soniyada tashxis oling.
+          </div>
+          <div class="toggle-row">
+            <a href="/?app=true" class="btn-pill-outline" style="padding: 8px 16px; font-size: 13px;" data-i18n="act_vision_btn">
+              Suratni Tekshirish ↗
+            </a>
+          </div>
+        </div>
+
+        <!-- Action 3 -->
+        <div class="action-panel-card">
+          <div class="action-icon-circle">📋</div>
+          <div class="action-title" data-i18n="act_tasks_title">Kunlik Ish Vazifalari</div>
+          <div class="action-desc" data-i18n="act_tasks_desc">
+            Suv idishlarini yuvish, yem dozasini 510g/bosh me'yoriga ko'tarish (14-kun).
+          </div>
+          <div class="toggle-row">
+            <span style="font-size: 12.5px; font-weight: 800; color: #22C55E;" data-i18n="act_tasks_badge">3 tadan 2 tasi bajarildi</span>
+            <a href="/?app=true" class="circle-arrow-btn">↗</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         CALL TO ACTION / INTERACTIVE WORKSPACE BANNER
+         ========================================================================== -->
+    <div class="interactive-banner">
+      <div class="banner-text-box">
+        <h3 class="banner-title" data-i18n="banner_title">Parrandachilik va Fermangizni Bugunoq Yuksaltiring</h3>
+        <p class="banner-desc" data-i18n="banner_desc">
+          AgroZen veb-platformasi orqali jonli telemetriyani oching, kundalik qaydlarni yuriting va imtiyozli kredit sertifikatiga ega bo'ling.
+        </p>
+      </div>
+
+      <div class="banner-cta-group">
+        <a href="/?app=true" class="btn-banner-white">
+          <span data-i18n="banner_btn_app">AgroZen Ilovasini Ochish</span>
+          <span>→</span>
+        </a>
+        <a href="#telemetry" class="btn-banner-outline" data-i18n="banner_btn_explore">
+          Qayta Ko'rib Chiqish
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer>
+    <div class="container footer-content">
+      <div class="footer-left">
+        <div class="brand-icon" style="width: 30px; height: 30px; font-size: 15px;">🌱</div>
+        <span style="font-weight: 800; color: var(--text-headline);">AgroZen OS</span>
+        <span class="footer-rights" data-i18n="footer_rights">© 2026 Barcha huquqlar himoyalangan. StudEXPO-2026.</span>
+      </div>
+
+      <ul class="footer-links">
+        <li><a href="#telemetry" class="footer-link" data-i18n="nav_telemetry">Telemetriya</a></li>
+        <li><a href="#fields" class="footer-link" data-i18n="nav_fields">Dala & Poda</a></li>
+        <li><a href="#certification" class="footer-link" data-i18n="nav_certification">Kredit Sertifikati</a></li>
+        <li><a href="/?app=true" class="footer-link" data-i18n="btn_launch_app">Ilovaga O'tish</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       INTERACTIVE LOGIC & TRILINGUAL DICTIONARY
+       ========================================================================== -->
+  <script>
+    // 1. Trilingual Translations Dictionary
+    const translations = {
+      uz: {
+        nav_telemetry: "Telemetriya",
+        nav_fields: "Dala & Poda",
+        nav_certification: "Kredit Sertifikati",
+        nav_actions: "Tezkor Amallar",
+        btn_launch_app: "Dasturni Ochish",
+        hero_badge: "AI AGRITECH & PARRANDACHILIK OS",
+        hero_title: "Zamonaviy Fermerlik Kelajagini Shakllantiramiz",
+        hero_subtitle: "Ilg'or sun'iy intellekt, dron telemetriyasi va sensorlar yordamida parrandalar hamda ekinlarni yo'qotishlarsiz boshqaring.",
+        hero_cta: "Boshlash >>>",
+        hero_demo: "Jonli Telemetriya",
+        stat_birds: "Bosh Parranda Nazoratda",
+        stat_accuracy: "Ross-308 Me'yor Aniqligi",
+        stat_credit: "AgroBank Kredit Tayyorgarligi",
+        pill_soil_label: "Tuproq & Bino Holati",
+        pill_soil_val: "A'lo darajada (Healthy)",
+        pill_weather_label: "Ob-havo",
+        bento_eyebrow: "JONLI TELEMETRIYA",
+        bento_title: "Har Bir Maydon & Katak Bo'yicha Aniq Intellekt",
+        bento_subtitle: "Atrof-muhit sensorlari, Ross-308 me'yorlari va AI tahlili uzluksiz real vaqt ma'lumotlarini taqdim etadi.",
+        card_climate_title: "Ob-havo & Iqlim",
+        tag_healthy: "ME'YORIDA",
+        label_humidity: "Namlik",
+        label_wind: "Shamol Tezligi",
+        sim_temp: "Sinov Harorati:",
+        card_barn_title: "Bino & Tuproq Sifati",
+        card_barn_val: "Toza & Xavfsiz",
+        tag_clean: "TOZA",
+        label_ammonia: "Ammiak (NH3)",
+        label_co2: "Karbonat Angidrid (CO2)",
+        card_health_title: "Parranda & Ekin Salomatligi",
+        tag_optimal: "OPTIMAL",
+        gauge_headline: "42 Kunlik Tsikl (14-kun)",
+        gauge_loss: "Yo'qotish darajasi: 0.8% (Me'yor 1.2%)",
+        card_area_title: "Umumiy Maydon & Kutilma",
+        tag_active: "FAOLLASHTIRILGAN",
+        label_yield: "Hosil / Go'sht Prognozi",
+        label_market: "Bozorga Tayyorgarlik",
+        fields_title: "O'z xo'jaligingiz va podangizni tanlang",
+        fields_subtitle: "Issiqxonalar, broyler binolari va ochiq maydonlar bo'yicha avtomatlashtirilgan telemetrik boshqaruv.",
+        filter_all: "Hammasi (3)",
+        filter_poultry: "Broyler Parrandachilik",
+        filter_veg: "Sabzavotlar & Issiqxona",
+        filter_grains: "Don & G'alla",
+        badge_pts: "ball",
+        tag_vegetable: "Sabzavot",
+        tag_open_field: "Ochiq Dala",
+        tag_grains: "Don Ekinlari",
+        tag_large_field: "Katta Maydon",
+        tag_poultry: "Parrandachilik",
+        tag_smart_coop: "Aqlli Bino",
+        cert_eyebrow: "FERMER TIER & MOLIYAVIY TAYYORGARLIK",
+        cert_title: "Tasdiqlangan Amallar. Tezlashtirilgan Kapital.",
+        cert_subtitle: "Kundalik parvarish, telemetriya ma'lumotlari va to'ldirilgan kundalikni hamkor agroboshqarmalar uchun imtiyozli kredit sertifikatiga aylantiring.",
+        badge_premium_farmer: "Premium Fermer",
+        tier_next_goal: "Premium maqomgacha 125 ball qoldi",
+        btn_earn_points: "Ball To'plash +50",
+        btn_claim_benefits: "Imtiyozlarni Olish",
+        cert_doc_title: "Raqamli Sertifikat",
+        cert_score_label: "Bankka Tayyorgarlik Reytingi",
+        cert_status: "✓ Ross-308 Me'yoriga 100% Mos",
+        cert_view_btn: "Ko'rish",
+        cert_partner_banks: "Hamkor Banklar:",
+        actions_title: "Bir Bosishda Bajariladigan Amallar",
+        actions_subtitle: "Avtomatlashtirilgan boshqaruv, AI ko'rish diagnostikasi va kundalik ish vazifalari.",
+        act_auto_title: "Tizim Avtomatizatsiyasi",
+        act_auto_desc: "Binodagi ventilyatsiya, isitgich va yoritish tizimlarini masofadan nazorat qilish.",
+        act_auto_state: "Avtomatik Rejim:",
+        act_vision_title: "AI Ko'z & Kasallik Skanneri",
+        act_vision_desc: "Broyler patlari, ko'zlari yoki axlat suratini yuklab 3 soniyada tashxis oling.",
+        act_vision_btn: "Suratni Tekshirish ↗",
+        act_tasks_title: "Kunlik Ish Vazifalari",
+        act_tasks_desc: "Suv idishlarini yuvish, yem dozasini 510g/bosh me'yoriga ko'tarish (14-kun).",
+        act_tasks_badge: "3 tadan 2 tasi bajarildi",
+        banner_title: "Parrandachilik va Fermangizni Bugunoq Yuksaltiring",
+        banner_desc: "AgroZen veb-platformasi orqali jonli telemetriyani oching, kundalik qaydlarni yuriting va imtiyozli kredit sertifikatiga ega bo'ling.",
+        banner_btn_app: "AgroZen Ilovasini Ochish",
+        banner_btn_explore: "Qayta Ko'rib Chiqish",
+        footer_rights: "© 2026 Barcha huquqlar himoyalangan. StudEXPO-2026."
+      },
+      ru: {
+        nav_telemetry: "Телеметрия",
+        nav_fields: "Поля & Птичник",
+        nav_certification: "Кредитный Сертификат",
+        nav_actions: "Быстрые Действия",
+        btn_launch_app: "Открыть Приложение",
+        hero_badge: "AI АГРОТЕХ & ПТИЦЕВОДСТВО OS",
+        hero_title: "Создаём Будущее Современного Фермерства",
+        hero_subtitle: "Управляйте птичником и культурами без падежа и потерь с помощью ИИ-зрения, телеметрии дронов и микроклимата.",
+        hero_cta: "Начать Работу >>>",
+        hero_demo: "Живая Телеметрия",
+        stat_birds: "Птиц Под Контролем",
+        stat_accuracy: "Точность Норм Ross-308",
+        stat_credit: "Готовность к Кредиту АгроБанка",
+        pill_soil_label: "Почва & Птичник",
+        pill_soil_val: "Отлично (Здорово)",
+        pill_weather_label: "Погода",
+        bento_eyebrow: "ЖИВАЯ ТЕЛЕМЕТРИЯ",
+        bento_title: "Точный Интеллект На Каждом Гектаре и в Птичнике",
+        bento_subtitle: "Датчики микроклимата, стандарты Ross-308 и ИИ-анализ непрерывно передают статус фермы.",
+        card_climate_title: "Погода & Микроклимат",
+        tag_healthy: "В НОРМЕ",
+        label_humidity: "Влажность",
+        label_wind: "Скорость Ветра",
+        sim_temp: "Тестовая Температура:",
+        card_barn_title: "Качество Птичника & Почвы",
+        card_barn_val: "Чисто & Безопасно",
+        tag_clean: "ЧИСТО",
+        label_ammonia: "Аммиак (NH3)",
+        label_co2: "Углекислый Газ (CO2)",
+        card_health_title: "Здоровье Птицы & Посевов",
+        tag_optimal: "ОПТИМАЛЬНО",
+        gauge_headline: "42-дневный цикл (14-й день)",
+        gauge_loss: "Падеж: 0.8% (Норма 1.2%)",
+        card_area_title: "Площадь & Прогноз",
+        tag_active: "АКТИВНО",
+        label_yield: "Прогноз Мяса / Урожая",
+        label_market: "Готовность к Рынку",
+        fields_title: "Выберите Хозяйство и Птичник",
+        fields_subtitle: "Автоматизированный телеметрический контроль теплиц, бройлерных корпусов и открытых угодий.",
+        filter_all: "Все (3)",
+        filter_poultry: "Бройлерное Птицеводство",
+        filter_veg: "Овощи & Теплицы",
+        filter_grains: "Зерно & Урожай",
+        badge_pts: "очков",
+        tag_vegetable: "Овощи",
+        tag_open_field: "Открытый Грунт",
+        tag_grains: "Зерновые",
+        tag_large_field: "Большое Поле",
+        tag_poultry: "Птицеводство",
+        tag_smart_coop: "Умный Птичник",
+        cert_eyebrow: "ТИЕР ФЕРМЕРА & КРЕДИТНАЯ ГОТОВНОСТЬ",
+        cert_title: "Подтверждённые Данные. Быстрый Капитал.",
+        cert_subtitle: "Превратите ежедневные записи и микроклимат в официальный сертификат для льготного кредита в банке.",
+        badge_premium_farmer: "Премиум Фермер",
+        tier_next_goal: "До статуса Премиум осталось 125 очков",
+        btn_earn_points: "Набрать Очки +50",
+        btn_claim_benefits: "Получить Льготы",
+        cert_doc_title: "Цифровой Сертификат",
+        cert_score_label: "Рейтинг Готовности Банка",
+        cert_status: "✓ 100% Соответствие Ross-308",
+        cert_view_btn: "Смотреть",
+        cert_partner_banks: "Банки-партнёры:",
+        actions_title: "Действия в Один Клик",
+        actions_subtitle: "Автоматизация оборудования, диагностика болезней по фото и задачи дня.",
+        act_auto_title: "Автоматизация Систем",
+        act_auto_desc: "Удаленный контроль вентиляции, обогревателей и освещения корпуса.",
+        act_auto_state: "Авто-режим:",
+        act_vision_title: "ИИ-Зрение & Диагностика",
+        act_vision_desc: "Загрузите фото оперения или помета для моментальной ветеринарной оценки.",
+        act_vision_btn: "Проверить Фото ↗",
+        act_tasks_title: "Задачи Дня",
+        act_tasks_desc: "Промывка поилок, повышение нормы корма до 510г/голову (14 день).",
+        act_tasks_badge: "Выполнено 2 из 3",
+        banner_title: "Улучшите Вашу Ферму Уже Сегодня",
+        banner_desc: "Откройте живую телеметрию AgroZen, ведите дневник птицы и получите сертификат на льготный кредит.",
+        banner_btn_app: "Открыть AgroZen",
+        banner_btn_explore: "Изучить Функции",
+        footer_rights: "© 2026 Все права защищены. StudEXPO-2026."
+      },
+      en: {
+        nav_telemetry: "Telemetry",
+        nav_fields: "Fields & Flocks",
+        nav_certification: "Credit Cert",
+        nav_actions: "Quick Actions",
+        btn_launch_app: "Launch App",
+        hero_badge: "AI AGRITECH & POULTRY OS",
+        hero_title: "Shaping the Future of Modern Farming",
+        hero_subtitle: "Advanced tools, AI vision, and real-time telemetry helping farmers manage crops and poultry batches without mortality losses.",
+        hero_cta: "Get Started >>>",
+        hero_demo: "Live Telemetry",
+        stat_birds: "Poultry Under Care",
+        stat_accuracy: "Ross-308 Norm Precision",
+        stat_credit: "AgroBank Loan Readiness",
+        pill_soil_label: "Soil & Coop Condition",
+        pill_soil_val: "Optimal & Healthy",
+        pill_weather_label: "Weather",
+        bento_eyebrow: "REAL-TIME TELEMETRY",
+        bento_title: "Precision Intelligence Across Every Acre & Coop",
+        bento_subtitle: "Environmental sensors, Ross-308 benchmarks, and computer vision provide continuous operational feedback.",
+        card_climate_title: "Weather & Microclimate",
+        tag_healthy: "HEALTHY",
+        label_humidity: "Humidity",
+        label_wind: "Wind Speed",
+        sim_temp: "Simulate Temp:",
+        card_barn_title: "Barn & Soil Atmosphere",
+        card_barn_val: "Clean & Safe",
+        tag_clean: "CLEAN",
+        label_ammonia: "Ammonia (NH3)",
+        label_co2: "Carbon Dioxide (CO2)",
+        card_health_title: "Flock & Plant Health",
+        tag_optimal: "OPTIMAL",
+        gauge_headline: "42-Day Growth Cycle (Day 14)",
+        gauge_loss: "Mortality Rate: 0.8% (Threshold 1.2%)",
+        card_area_title: "Total Acreage & Yield",
+        tag_active: "ACTIVE",
+        label_yield: "Projected Meat / Yield",
+        label_market: "Market Readiness",
+        fields_title: "Choose Your Farm & Flock",
+        fields_subtitle: "Granular operational tracking for greenhouses, broiler coops, and open fields with automated health telemetry.",
+        filter_all: "All (3)",
+        filter_poultry: "Broiler Poultry",
+        filter_veg: "Vegetables & Greenhouse",
+        filter_grains: "Grains & Harvest",
+        badge_pts: "pts",
+        tag_vegetable: "Vegetables",
+        tag_open_field: "Open Field",
+        tag_grains: "Grains",
+        tag_large_field: "Large Acreage",
+        tag_poultry: "Poultry",
+        tag_smart_coop: "Automated Coop",
+        cert_eyebrow: "FARMER TIER & MICROFINANCE READINESS",
+        cert_title: "Verified Operations. Accelerated Capital.",
+        cert_subtitle: "Turn daily flock care, sensor telemetry, and verified diaries into credit-ready certification for partner agro-banks.",
+        badge_premium_farmer: "Premium Farmer",
+        tier_next_goal: "125 points to Premium Tier",
+        btn_earn_points: "Earn Points +50",
+        btn_claim_benefits: "Claim Benefits",
+        cert_doc_title: "Digital Certificate",
+        cert_score_label: "Bank Readiness Score",
+        cert_status: "✓ 100% Ross-308 Compliant",
+        cert_view_btn: "View",
+        cert_partner_banks: "Partner Banks:",
+        actions_title: "One-Tap Field Actions",
+        actions_subtitle: "System automation, vision AI disease screening, and daily work checklists.",
+        act_auto_title: "System Automation",
+        act_auto_desc: "Remote automated control over barn ventilation, heating, and lighting.",
+        act_auto_state: "Auto Mode:",
+        act_vision_title: "AI Vision & Disease Scanner",
+        act_vision_desc: "Upload photo of broiler feathers or droppings for immediate 3-second diagnostic report.",
+        act_vision_btn: "Test Vision ↗",
+        act_tasks_title: "Daily Tasks",
+        act_tasks_desc: "Water drinker flush, increase feed allowance to 510g/bird target (Day 14).",
+        act_tasks_badge: "2 of 3 Completed",
+        banner_title: "Upgrade Your Farm Operations Today",
+        banner_desc: "Experience AgroZen's live telemetry, log daily farm entries, and earn certified bank credit eligibility.",
+        banner_btn_app: "Launch AgroZen App",
+        banner_btn_explore: "Explore Features",
+        footer_rights: "© 2026 All rights reserved. StudEXPO-2026."
+      }
+    };
+
+    let currentLang = 'uz';
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      const dict = translations[lang] || translations.uz;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+          el.textContent = dict[key];
+        }
+      });
+      document.documentElement.setAttribute('lang', lang);
+    }
+
+    // 2. Day/Night Mode Switcher
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      const btn = document.getElementById('themeToggleBtn');
+      btn.textContent = next === 'dark' ? '🌙' : '☀️';
+    }
+
+    // 3. Dot Matrix Progress Render
+    let currentPoints = 3120;
+    function renderDotMatrix(filledCount) {
+      const container = document.getElementById('dotMatrix');
+      container.innerHTML = '';
+      const totalDots = 40;
+      for (let i = 0; i < totalDots; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'matrix-dot' + (i < filledCount ? ' filled' : '');
+        container.appendChild(dot);
+      }
+    }
+    renderDotMatrix(32); // 32 out of 40 dots
+
+    function earnMorePoints() {
+      currentPoints += 50;
+      document.getElementById('tierPtsDisplay').textContent = currentPoints.toLocaleString() + ' Pts';
+      renderDotMatrix(36);
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed; bottom:24px; right:24px; background:#22C55E; color:#fff; padding:12px 24px; border-radius:9999px; font-weight:800; box-shadow:0 10px 30px rgba(0,0,0,0.2); z-index:999; animation:gentleFloat 0.5s ease;';
+      toast.textContent = '+50 Ball Qo\'shildi! (AgroBank balli yangilandi)';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+
+    // 4. Interactive Temp Simulation
+    function updateTempSim(val) {
+      document.getElementById('sliderValLabel').textContent = val + '°C';
+      document.getElementById('liveTempDisplay').textContent = val + '°C ' + (val > 30 ? 'Issiq' : val < 22 ? 'Salqin' : 'Quyoshli');
+    }
+
+    // 5. Farm Cards Filter
+    function filterFarms(category, btn) {
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.farm-card');
+      cards.forEach(card => {
+        if (category === 'all' || card.getAttribute('data-category') === category) {
+          card.style.display = 'flex';
+          card.style.opacity = '1';
+        } else {
+          card.style.display = 'none';
+          card.style.opacity = '0';
+        }
+      });
+    }
+
+    function handleAutoToggle(checked) {
+      console.log('Automated systems:', checked ? 'ACTIVE' : 'MANUAL');
+    }
+  </script>
+</body>
+</html>

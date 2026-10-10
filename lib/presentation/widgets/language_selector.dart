@@ -15,10 +15,11 @@ class LanguageSelector extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFEDF2EE),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDCE6DF), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -62,26 +63,26 @@ class LanguageSelector extends StatelessWidget {
       onTap: () => onLanguageChanged?.call(localeCode),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: isSelected ? theme.colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withAlpha(40),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
+            ? [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withAlpha(60),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                )
+              ]
+            : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade800,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 14,
+            color: isSelected ? Colors.white : const Color(0xFF4A5D4E),
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            fontSize: 13.5,
           ),
         ),
       ),

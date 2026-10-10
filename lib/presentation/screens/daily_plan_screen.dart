@@ -72,8 +72,6 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     final selectedPlan = _allPlans.firstWhere(
       (p) => p.day == _selectedDay,
       orElse: () => DailyPlan(
@@ -100,16 +98,23 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
               children: [
                 // Horizontal Day Picker Carousel
                 Container(
-                  height: 72,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  height: 78,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                    border: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: 42,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                     itemBuilder: (context, index) {
                       final dayNum = index + 1;
                       final isSelected = dayNum == _selectedDay;
@@ -122,20 +127,36 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                       return GestureDetector(
                         onTap: () => setState(() => _selectedDay = dayNum),
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 54,
+                          duration: const Duration(milliseconds: 200),
+                          width: 58,
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           decoration: BoxDecoration(
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: [Color(0xFF2D7A4C), Color(0xFF1B5E20)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
                             color: isSelected
-                                ? theme.colorScheme.primary
-                                : (isToday ? theme.colorScheme.primary.withAlpha(25) : Colors.grey.shade100),
-                            borderRadius: BorderRadius.circular(12),
+                                ? null
+                                : (isToday ? const Color(0xFFE8F5ED) : const Color(0xFFF3F6F4)),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isToday
-                                  ? theme.colorScheme.primary
-                                  : (isSelected ? theme.colorScheme.primary : Colors.transparent),
-                              width: 1.5,
+                                  ? const Color(0xFF2D7A4C)
+                                  : (isSelected ? Colors.transparent : const Color(0xFFE0E8E2)),
+                              width: isToday ? 2 : 1,
                             ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xFF1B5E20).withAlpha(80),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ]
+                                : null,
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -143,18 +164,21 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                               Text(
                                 dayLabel,
                                 style: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.black87,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isToday ? const Color(0xFF1B5E20) : const Color(0xFF2A3A2D)),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                  letterSpacing: -0.2,
                                 ),
                               ),
                               if (isToday)
                                 Container(
-                                  margin: const EdgeInsets.only(top: 3),
-                                  width: 5,
-                                  height: 5,
+                                  margin: const EdgeInsets.only(top: 4),
+                                  width: 6,
+                                  height: 6,
                                   decoration: BoxDecoration(
-                                    color: isSelected ? Colors.white : theme.colorScheme.primary,
+                                    color: isSelected ? const Color(0xFFFFD54F) : const Color(0xFF1B5E20),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -175,17 +199,21 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                       children: [
                         if (_selectedDay == _currentBatchDay)
                           Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.green.shade300),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFE8F5ED), Color(0xFFDCEDE1)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFF2D7A4C).withAlpha(50), width: 1.2),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.check_circle, color: Colors.green, size: 18),
-                                const SizedBox(width: 8),
+                                const Icon(Icons.check_circle_rounded, color: Color(0xFF1B5E20), size: 20),
+                                const SizedBox(width: 10),
                                 Text(
                                   AppStrings.tr(
                                     lang: _lang,
@@ -193,10 +221,10 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                                     ru: 'Это ваш текущий день партии!',
                                     en: 'This is your current batch day!',
                                   ),
-                                  style: TextStyle(
-                                    color: Colors.green.shade900,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                                  style: const TextStyle(
+                                    color: Color(0xFF1B5E20),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13.5,
                                   ),
                                 ),
                               ],
@@ -209,27 +237,68 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                         ),
                         const SizedBox(height: 16),
                         // Growth Stage Tips
-                        Card(
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: const Color(0xFFE2EBE4), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(6),
+                                blurRadius: 14,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(18.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  AppStrings.tr(
-                                    lang: _lang,
-                                    uz: "Bosqich bo'yicha tavsiyalar",
-                                    ru: 'Рекомендации по периоду',
-                                    en: 'Growth Stage Recommendations',
-                                  ),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF2D7A4C).withAlpha(25),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFF1B5E20), size: 20),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      AppStrings.tr(
+                                        lang: _lang,
+                                        uz: "Bosqich bo'yicha tavsiyalar",
+                                        ru: 'Рекомендации по периоду',
+                                        en: 'Growth Stage Recommendations',
+                                      ),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 15.5,
+                                        color: Color(0xFF1B2A1E),
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  _getStageRecommendation(_selectedDay, _lang),
-                                  style: TextStyle(fontSize: 13, height: 1.5, color: Colors.grey.shade800),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF9FAF7),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFFE8EDE9), width: 1),
+                                  ),
+                                  child: Text(
+                                    _getStageRecommendation(_selectedDay, _lang),
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      height: 1.55,
+                                      color: Color(0xFF334436),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),

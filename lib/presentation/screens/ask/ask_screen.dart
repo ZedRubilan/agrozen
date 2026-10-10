@@ -1,14 +1,17 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:agrozen/config/constants.dart';
+import 'package:agrozen/config/theme.dart';
 import 'package:agrozen/config/supabase_config.dart';
 import 'package:agrozen/core/localization/app_strings.dart';
 import 'package:agrozen/data/providers/ai_provider.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
 import 'package:agrozen/presentation/widgets/voice_input_button.dart';
 import 'package:agrozen/presentation/widgets/organic_image_inspector.dart';
+import 'package:agrozen/presentation/widgets/tactile_button.dart';
 import 'package:agrozen/services/daily_counters.dart';
 import 'package:agrozen/services/local_rag.dart';
 import 'package:agrozen/services/poultry_vision_analyzer.dart';
@@ -38,10 +41,12 @@ class ChatMessage {
 
 class AskScreen extends StatefulWidget {
   final bool startInFieldMode;
+  final bool isEmbeddedInPageView;
 
   const AskScreen({
     super.key,
     this.startInFieldMode = false,
+    this.isEmbeddedInPageView = false,
   });
 
   @override
@@ -95,6 +100,27 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     );
     final context = await _flockContextService.getLiveContext();
 
+    final bDay = context.batchDay;
+    final cCount = context.currentCount;
+    final welcomeMessage = ChatMessage(
+      text: AppStrings.tr(
+        lang: prefs.getString('app_language') ?? 'uz',
+        uz: "Assalomu alaykum, ${context.farmerName}! Men AgroZen aqlli yordamchingizman.\n"
+            "Sizning partiyangiz $bDay-kunda ($cCount ta parrandalar). Harorat, yem, shamollatish yoki jo'jalar sog'lig'i bo'yicha savolingizni bering yoki surat yuboring.",
+        ru: "Здравствуйте, ${context.farmerName}! Я ваш помощник AgroZen.\n"
+            "Ваша партия на $bDay-м дне ($cCount голов). Задавайте любые вопросы по температуре, кормам, вентиляции или отправьте фото птичника.",
+        en: "Hello, ${context.farmerName}! I am your AgroZen assistant.\n"
+            "Your flock is on Day $bDay ($cCount birds). Ask any questions about temperature, feed, ventilation, or share a flock photo.",
+      ),
+      isUser: false,
+      source: AppStrings.tr(
+        lang: prefs.getString('app_language') ?? 'uz',
+        uz: 'AgroZen bilimlar bazasi',
+        ru: 'База знаний AgroZen',
+        en: 'AgroZen Knowledge Base',
+      ),
+    );
+
     if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
@@ -103,31 +129,10 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         maxDailyQuestions: AppConstants.maxDailyQuestions,
       );
       _liveContext = context;
+      if (_messages.isEmpty) {
+        _messages.add(welcomeMessage);
+      }
     });
-
-    // Add initial welcome message with live flock context
-    final bDay = context.batchDay;
-    final cCount = context.currentCount;
-    _messages.add(
-      ChatMessage(
-        text: AppStrings.tr(
-          lang: _lang,
-          uz: "Assalomu alaykum, ${context.farmerName}! Men AgroZen aqlli yordamchingizman.\n"
-              "Sizning partiyangiz $bDay-kunda ($cCount ta parrandalar). Harorat, yem, shamollatish yoki jo'jalar sog'lig'i bo'yicha savolingizni bering yoki surat yuboring.",
-          ru: "Здравствуйте, ${context.farmerName}! Я ваш помощник AgroZen.\n"
-              "Ваша партия на $bDay-м дне ($cCount голов). Задавайте любые вопросы по температуре, кормам, вентиляции или отправьте фото птичника.",
-          en: "Hello, ${context.farmerName}! I am your AgroZen assistant.\n"
-              "Your flock is on Day $bDay ($cCount birds). Ask any questions about temperature, feed, ventilation, or share a flock photo.",
-        ),
-        isUser: false,
-        source: AppStrings.tr(
-          lang: _lang,
-          uz: 'AgroZen bilimlar bazasi',
-          ru: 'База знаний AgroZen',
-          en: 'AgroZen Knowledge Base',
-        ),
-      ),
-    );
   }
 
   void _showSnack(String message, {bool isError = false}) {
@@ -201,6 +206,19 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           isError: true,
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      _pulseController.stop();
+      _pulseController.reset();
+      _showSnack(
+        AppStrings.tr(
+          lang: _lang,
+          uz: 'Yozib olish imkonsiz. Savolni matn bilan yozing.',
+          ru: 'Запись недоступна. Напишите вопрос текстом.',
+          en: 'Voice recording unavailable. Please type your question.',
+        ),
+        isError: true,
+      );
     }
   }
 
@@ -263,20 +281,45 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           isError: true,
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showSnack(
+        AppStrings.tr(
+          lang: _lang,
+          uz: "Nutqni aniqlab bo'lmadi. Savolni matn bilan yozing.",
+          ru: 'Не удалось распознать речь. Напишите вопрос текстом.',
+          en: 'Could not recognize speech. Please type your question.',
+        ),
+        isError: true,
+      );
     }
   }
 
   Future<void> _toggleSpeak(String text) async {
     if (_speakingText == text) {
       await _ttsService.stop();
+      if (!_isRecording && _pulseController.isAnimating) {
+        _pulseController.stop();
+        _pulseController.reset();
+      }
       setState(() => _speakingText = null);
     } else {
+      if (!_pulseController.isAnimating) {
+        _pulseController.repeat(reverse: true);
+      }
       setState(() => _speakingText = text);
       await _ttsService.speak(
         text: text,
         lang: _lang,
         onComplete: () {
-          if (mounted) setState(() => _speakingText = null);
+          if (mounted) {
+            setState(() => _speakingText = null);
+            if (!_isRecording && _pulseController.isAnimating) {
+              _pulseController.stop();
+              _pulseController.reset();
+            }
+          }
         },
       );
     }
@@ -519,45 +562,133 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       lang: _lang,
       uz: 'Bugun qoldi: $_remainingQuestions/30',
       ru: 'Осталось: $_remainingQuestions/30 сегодня',
-      en: 'Remaining today: $_remainingQuestions/30',
+      en: 'Bugun qoldi: $_remainingQuestions/30',
     );
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        automaticallyImplyLeading: !widget.isEmbeddedInPageView,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        titleSpacing: 16,
+        title: Row(
           children: [
-            Text(titleText, style: const TextStyle(fontSize: 16)),
-            Text(
-              quotaText,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2D7A4C), Color(0xFF1B5E20)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2D7A4C).withAlpha(50),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(Icons.psychology_rounded, color: Colors.white, size: 22),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titleText,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1A1F1D),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: _remainingQuestions > 0 ? const Color(0xFF22C55E) : Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        quotaText,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         actions: [
           // Mode toggle: Chat vs Hands-Free Field Mode
           Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ActionChip(
-              avatar: Icon(
-                _isFieldMode ? Icons.agriculture_rounded : Icons.chat_bubble_outline_rounded,
-                size: 16,
-                color: _isFieldMode ? Colors.white : theme.colorScheme.primary,
-              ),
-              label: Text(
-                _isFieldMode
-                    ? AppStrings.tr(lang: _lang, uz: 'Dala rejimi', ru: 'Режим поля', en: 'Field Mode')
-                    : AppStrings.tr(lang: _lang, uz: 'Chat', ru: 'Чат', en: 'Chat'),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: _isFieldMode ? Colors.white : theme.colorScheme.primary,
+            padding: const EdgeInsets.only(right: 12.0),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() => _isFieldMode = !_isFieldMode);
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: _isFieldMode
+                        ? const Color(0xFF2D7A4C)
+                        : const Color(0xFF2D7A4C).withAlpha(20),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _isFieldMode
+                          ? const Color(0xFF2D7A4C)
+                          : const Color(0xFF2D7A4C).withAlpha(60),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isFieldMode
+                            ? Icons.agriculture_rounded
+                            : Icons.chat_bubble_outline_rounded,
+                        size: 15,
+                        color: _isFieldMode ? Colors.white : const Color(0xFF2D7A4C),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _isFieldMode
+                            ? AppStrings.tr(
+                                lang: _lang, uz: 'Dala rejimi', ru: 'Режим поля', en: 'Field Mode')
+                            : AppStrings.tr(lang: _lang, uz: 'Chat', ru: 'Чат', en: 'Chat'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: _isFieldMode ? Colors.white : const Color(0xFF2D7A4C),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              backgroundColor: _isFieldMode ? theme.colorScheme.primary : theme.colorScheme.primaryContainer,
-              onPressed: () {
-                setState(() => _isFieldMode = !_isFieldMode);
-              },
             ),
           ),
         ],
@@ -568,61 +699,59 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     );
   }
 
-  /// Hands-Free "Dala Rejimi": Built for dirty hands with massive touch targets
-  /// and automatic read-aloud voice playback.
-  Widget _buildFieldModeBody(ThemeData theme) {
-    final lastAiMessage = _messages.lastWhere(
-      (m) => !m.isUser,
-      orElse: () => _messages.first,
+  /// Real-time live audio wave visualizer (equalizer effect)
+  Widget _buildAudioWaveVisualizer({
+    required bool isActive,
+    required Color color,
+  }) {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, _) {
+        final animValue = _pulseController.value;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(5, (index) {
+            final double height = isActive
+                ? (6.0 + 16.0 * (0.3 + 0.7 * (sin(animValue * pi * 2 + index * 1.1).abs())))
+                : 4.0;
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+              width: 3.5,
+              height: height,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+          }),
+        );
+      },
     );
+  }
+
+  /// Hands-Free "Dala Rejimi": Built for dirty hands with massive touch targets,
+  /// atmospheric voice chamber, and automatic read-aloud voice playback.
+  Widget _buildFieldModeBody(ThemeData theme) {
+    final ChatMessage lastAiMessage = _messages.isNotEmpty
+        ? _messages.lastWhere(
+            (m) => !m.isUser,
+            orElse: () => _messages.first,
+          )
+        : ChatMessage(
+            text: AppStrings.tr(
+              lang: _lang,
+              uz: "Assalomu alaykum! Savolingizni ovozli bering yoki rasm yuboring.",
+              ru: "Здравствуйте! Задайте вопрос голосом или отправьте фото.",
+              en: "Hello! Ask a question by voice or share a photo.",
+            ),
+            isUser: false,
+            source: 'AgroZen',
+          );
 
     return Column(
       children: [
-        // Live Flock Dossier Banner
-        if (_liveContext != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF5ED),
-              border: Border(
-                bottom: BorderSide(color: const Color(0xFF2D7A4C).withAlpha(50), width: 1.5),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF2D7A4C),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_liveContext!.batchDay}-kun dossier biriktirildi',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                        color: Color(0xFF1B5E20),
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '${_liveContext!.district} • ${_liveContext!.currentCount} bosh',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade800,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        // 1. Live Flock Dossier Card
+        if (_liveContext != null) _buildFlockDossierCard(),
 
         // Live Organic Image Inspector if analyzing
         if (_selectedImagePath != null && _isLoading)
@@ -638,339 +767,30 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         else
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(
+                left: 18,
+                right: 18,
+                top: 8,
+                bottom: widget.isEmbeddedInPageView ? 110 : 24,
+              ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 12),
-
-                  // Giant Center Voice Circle with Outer Pulsing Ripple Rings
-                  AnimatedBuilder(
-                    animation: _pulseScale,
-                    builder: (context, child) {
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Outer animated ripple ring
-                          Transform.scale(
-                            scale: _pulseScale.value,
-                            child: Container(
-                              width: 172,
-                              height: 172,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: (_isRecording ? Colors.red : const Color(0xFF2D7A4C))
-                                    .withAlpha(_isRecording ? 45 : 30),
-                              ),
-                            ),
-                          ),
-                          // Secondary softer ripple
-                          Transform.scale(
-                            scale: 1.0 + (_pulseScale.value - 1.0) * 0.5,
-                            child: Container(
-                              width: 154,
-                              height: 154,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: (_isRecording ? Colors.red : const Color(0xFF2D7A4C))
-                                    .withAlpha(_isRecording ? 60 : 40),
-                              ),
-                            ),
-                          ),
-                          // Giant Tactile Mic Button (136x136)
-                          GestureDetector(
-                            onTap: () {
-                              if (_isRecording) {
-                                _stopVoiceRecording();
-                              } else {
-                                _startVoiceRecording();
-                              }
-                            },
-                            child: Container(
-                              width: 136,
-                              height: 136,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: _isRecording
-                                      ? [const Color(0xFFE53935), const Color(0xFFB71C1C)]
-                                      : [const Color(0xFF2D7A4C), const Color(0xFF1B5E20)],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: (_isRecording ? Colors.red : const Color(0xFF1B5E20))
-                                        .withAlpha(120),
-                                    blurRadius: 22,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
-                                  size: 60,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-
+                  // 2. Atmospheric Voice Sphere Hero Arena
+                  _buildAtmosphericVoiceArena(),
                   const SizedBox(height: 16),
 
-                  // Clean Status Pill Badge (Outside circle - Zero font collision)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(
-                        color: _isRecording ? Colors.red.shade700 : const Color(0xFF1B5E20),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(12),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: _isRecording ? Colors.red.shade700 : const Color(0xFF1B5E20),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isRecording
-                              ? AppStrings.tr(
-                                  lang: _lang,
-                                  uz: "ESHITILMOQDA...",
-                                  ru: "СЛУШАЮ...",
-                                  en: "LISTENING...",
-                                )
-                              : AppStrings.tr(
-                                  lang: _lang,
-                                  uz: "TUGMANI BOSING",
-                                  ru: "НАЖМИТЕ ДЛЯ ЗАПИСИ",
-                                  en: "TAP TO SPEAK",
-                                ),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.8,
-                            color: _isRecording ? Colors.red.shade800 : const Color(0xFF1B5E20),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Helpful Guidance Subtext
-                  Text(
-                    _isRecording
-                        ? AppStrings.tr(
-                            lang: _lang,
-                            uz: "Gapiring, to'xtatish uchun yana bosing",
-                            ru: "Говорите, для завершения нажмите снова",
-                            en: "Speak now, tap again to finish",
-                          )
-                        : AppStrings.tr(
-                            lang: _lang,
-                            uz: "Bosing va savolingizni ayting.\nJavob ovozli o'qib beriladi.",
-                            ru: "Нажмите и задайте вопрос голосом.\nОтвет будет озвучен.",
-                            en: "Tap and ask hands-free.\nAnswer will be read aloud.",
-                          ),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                      height: 1.4,
-                    ),
-                  ),
-
+                  // 3. Tactile Media & Action Pill Dock
+                  _buildTactileMediaDock(),
                   const SizedBox(height: 18),
 
-                  // Quick Tactile Action Controls (Camera & Gallery)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildQuickActionBtn(
-                        icon: Icons.camera_alt_rounded,
-                        label: AppStrings.tr(lang: _lang, uz: 'Kamera', ru: 'Камера', en: 'Camera'),
-                        color: const Color(0xFFB8781B),
-                        bgColor: const Color(0xFFFFF7E6),
-                        borderColor: const Color(0xFFE5A338),
-                        onTap: () => _pickImage(ImageSource.camera),
-                      ),
-                      const SizedBox(width: 24),
-                      _buildQuickActionBtn(
-                        icon: Icons.photo_library_rounded,
-                        label: AppStrings.tr(lang: _lang, uz: 'Galereya', ru: 'Галерея', en: 'Gallery'),
-                        color: const Color(0xFF2D7A4C),
-                        bgColor: const Color(0xFFEAF5ED),
-                        borderColor: const Color(0xFF2D7A4C),
-                        onTap: () => _pickImage(ImageSource.gallery),
-                      ),
-                    ],
-                  ),
-
+                  // 4. Quick Agronomic Questions Carousel (1-Tap Voice Answers)
+                  _buildQuickPromptsCarousel(),
                   const SizedBox(height: 18),
 
-                  // Simulated AI Answer Card with TTS readout & emergency call
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade300, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF2D7A4C),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  AppStrings.tr(
-                                    lang: _lang,
-                                    uz: 'AgroZen Maslahatchi',
-                                    ru: 'AgroZen Консультант',
-                                    en: 'AgroZen Advisor',
-                                  ),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF1B5E20),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // TTS Play/Stop Button
-                            InkWell(
-                              onTap: () => _toggleSpeak(lastAiMessage.text),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _speakingText == lastAiMessage.text
-                                      ? const Color(0xFFEAF5ED)
-                                      : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      _speakingText == lastAiMessage.text
-                                          ? Icons.volume_up_rounded
-                                          : Icons.volume_mute_rounded,
-                                      size: 16,
-                                      color: _speakingText == lastAiMessage.text
-                                          ? const Color(0xFF1B5E20)
-                                          : Colors.grey.shade700,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _speakingText == lastAiMessage.text
-                                          ? AppStrings.tr(
-                                              lang: _lang,
-                                              uz: 'Ovozli...',
-                                              ru: 'Озвучивается...',
-                                              en: 'Speaking...',
-                                            )
-                                          : AppStrings.tr(
-                                              lang: _lang,
-                                              uz: 'Ovoz',
-                                              ru: 'Озвучить',
-                                              en: 'Listen',
-                                            ),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: _speakingText == lastAiMessage.text
-                                            ? const Color(0xFF1B5E20)
-                                            : Colors.grey.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          lastAiMessage.text,
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade800,
-                            height: 1.45,
-                          ),
-                        ),
-                        if (lastAiMessage.riskLevel == RiskLevel.high &&
-                            _liveContext?.localVet != null) ...[
-                          const SizedBox(height: 12),
-                          ElevatedButton.icon(
-                            onPressed: _callLocalVet,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFC84B31),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(Icons.phone_in_talk, size: 20),
-                            label: Text(
-                              "${AppStrings.tr(lang: _lang, uz: 'Veterinar:', ru: 'Ветеринар:', en: 'Vet:')} ${_liveContext!.localVet!['name']}",
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                  // 5. Premier AI Voice Response Card
+                  _buildAiAnswerCard(lastAiMessage),
                   const SizedBox(height: 12),
                 ],
               ),
@@ -980,45 +800,655 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildQuickActionBtn({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required Color bgColor,
-    required Color borderColor,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+  /// Live Flock Dossier Card with real chick photo and climate norm
+  Widget _buildFlockDossierCard() {
+    if (_liveContext == null) return const SizedBox.shrink();
+
+    final targetTemp = _liveContext!.targetTemperatureC.round();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppTheme.cardBorder, width: 1.2),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: bgColor,
               shape: BoxShape.circle,
-              border: Border.all(color: borderColor, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withAlpha(40),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
+              border: Border.all(color: const Color(0xFF22C55E), width: 1.8),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: Image.asset(
+                'assets/images/chick_starter.jpg',
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_liveContext!.batchDay}-kun dossier biriktirildi',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                        color: Color(0xFF15803D),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${_liveContext!.district} • ${_liveContext!.currentCount} bosh',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
-            child: Icon(icon, size: 28, color: color),
           ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey.shade800,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+              border: Border.all(color: const Color(0xFFFDE68A), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.thermostat_rounded, size: 14, color: Color(0xFFD97706)),
+                const SizedBox(width: 3),
+                Text(
+                  '$targetTemp°C',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+              ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// The Atmospheric Voice Sphere Hero Chamber
+  Widget _buildAtmosphericVoiceArena() {
+    final bool isListening = _isRecording;
+    final bool isSpeaking = _speakingText != null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF0C2417),
+            Color(0xFF133E26),
+            Color(0xFF091C12),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(34),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF133E26).withAlpha(100),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Voice Orb with Multi-Ring Pulse
+          AnimatedBuilder(
+            animation: _pulseScale,
+            builder: (context, _) {
+              final scaleVal = _pulseController.isAnimating ? _pulseScale.value : 1.0;
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Outer ripple ring
+                  Transform.scale(
+                    scale: isListening ? scaleVal * 1.15 : (isSpeaking ? scaleVal * 1.08 : 1.0),
+                    child: Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: (isListening
+                                ? const Color(0xFFEF4444)
+                                : const Color(0xFF22C55E))
+                            .withAlpha(isListening ? 45 : (isSpeaking ? 30 : 18)),
+                      ),
+                    ),
+                  ),
+                  // Secondary softer ripple
+                  Transform.scale(
+                    scale: isListening ? 1.0 + (scaleVal - 1.0) * 0.6 : 1.0,
+                    child: Container(
+                      width: 154,
+                      height: 154,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: (isListening
+                                ? const Color(0xFFEF4444)
+                                : const Color(0xFF22C55E))
+                            .withAlpha(isListening ? 70 : (isSpeaking ? 50 : 30)),
+                      ),
+                    ),
+                  ),
+                  // Center Tactile Glowing Mic Button (128x128)
+                  GestureDetector(
+                    onTap: () {
+                      if (_isRecording) {
+                        _stopVoiceRecording();
+                      } else {
+                        _startVoiceRecording();
+                      }
+                    },
+                    child: Container(
+                      width: 128,
+                      height: 128,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: isListening
+                              ? [const Color(0xFFEF4444), const Color(0xFFB91C1C)]
+                              : [const Color(0xFF22C55E), const Color(0xFF15803D)],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        border: Border.all(
+                          color: Colors.white.withAlpha(220),
+                          width: 3.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E))
+                                .withAlpha(140),
+                            blurRadius: 28,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                          size: 56,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // Glow Status Pill inside Arena
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(120),
+              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+              border: Border.all(
+                color: (isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E)).withAlpha(140),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E))
+                            .withAlpha(180),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isListening
+                      ? AppStrings.tr(
+                          lang: _lang,
+                          uz: "ESHITILMOQDA...",
+                          ru: "СЛУШАЮ...",
+                          en: "LISTENING...",
+                        )
+                      : AppStrings.tr(
+                          lang: _lang,
+                          uz: "TUGMANI BOSING",
+                          ru: "НАЖМИТЕ ДЛЯ ЗАПИСИ",
+                          en: "TAP TO SPEAK",
+                        ),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                    color: isListening ? const Color(0xFFFCA5A5) : const Color(0xFF86EFAC),
+                  ),
+                ),
+                if (isListening || isSpeaking) ...[
+                  const SizedBox(width: 8),
+                  _buildAudioWaveVisualizer(
+                    isActive: true,
+                    color: isListening ? const Color(0xFFFCA5A5) : const Color(0xFF86EFAC),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Subtle guidance prompt in ivory
+          Text(
+            isListening
+                ? AppStrings.tr(
+                    lang: _lang,
+                    uz: "Gapiring, to'xtatish uchun yana bosing",
+                    ru: "Говорите, для завершения нажмите снова",
+                    en: "Speak now, tap again to finish",
+                  )
+                : AppStrings.tr(
+                    lang: _lang,
+                    uz: "Bosing va savolingizni ayting.\nJavob ovozli o'qib beriladi.",
+                    ru: "Нажмите и задайте вопрос голосом.\nОтвет будет озвучен.",
+                    en: "Tap and ask hands-free.\nAnswer will be read aloud.",
+                  ),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withAlpha(200),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tactile Media & Action Pill Dock
+  Widget _buildTactileMediaDock() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+        border: Border.all(color: AppTheme.cardBorder, width: 1.2),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Camera action pill
+          InkWell(
+            onTap: () => _pickImage(ImageSource.camera),
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFFDE68A), width: 1),
+                    ),
+                    child: const Icon(Icons.camera_alt_rounded, size: 18, color: Color(0xFFD97706)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppStrings.tr(lang: _lang, uz: 'Kamera', ru: 'Камера', en: 'Camera'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 24,
+            color: AppTheme.cardBorder,
+          ),
+          // Gallery action pill
+          InkWell(
+            onTap: () => _pickImage(ImageSource.gallery),
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
+                    ),
+                    child: const Icon(Icons.photo_library_rounded, size: 18, color: Color(0xFF059669)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppStrings.tr(lang: _lang, uz: 'Galereya', ru: 'Галерея', en: 'Gallery'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Quick Agronomic Questions Carousel (1-Tap Voice Answers)
+  Widget _buildQuickPromptsCarousel() {
+    final day = _liveContext?.batchDay ?? 1;
+    final prompts = [
+      {
+        'icon': Icons.thermostat_rounded,
+        'label': '$day-kun harorat me\'yori',
+        'query': "$day-kunda xona harorati qanday bo'lishi kerak?",
+      },
+      {
+        'icon': Icons.water_drop_rounded,
+        'label': 'Suv harorati qanday?',
+        'query': "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
+      },
+      {
+        'icon': Icons.grain_rounded,
+        'label': 'Yem sarfi me\'yori',
+        'query': "$day-kunda jo'jalar uchun yem sarfi qancha?",
+      },
+      {
+        'icon': Icons.air_rounded,
+        'label': 'Shamollatish qoidalari',
+        'query': "Parrandaxonani shamollatish qoidalari qanday?",
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, size: 15, color: Color(0xFFD97706)),
+              const SizedBox(width: 6),
+              Text(
+                AppStrings.tr(
+                  lang: _lang,
+                  uz: "Tezkor agronomic savollar",
+                  ru: "Быстрые вопросы агроному",
+                  en: "Quick Agronomic Questions",
+                ),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textMuted,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 38,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: prompts.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, idx) {
+              final item = prompts[idx];
+              return InkWell(
+                onTap: () => _sendMessage(item['query'] as String),
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                    border: Border.all(color: AppTheme.cardBorder, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(6),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(item['icon'] as IconData, size: 14, color: const Color(0xFF15803D)),
+                      const SizedBox(width: 6),
+                      Text(
+                        item['label'] as String,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Simulated AI Answer Card with TTS readout & emergency call
+  Widget _buildAiAnswerCard(ChatMessage lastAiMessage) {
+    final bool isSpeaking = _speakingText == lastAiMessage.text;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+        border: Border.all(color: AppTheme.cardBorder, width: 1.2),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEAF5ED),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.psychology_rounded, size: 18, color: Color(0xFF15803D)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppStrings.tr(
+                          lang: _lang,
+                          uz: 'AgroZen Maslahatchi',
+                          ru: 'AgroZen Консультант',
+                          en: 'AgroZen Advisor',
+                        ),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      if (lastAiMessage.source != null)
+                        Text(
+                          lastAiMessage.source!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              // TTS Play/Stop Button
+              InkWell(
+                onTap: () => _toggleSpeak(lastAiMessage.text),
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isSpeaking ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                    border: Border.all(
+                      color: isSpeaking ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSpeaking ? Icons.volume_up_rounded : Icons.volume_mute_rounded,
+                        size: 16,
+                        color: isSpeaking ? const Color(0xFF15803D) : const Color(0xFF475569),
+                      ),
+                      const SizedBox(width: 6),
+                      if (isSpeaking) ...[
+                        _buildAudioWaveVisualizer(
+                          isActive: true,
+                          color: const Color(0xFF15803D),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        isSpeaking
+                            ? AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Ovozli...',
+                                ru: 'Озвучивается...',
+                                en: 'Speaking...',
+                              )
+                            : AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Ovoz',
+                                ru: 'Озвучить',
+                                en: 'Listen',
+                              ),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: isSpeaking ? const Color(0xFF15803D) : const Color(0xFF475569),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            lastAiMessage.text,
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.textPrimary,
+              height: 1.55,
+            ),
+          ),
+          if (lastAiMessage.riskLevel == RiskLevel.high &&
+              _liveContext?.localVet != null) ...[
+            const SizedBox(height: 16),
+            TactileButton(
+              height: 52,
+              depth: 4,
+              borderRadius: 16,
+              backgroundColor: const Color(0xFFDC2626),
+              shadowColor: const Color(0xFF991B1B),
+              onPressed: _callLocalVet,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    "${AppStrings.tr(lang: _lang, uz: 'Veterinar:', ru: 'Ветеринар:', en: 'Vet:')} ${_liveContext!.localVet!['name']}",
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1032,7 +1462,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             itemCount: _messages.length,
             itemBuilder: (context, index) {
               final msg = _messages[index];
@@ -1050,15 +1480,31 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           ),
 
         if (_isLoading && _selectedImagePath == null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(6),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2D7A4C)),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -1068,7 +1514,47 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
                     ru: 'AgroZen думает...',
                     en: 'AgroZen is thinking...',
                   ),
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Quick Suggestion Chips Carousel (shown before first query)
+        if (_messages.length <= 1 && !_isLoading)
+          Container(
+            height: 38,
+            margin: const EdgeInsets.only(bottom: 6),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                _buildSuggestionChip(
+                  icon: Icons.thermostat_rounded,
+                  text: "Issiqlik me'yori",
+                  prompt: "Broylerlar uchun xona harorati qanday bo'lishi kerak?",
+                ),
+                const SizedBox(width: 8),
+                _buildSuggestionChip(
+                  icon: Icons.grass_rounded,
+                  text: "Kunlik yem miqdori",
+                  prompt: "Broylerlarga kunlik yem me'yori qancha?",
+                ),
+                const SizedBox(width: 8),
+                _buildSuggestionChip(
+                  icon: Icons.air_rounded,
+                  text: "Shamollatish qoidalari",
+                  prompt: "Parrandaxonani shamollatish qoidalari qanday?",
+                ),
+                const SizedBox(width: 8),
+                _buildSuggestionChip(
+                  icon: Icons.water_drop_rounded,
+                  text: "Suv harorati",
+                  prompt: "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
                 ),
               ],
             ),
@@ -1077,101 +1563,212 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         // Image attachment preview before sending
         if (_selectedImagePath != null && !_isLoading)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            color: Colors.grey.shade100,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(8),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   child: Image.file(
                     File(_selectedImagePath!),
-                    width: 48,
-                    height: 48,
+                    width: 52,
+                    height: 52,
                     fit: BoxFit.cover,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    AppStrings.tr(
-                      lang: _lang,
-                      uz: "Biriktirilgan rasm (jo'ja yoki to'shama)",
-                      ru: 'Прикреплённое фото (птицы / подстилка)',
-                      en: 'Attached photo (birds / litter)',
-                    ),
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppStrings.tr(
+                          lang: _lang,
+                          uz: "Biriktirilgan rasm",
+                          ru: 'Прикреплённое фото',
+                          en: 'Attached photo',
+                        ),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        AppStrings.tr(
+                          lang: _lang,
+                          uz: "Jo'ja yoki to'shama holati",
+                          ru: 'Птица или подстилка',
+                          en: 'Flock or bedding condition',
+                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      ),
+                    ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: const Icon(Icons.close_rounded, size: 20, color: Colors.grey),
                   onPressed: () => setState(() => _selectedImagePath = null),
                 ),
               ],
             ),
           ),
 
-        // Input Bar
+        // Modern Floating Input Dock
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: EdgeInsets.only(
+            left: 12,
+            right: 12,
+            top: 10,
+            bottom: widget.isEmbeddedInPageView ? 95 : 10,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(15),
-                blurRadius: 6,
-                offset: const Offset(0, -2),
+                color: Colors.black.withAlpha(12),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
               ),
             ],
           ),
           child: Row(
             children: [
-              IconButton(
+              // Media Action Buttons
+              _buildInputIconBtn(
+                icon: Icons.camera_alt_rounded,
                 tooltip: 'Camera',
-                icon: Icon(Icons.camera_alt_outlined, color: Colors.grey.shade700),
                 onPressed: () => _pickImage(ImageSource.camera),
               ),
-              IconButton(
+              const SizedBox(width: 4),
+              _buildInputIconBtn(
+                icon: Icons.photo_library_rounded,
                 tooltip: 'Gallery',
-                icon: Icon(Icons.photo_library_outlined, color: Colors.grey.shade700),
                 onPressed: () => _pickImage(ImageSource.gallery),
               ),
+              const SizedBox(width: 4),
               VoiceInputButton(
                 isRecording: _isRecording,
                 language: _lang,
                 onStartRecording: _startVoiceRecording,
                 onStopRecording: _stopVoiceRecording,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
-                child: TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    hintText: AppStrings.tr(
-                      lang: _lang,
-                      uz: 'Savol yozing...',
-                      ru: 'Задайте вопрос...',
-                      en: 'Type a question...',
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  onSubmitted: (_) => _sendMessage(),
+                  child: TextField(
+                    controller: _controller,
+                    textInputAction: TextInputAction.send,
+                    decoration: InputDecoration(
+                      hintText: AppStrings.tr(
+                        lang: _lang,
+                        uz: 'Savol yozing...',
+                        ru: 'Задайте вопрос...',
+                        en: 'Type a question...',
+                      ),
+                      hintStyle: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
                 ),
               ),
-              const SizedBox(width: 4),
-              IconButton(
-                onPressed: _sendMessage,
-                icon: Icon(Icons.send_rounded, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              // Tactile Emerald Send Button
+              GestureDetector(
+                onTap: _sendMessage,
+                child: Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2D7A4C), Color(0xFF1E5B37)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(23),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2D7A4C).withAlpha(80),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSuggestionChip({
+    required IconData icon,
+    required String text,
+    required String prompt,
+  }) {
+    return ActionChip(
+      avatar: Icon(icon, size: 16, color: const Color(0xFF2D7A4C)),
+      label: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF1B5E20),
+        ),
+      ),
+      backgroundColor: const Color(0xFFEAF5ED),
+      side: BorderSide(color: const Color(0xFF2D7A4C).withAlpha(40)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      onPressed: () => _sendMessage(prompt),
+    );
+  }
+
+  Widget _buildInputIconBtn({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        icon: Icon(icon, size: 20, color: const Color(0xFF475569)),
+        padding: EdgeInsets.zero,
+        tooltip: tooltip,
+        onPressed: onPressed,
+      ),
     );
   }
 
@@ -1182,93 +1779,187 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.88),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.84),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: msg.isUser ? theme.colorScheme.primary : Colors.grey.shade50,
+          gradient: msg.isUser
+              ? const LinearGradient(
+                  colors: [Color(0xFF2D7A4C), Color(0xFF1E5B37)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: msg.isUser ? null : Colors.white,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(msg.isUser ? 16 : 4),
-            bottomRight: Radius.circular(msg.isUser ? 4 : 16),
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(msg.isUser ? 20 : 4),
+            bottomRight: Radius.circular(msg.isUser ? 4 : 20),
           ),
-          border: msg.isUser ? null : Border.all(color: Colors.grey.shade300),
+          border: msg.isUser
+              ? null
+              : Border.all(
+                  color: msg.riskLevel == RiskLevel.high
+                      ? const Color(0xFFFCA5A5)
+                      : const Color(0xFFE2E8F0),
+                  width: msg.riskLevel == RiskLevel.high ? 1.5 : 1.0,
+                ),
+          boxShadow: [
+            BoxShadow(
+              color: msg.isUser
+                  ? const Color(0xFF2D7A4C).withAlpha(40)
+                  : Colors.black.withAlpha(8),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Risk Level Badge for AI responses
-            if (!msg.isUser && msg.riskLevel != RiskLevel.low) ...[
-              _buildRiskBadge(msg.riskLevel),
+            // Assistant Brand Header in Bubble
+            if (!msg.isUser) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D7A4C).withAlpha(25),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 12,
+                            color: Color(0xFF2D7A4C),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'AgroZen AI',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E5B37),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Audio TTS button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _toggleSpeak(msg.text),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isSpeakerActive
+                              ? const Color(0xFFEAF5ED)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isSpeakerActive ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+                              size: 15,
+                              color: isSpeakerActive
+                                  ? const Color(0xFF2D7A4C)
+                                  : Colors.grey.shade600,
+                            ),
+                            if (isSpeakerActive) ...[
+                              const SizedBox(width: 4),
+                              const Text(
+                                '...',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF2D7A4C),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
             ],
 
+            // Risk Level Badge for AI responses
+            if (!msg.isUser && msg.riskLevel != RiskLevel.low) ...[
+              _buildRiskBadge(msg.riskLevel),
+              const SizedBox(height: 10),
+            ],
+
+            // Attached image if present
             if (msg.imagePath != null) ...[
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 child: Image.file(
                   File(msg.imagePath!),
-                  width: 220,
-                  height: 150,
+                  width: 240,
+                  height: 160,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => const SizedBox(),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
             ],
 
             Text(
               msg.text,
               style: TextStyle(
-                color: msg.isUser ? Colors.white : Colors.black87,
+                color: msg.isUser ? Colors.white : const Color(0xFF1E293B),
                 fontSize: 14,
-                height: 1.45,
+                fontWeight: msg.isUser ? FontWeight.w600 : FontWeight.w500,
+                height: 1.5,
               ),
             ),
 
-            if (!msg.isUser) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (msg.source != null)
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.verified_outlined,
-                            size: 14,
-                            color: Colors.green.shade800,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              '${AppStrings.tr(lang: _lang, uz: 'Manba:', ru: 'Источник:', en: 'Source:')} ${msg.source}',
-                              softWrap: true,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.green.shade800,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
+            // Source indicator
+            if (!msg.isUser && msg.source != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAF7),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.verified_rounded,
+                      size: 13,
+                      color: Color(0xFF2D7A4C),
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        '${AppStrings.tr(lang: _lang, uz: 'Manba:', ru: 'Источник:', en: 'Source:')} ${msg.source}',
+                        softWrap: true,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF1E5B37),
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: Icon(
-                      isSpeakerActive ? Icons.volume_up_rounded : Icons.volume_down_rounded,
-                      size: 22,
-                      color: isSpeakerActive ? theme.colorScheme.primary : Colors.grey.shade600,
-                    ),
-                    tooltip: 'Speak',
-                    onPressed: () => _toggleSpeak(msg.text),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ] else if (msg.source != null) ...[
+            ] else if (msg.isUser && msg.source != null) ...[
               const SizedBox(height: 6),
               Text(
                 'Manba: ${msg.source}',
@@ -1283,32 +1974,51 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
 
   Widget _buildRiskBadge(RiskLevel level) {
     final isCritical = level == RiskLevel.high;
-    final color = isCritical ? const Color(0xFFC84B31) : const Color(0xFFE5A338);
+    final color = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
+    final bgColor = isCritical ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(120)),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withAlpha(120), width: 1.2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isCritical ? Icons.emergency : Icons.warning_amber_rounded,
+            isCritical ? Icons.emergency_rounded : Icons.warning_amber_rounded,
             color: color,
-            size: 14,
+            size: 16,
           ),
-          const SizedBox(width: 4),
-          Text(
-            isCritical
-                ? AppStrings.tr(lang: _lang, uz: "YUQORI XAVF: VETERINAR TALAB ETILADI", ru: "ВЫСОКИЙ РИСК: ТРЕБУЕТСЯ ВЕТЕРИНАР", en: "CRITICAL: VETERINARY REFERRAL")
-                : AppStrings.tr(lang: _lang, uz: "DIQQAT TALAB HOLAT", ru: "ТРЕБУЕТСЯ ВНИМАНИЕ", en: "MODERATE ATTENTION"),
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              isCritical
+                  ? AppStrings.tr(
+                      lang: _lang,
+                      uz: "YUQORI XAVF: VETERINAR TALAB ETILADI",
+                      ru: "ВЫСОКИЙ РИСК: ТРЕБУЕТСЯ ВЕТЕРИНАР",
+                      en: "CRITICAL: VETERINARY REFERRAL",
+                    )
+                  : AppStrings.tr(
+                      lang: _lang,
+                      uz: "DIQQAT TALAB HOLAT",
+                      ru: "ТРЕБУЕТСЯ ВНИМАНИЕ",
+                      en: "MODERATE ATTENTION",
+                    ),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: color,
+                letterSpacing: 0.2,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 }
+

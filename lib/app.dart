@@ -21,6 +21,7 @@ import 'presentation/screens/course/lesson_screen.dart';
 import 'presentation/screens/course/quiz_screen.dart';
 import 'presentation/screens/course/certificate_screen.dart';
 import 'presentation/screens/settings_screen.dart';
+import 'presentation/widgets/desktop_web_shell.dart';
 
 final GoRouter _router = GoRouter(
   initialLocation: '/',
@@ -117,17 +118,7 @@ class _AgroZenAppState extends State<AgroZenApp> {
         Locale('en'),
       ],
       builder: (context, child) {
-        return Container(
-          color: const Color(0xFFE8EFE9),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: ClipRRect(
-                child: child ?? const SizedBox.shrink(),
-              ),
-            ),
-          ),
-        );
+        return DesktopWebShell(child: child ?? const SizedBox.shrink());
       },
     );
   }

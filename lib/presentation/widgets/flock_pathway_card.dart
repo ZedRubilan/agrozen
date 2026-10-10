@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 import '../../core/localization/app_strings.dart';
-import 'agro_icons.dart';
 
-/// A Duolingo-inspired 42-Day Milestone Pathway card that visualizes the flock
-/// growth cycle as an engaging step-by-step roadmap rather than a boring progress bar.
+/// Ultra-rounded, Image-first 42-Day Milestone Pathway card
+/// Displays the flock growth cycle with photographic milestone avatars and minimal-click clarity.
 class FlockPathwayCard extends StatelessWidget {
   final int batchDay;
   final String language;
@@ -21,9 +21,9 @@ class FlockPathwayCard extends StatelessWidget {
     final currentDay = batchDay.clamp(1, 42);
     final percent = ((currentDay / 42) * 100).toInt();
 
-    // 4 major phases of the Ross-308 42-day cycle
+    // 4 major phases of the Ross-308 42-day cycle with real photographic thumbnails
     final phases = [
-      _PhaseInfo(
+      const _PhaseInfo(
         phaseNumber: 1,
         titleUz: "Start",
         titleRu: "Старт",
@@ -31,9 +31,10 @@ class FlockPathwayCard extends StatelessWidget {
         dayRange: "1–7",
         minDay: 1,
         maxDay: 7,
-        icon: Icons.egg_outlined,
+        imageAsset: 'assets/images/chick_starter.jpg',
+        fallbackIcon: Icons.egg_outlined,
       ),
-      _PhaseInfo(
+      const _PhaseInfo(
         phaseNumber: 2,
         titleUz: "O'sish",
         titleRu: "Рост",
@@ -41,9 +42,10 @@ class FlockPathwayCard extends StatelessWidget {
         dayRange: "8–21",
         minDay: 8,
         maxDay: 21,
-        icon: Icons.eco_outlined,
+        imageAsset: 'assets/images/broiler_flock.jpg',
+        fallbackIcon: Icons.eco_outlined,
       ),
-      _PhaseInfo(
+      const _PhaseInfo(
         phaseNumber: 3,
         titleUz: "Finish",
         titleRu: "Финиш",
@@ -51,9 +53,10 @@ class FlockPathwayCard extends StatelessWidget {
         dayRange: "22–35",
         minDay: 22,
         maxDay: 35,
-        icon: Icons.grain_outlined,
+        imageAsset: 'assets/images/feed_grain.jpg',
+        fallbackIcon: Icons.grain_outlined,
       ),
-      _PhaseInfo(
+      const _PhaseInfo(
         phaseNumber: 4,
         titleUz: "Hosil",
         titleRu: "Убой",
@@ -61,32 +64,41 @@ class FlockPathwayCard extends StatelessWidget {
         dayRange: "36–42",
         minDay: 36,
         maxDay: 42,
-        icon: Icons.military_tech_outlined,
+        imageAsset: 'assets/images/field_aerial.jpg',
+        fallbackIcon: Icons.military_tech_outlined,
       ),
     ];
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF2D7A4C).withAlpha(40), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+        border: Border.all(color: AppTheme.cardBorder, width: 0.8),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row with AgroChickIcon
+          // Header Row with Avatar Thumbnail & Progress Pill
           Row(
             children: [
-              const AgroChickIcon(size: 34),
-              const SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                child: Image.asset(
+                  'assets/images/chick_starter.jpg',
+                  width: 42,
+                  height: 42,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 42,
+                    height: 42,
+                    color: AppTheme.amberSoft,
+                    child: const Icon(Icons.egg_alt_rounded, color: AppTheme.goldWarm),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,41 +111,51 @@ class FlockPathwayCard extends StatelessWidget {
                         en: "Day $currentDay of 42",
                       ),
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16.5,
+                        color: AppTheme.textPrimary,
+                        letterSpacing: -0.3,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       _getCurrentPhaseSummary(currentDay, language),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: AppTheme.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF5ED),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.emeraldSoft,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                  border: Border.all(
+                    color: AppTheme.primaryGreen.withAlpha(40),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   "$percent%",
                   style: const TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D7A4C),
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primaryGreenDark,
+                    letterSpacing: 0.1,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Milestone Pathway Nodes Row
+          // Milestone Pathway Nodes Row with Image Avatars
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(phases.length, (idx) {
@@ -144,12 +166,6 @@ class FlockPathwayCard extends StatelessWidget {
               final phaseTitle = language == 'en'
                   ? phase.titleEn
                   : (language == 'ru' ? phase.titleRu : phase.titleUz);
-
-              final Color nodeBg = isCompleted
-                  ? const Color(0xFF2D7A4C)
-                  : (isCurrent ? const Color(0xFFE5A338) : Colors.grey.shade100);
-
-              final Color nodeFg = (isCompleted || isCurrent) ? Colors.white : Colors.grey.shade600;
 
               return Expanded(
                 child: Column(
@@ -163,76 +179,121 @@ class FlockPathwayCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Container(
-                                height: 4,
-                                color: idx == 0
-                                    ? Colors.transparent
-                                    : (currentDay >= phase.minDay
-                                        ? const Color(0xFF2D7A4C)
-                                        : Colors.grey.shade200),
+                                height: 3.5,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(2),
+                                  color: idx == 0
+                                      ? Colors.transparent
+                                      : (currentDay >= phase.minDay
+                                          ? AppTheme.primaryGreen
+                                          : const Color(0xFFE2EBE4)),
+                                ),
                               ),
                             ),
                             Expanded(
                               child: Container(
-                                height: 4,
-                                color: idx == phases.length - 1
-                                    ? Colors.transparent
-                                    : (currentDay > phase.maxDay
-                                        ? const Color(0xFF2D7A4C)
-                                        : Colors.grey.shade200),
+                                height: 3.5,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(2),
+                                  color: idx == phases.length - 1
+                                      ? Colors.transparent
+                                      : (currentDay > phase.maxDay
+                                          ? AppTheme.primaryGreen
+                                          : const Color(0xFFE2EBE4)),
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        // Circular Node Button
+
+                        // Circular Node Button with Photo Avatar
                         GestureDetector(
                           onTap: onOpenPlan,
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
-                            width: isCurrent ? 44 : 36,
-                            height: isCurrent ? 44 : 36,
+                            width: isCurrent ? 48 : 40,
+                            height: isCurrent ? 48 : 40,
                             decoration: BoxDecoration(
-                              color: nodeBg,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isCurrent ? const Color(0xFFB8781B) : Colors.transparent,
-                                width: isCurrent ? 2.5 : 0,
+                                color: isCurrent
+                                    ? const Color(0xFFF59E0B)
+                                    : (isCompleted
+                                        ? AppTheme.primaryGreen
+                                        : AppTheme.cardBorder),
+                                width: isCurrent ? 3 : 1.5,
                               ),
                               boxShadow: isCurrent
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFFE5A338).withAlpha(100),
-                                        blurRadius: 10,
+                                        color: const Color(0xFFF59E0B).withAlpha(120),
+                                        blurRadius: 14,
                                         spreadRadius: 2,
-                                      )
+                                        offset: const Offset(0, 3),
+                                      ),
                                     ]
                                   : null,
                             ),
-                            child: Center(
-                              child: Icon(
-                                isCompleted ? Icons.check_rounded : phase.icon,
-                                size: isCurrent ? 22 : 18,
-                                color: nodeFg,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: Image.asset(
+                                      phase.imageAsset,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: isCompleted
+                                            ? AppTheme.primaryGreen
+                                            : AppTheme.surfaceSubtle,
+                                        child: Icon(
+                                          phase.fallbackIcon,
+                                          size: 18,
+                                          color: isCompleted
+                                              ? Colors.white
+                                              : AppTheme.textMuted,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (isCompleted)
+                                    Container(
+                                      color: AppTheme.primaryGreenDark.withAlpha(180),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.check_rounded,
+                                          size: 22,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Text(
                       phaseTitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
-                        color: isCurrent ? const Color(0xFFB8781B) : Colors.grey.shade800,
+                        fontSize: 12,
+                        fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                        color: isCurrent
+                            ? const Color(0xFFB45309)
+                            : AppTheme.textPrimary,
+                        letterSpacing: -0.1,
                       ),
                     ),
+                    const SizedBox(height: 1),
                     Text(
                       phase.dayRange,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey.shade500,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: AppTheme.textMuted,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -240,42 +301,62 @@ class FlockPathwayCard extends StatelessWidget {
               );
             }),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
 
-          // Actionable prompt to view day checklist
-          InkWell(
-            onTap: onOpenPlan,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9F5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.checklist_rounded, size: 16, color: Color(0xFF2D7A4C)),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppStrings.tr(
-                          lang: language,
-                          uz: "Kunlik parvarish rejasini ko'rish",
-                          ru: "Открыть ежедневный план ухода",
-                          en: "Open daily checklist & tasks",
+          // Actionable prompt to view day checklist with ultra-rounded pill style
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onOpenPlan,
+              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceSubtle,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                  border: Border.all(color: AppTheme.cardBorder, width: 0.8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryGreen.withAlpha(25),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.checklist_rounded,
+                            size: 16,
+                            color: AppTheme.primaryGreen,
+                          ),
                         ),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D7A4C),
+                        const SizedBox(width: 10),
+                        Text(
+                          AppStrings.tr(
+                            lang: language,
+                            uz: "Kunlik parvarish rejasini ko'rish",
+                            ru: "Открыть ежедневный план ухода",
+                            en: "Open daily checklist & tasks",
+                          ),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryGreenDark,
+                            letterSpacing: 0.1,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFF2D7A4C)),
-                ],
+                      ],
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 13,
+                      color: AppTheme.primaryGreen,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -325,7 +406,8 @@ class _PhaseInfo {
   final String dayRange;
   final int minDay;
   final int maxDay;
-  final IconData icon;
+  final String imageAsset;
+  final IconData fallbackIcon;
 
   const _PhaseInfo({
     required this.phaseNumber,
@@ -335,6 +417,7 @@ class _PhaseInfo {
     required this.dayRange,
     required this.minDay,
     required this.maxDay,
-    required this.icon,
+    required this.imageAsset,
+    required this.fallbackIcon,
   });
 }
