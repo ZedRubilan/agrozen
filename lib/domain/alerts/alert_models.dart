@@ -10,6 +10,7 @@ class AlertResult extends Equatable {
   final double threshold;
   final String? messageRu;
   final String? messageUz;
+  final String? messageEn;
 
   const AlertResult({
     required this.type,
@@ -18,6 +19,7 @@ class AlertResult extends Equatable {
     required this.threshold,
     this.messageRu,
     this.messageUz,
+    this.messageEn,
   });
 
   @override

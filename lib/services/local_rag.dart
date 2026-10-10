@@ -247,14 +247,30 @@ class LocalRag {
     String contextualNote = '';
     if (context != null) {
       final matchedTopics = matches.map((m) => m.topic).toSet();
-      if (matchedTopics.contains('temperature') || matchedTopics.contains('03_temperature')) {
+      if (matchedTopics.contains('temperature') ||
+          matchedTopics.contains('03_temperature') ||
+          matchedTopics.contains('ventilation') ||
+          matchedTopics.contains('04_ventilation')) {
         final bDay = context.batchDay;
         final tTemp = context.targetTemperatureC.toStringAsFixed(0);
+        final outsideTemp = context.outsideTemp as double?;
+        String weatherSnippet = '';
+        if (outsideTemp != null) {
+          final diff = outsideTemp - context.targetTemperatureC;
+          final diffStr = diff >= 0 ? '+${diff.toStringAsFixed(1)}°C' : '${diff.toStringAsFixed(1)}°C';
+          if (lang == 'en') {
+            weatherSnippet = ' (Outdoor weather: ${outsideTemp.toStringAsFixed(1)}°C, $diffStr vs target)';
+          } else if (lang == 'ru') {
+            weatherSnippet = ' (На улице: ${outsideTemp.toStringAsFixed(1)}°C, дельта $diffStr)';
+          } else {
+            weatherSnippet = ' (Tashqi harorat: ${outsideTemp.toStringAsFixed(1)}°C, farq $diffStr)';
+          }
+        }
         contextualNote = lang == 'en'
-            ? "• Live Farm Target (Day $bDay): Target house temperature is $tTemp°C.\n\n"
+            ? "• Live Farm Target (Day $bDay): Target house temperature is $tTemp°C$weatherSnippet.\n\n"
             : (lang == 'ru'
-                ? "• Показатель для вашей партии ($bDay-й день): Целевая температура птичника — $tTemp°C.\n\n"
-                : "• Sizning partiyangiz uchun ($bDay-kun): Xonadagi me'yoriy harorat aynan $tTemp°C bo'lishi kerak.\n\n");
+                ? "• Показатель для вашей партии ($bDay-й день): Целевая температура птичника — $tTemp°C$weatherSnippet.\n\n"
+                : "• Sizning partiyangiz uchun ($bDay-kun): Xonadagi me'yoriy harorat aynan $tTemp°C bo'lishi kerak$weatherSnippet.\n\n");
       } else if (matchedTopics.contains('feed') || matchedTopics.contains('05_feeding')) {
         final bDay = context.batchDay;
         final cCount = context.currentCount;

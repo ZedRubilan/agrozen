@@ -860,10 +860,10 @@ function tokenize(text: string): string[] {
  */
 export function retrieveRelevantKnowledge(
   query: string,
-  language: 'uz' | 'ru' = 'uz',
+  language: 'uz' | 'ru' | 'en' = 'uz',
   maxArticles = 3
 ): { topics: string[]; contextText: string } {
-  const articles = language === 'ru' ? KNOWLEDGE_ARTICLES_RU : KNOWLEDGE_ARTICLES_UZ;
+  const articles = language === 'ru' ? KNOWLEDGE_ARTICLES_RU : (language === 'en' ? KNOWLEDGE_ARTICLES_RU : KNOWLEDGE_ARTICLES_UZ);
   const queryTokens = tokenize(query);
 
   const scored = articles.map((article) => {
@@ -901,7 +901,8 @@ export function retrieveRelevantKnowledge(
   const normsKeywords = [
     'norma', 'normasi', 'ogirlik', 'vazn', 'harorat', 'temperatura', 'gradus',
     'yem', 'sarfi', 'suv', 'hafta', 'kun', 'jadval', 'ross', 'cobb',
-    'норма', 'вес', 'масса', 'температура', 'градус', 'корм', 'расход', 'вода', 'неделя', 'день'
+    'норма', 'вес', 'масса', 'температура', 'градус', 'корм', 'расход', 'вода', 'неделя', 'день',
+    'norm', 'norms', 'weight', 'target', 'temperature', 'feed', 'consumption', 'water', 'week', 'day'
   ];
 
   const mentionsNorms = normsKeywords.some((kw) => queryLower.includes(kw));

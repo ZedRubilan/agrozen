@@ -37,7 +37,7 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
       backgroundColor: const Color(0xFFF8F9F5),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -45,77 +45,97 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
               Center(
                 child: Column(
                   children: [
-                    // Speech bubble
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF2D7A4C), width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(10),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                    // Animated Speech bubble
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+                            child: child,
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        _mascotGreeting,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1B5E20),
+                        );
+                      },
+                      child: Container(
+                        key: ValueKey<String>(_selectedLanguage),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF2D7A4C), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(12),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _mascotGreeting,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1B5E20),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    // Bobbing chick mascot
+                    const SizedBox(height: 6),
+                    // Bobbing chick mascot with warm shadow
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
                       duration: const Duration(milliseconds: 600),
                       curve: Curves.elasticOut,
                       builder: (context, value, child) {
                         return Transform.scale(
-                          scale: 0.85 + (value * 0.15),
+                          scale: 0.88 + (value * 0.12),
                           child: child,
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.amber.shade100.withAlpha(128),
+                          color: Colors.amber.shade100.withAlpha(140),
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.amber.shade300.withAlpha(60),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: const AgroChickIcon(size: 42),
+                        child: const AgroChickIcon(size: 46),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               const Text(
                 'Tilni tanlang\nВыберите язык\nSelect Language',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 19,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  height: 1.2,
+                  height: 1.25,
                   color: Color(0xFF1E293B),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 "AgroZen ilovasidan qaysi tilda foydalanmoqchisiz?\nВыберите язык / Choose language",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 12,
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w500,
-                  height: 1.2,
+                  height: 1.25,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
               // Chunky Tactile Language Cards
               _buildTactileLanguageCard(
@@ -124,41 +144,52 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
                 subtitle: "Lotin yozuvida",
                 isSelected: _selectedLanguage == 'uz',
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: 10),
               _buildTactileLanguageCard(
                 code: 'ru',
                 title: "Русский",
                 subtitle: "На русском языке",
                 isSelected: _selectedLanguage == 'ru',
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: 10),
               _buildTactileLanguageCard(
                 code: 'en',
                 title: "English",
                 subtitle: "International English",
                 isSelected: _selectedLanguage == 'en',
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Tactile 3D Proceed Button
               TactileButton(
-                height: 52,
+                height: 54,
                 depth: 3,
                 borderRadius: 16,
                 backgroundColor: theme.colorScheme.primary,
                 shadowColor: const Color(0xFF1B5E20),
                 onPressed: _proceed,
-                child: const Text(
-                  'Davom etish / Далее / Continue',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                    color: Colors.white,
-                  ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Davom etish / Далее / Continue',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -178,9 +209,9 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
     return GestureDetector(
       onTap: () => setState(() => _selectedLanguage = code),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
+        duration: const Duration(milliseconds: 160),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF0FDF4) : Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -198,7 +229,7 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
         ),
         child: Row(
           children: [
-            AgroFlagBadge(code: code, size: 38),
+            AgroFlagBadge(code: code, size: 40),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -225,9 +256,9 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
               ),
             ),
             AnimatedContainer(
-              duration: const Duration(milliseconds: 140),
-              width: 26,
-              height: 26,
+              duration: const Duration(milliseconds: 160),
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isSelected ? primary : Colors.transparent,
@@ -237,7 +268,7 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  ? const Icon(Icons.check, size: 18, color: Colors.white)
                   : null,
             ),
           ],

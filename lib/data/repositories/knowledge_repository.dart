@@ -256,9 +256,10 @@ class KnowledgeRepository {
     }
   }
 
-  /// List all available knowledge topic file names for a given language ('uz' or 'ru')
+  /// List all available knowledge topic file names for a given language ('uz', 'ru', or 'en')
   Future<List<String>> listTopicNames(String language) async {
-    final lang = language.toLowerCase() == 'ru' ? 'ru' : 'uz';
+    final lower = language.toLowerCase();
+    final lang = lower == 'en' ? 'en' : (lower == 'ru' ? 'ru' : 'uz');
     final prefix = 'knowledge/broilers/$lang/';
 
     try {
@@ -281,7 +282,8 @@ class KnowledgeRepository {
 
   /// Load markdown content for a specific topic article
   Future<String> getTopicContent(String language, String fileName) async {
-    final lang = language.toLowerCase() == 'ru' ? 'ru' : 'uz';
+    final lower = language.toLowerCase();
+    final lang = lower == 'en' ? 'en' : (lower == 'ru' ? 'ru' : 'uz');
     final normalizedFileName =
         fileName.endsWith('.md') ? fileName : '$fileName.md';
     final assetPath = 'knowledge/broilers/$lang/$normalizedFileName';

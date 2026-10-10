@@ -8,9 +8,10 @@ import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
+import 'audio/web_audio_bridge.dart';
 
-/// Records the farmer's voice and transcribes it via the
-/// `transcribe-voice` Supabase Edge Function.
+/// Records the farmer's voice and transcribes it via Web Speech API (on Chrome/web)
+/// or the `transcribe-voice` Supabase Edge Function (on mobile/cloud).
 ///
 /// Offline or unconfigured behavior is explicit: `startRecording` still works
 /// (so the UI never lies), but `transcribe` throws a [VoiceUnavailable]
@@ -19,12 +20,17 @@ import '../config/supabase_config.dart';
 class VoiceService {
   final AudioRecorder _recorder;
   final Future<SupabaseClient> Function()? _clientFactory;
+  final WebSpeechRecognitionDelegate _webSpeech = WebSpeechRecognitionDelegate();
+  String? _lastWebTranscript;
 
   VoiceService({AudioRecorder? recorder, this._clientFactory})
       : _recorder = recorder ?? AudioRecorder();
 
   /// True while the microphone is capturing.
   Future<bool> isRecording() async {
+    if (kIsWeb && _webSpeech.isSupported && _webSpeech.isListening) {
+      return true;
+    }
     try {
       return await _recorder.isRecording();
     } catch (_) {
@@ -32,10 +38,29 @@ class VoiceService {
     }
   }
 
-  /// Requests mic permission and starts capturing to a temp `.m4a` file.
-  /// Returns the file path, or throws [VoiceUnavailable] when recording
-  /// cannot start.
-  Future<String> startRecording() async {
+  /// Requests mic permission and starts capturing.
+  /// On Web, initializes native Chrome/Safari SpeechRecognition alongside the audio recorder.
+  Future<String> startRecording({String language = 'uz'}) async {
+    _lastWebTranscript = null;
+
+    if (kIsWeb && _webSpeech.isSupported) {
+      final started = await _webSpeech.startListening(
+        language: language,
+        onResult: (text) {
+          _lastWebTranscript = text;
+        },
+      );
+      if (started) {
+        try {
+          await _recorder.start(
+            const RecordConfig(encoder: AudioEncoder.opus),
+            path: '',
+          );
+        } catch (_) {}
+        return 'web_audio';
+      }
+    }
+
     final permitted = await _recorder.hasPermission();
     if (!permitted) {
       throw const VoiceUnavailable(
@@ -77,16 +102,28 @@ class VoiceService {
   /// Stops capturing and returns the file path, or null if there was no
   /// active recording.
   Future<String?> stopRecording() async {
+    if (kIsWeb && _webSpeech.isSupported && _webSpeech.isListening) {
+      final text = await _webSpeech.stopListening();
+      if (text.isNotEmpty) {
+        _lastWebTranscript = text;
+      }
+    }
+
     try {
-      return await _recorder.stop();
+      final path = await _recorder.stop();
+      return path ?? (kIsWeb ? 'web_audio' : null);
     } catch (e) {
       debugPrint('VoiceService.stopRecording: $e');
-      return null;
+      return kIsWeb ? 'web_audio' : null;
     }
   }
 
   /// Discards the current recording.
   Future<void> cancelRecording() async {
+    if (kIsWeb && _webSpeech.isSupported) {
+      await _webSpeech.cancelListening();
+    }
+    _lastWebTranscript = null;
     try {
       await _recorder.cancel();
     } catch (e) {
@@ -94,12 +131,19 @@ class VoiceService {
     }
   }
 
-  /// Sends [audioPath] to the `transcribe-voice` Edge Function and returns
-  /// the transcript. Throws [VoiceUnavailable] when there is no network,
-  /// no backend, or the provider returned nothing.
+  /// Sends [audioPath] to the `transcribe-voice` Edge Function or returns
+  /// native browser SpeechRecognition transcript (on Web).
   Future<String> transcribe(String audioPath, {required String language}) async {
     final lang = language.toLowerCase() == 'ru' ? 'ru' : 'uz';
 
+    // 1. If Web Speech Recognition captured speech during recording on Chrome:
+    if (kIsWeb && _lastWebTranscript != null && _lastWebTranscript!.trim().isNotEmpty) {
+      final transcript = _lastWebTranscript!.trim();
+      _lastWebTranscript = null;
+      return transcript;
+    }
+
+    // 2. Otherwise require configured cloud backend:
     if (!SupabaseConfig.isConfigured && _clientFactory == null) {
       throw const VoiceUnavailable(
         'Voice transcription needs the cloud backend, which is not configured.',
@@ -186,7 +230,12 @@ class VoiceService {
     }
   }
 
-  Future<void> dispose() => _recorder.dispose();
+  Future<void> dispose() async {
+    if (kIsWeb && _webSpeech.isSupported) {
+      await _webSpeech.cancelListening();
+    }
+    await _recorder.dispose();
+  }
 }
 
 enum VoiceUnavailableReason {
@@ -207,4 +256,3 @@ class VoiceUnavailable implements Exception {
   @override
   String toString() => 'VoiceUnavailable($reason): $message';
 }
-

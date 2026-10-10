@@ -75,34 +75,45 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
       if (!mounted) return;
       final vet = vets.isNotEmpty ? vets.first : null;
 
+      final isEn = _lang == 'en';
       final isRu = _lang == 'ru';
+      final alertTitle = isEn
+          ? 'Warning: High Mortality!'
+          : (isRu ? 'Внимание: Высокий падёж!' : "Diqqat: Yuqori nobodlik!");
+      final alertContent = isEn
+          ? 'Daily mortality exceeds standard threshold (${alert.actualValue.toStringAsFixed(1)}% > ${alert.threshold.toStringAsFixed(1)}%).\n\n'
+            'Contact your district veterinarian immediately:\n'
+            '${vet?['name'] ?? 'District Veterinarian'}\nTel: ${vet?['phone'] ?? '+998 90 123 45 67'}'
+          : (isRu
+              ? 'Падёж превышает суточную норму (${alert.actualValue.toStringAsFixed(1)}% > ${alert.threshold.toStringAsFixed(1)}%).\n\n'
+                'Срочно свяжитесь с ветеринаром:\n'
+                '${vet?['name'] ?? 'Ветеринар'}\nТел: ${vet?['phone'] ?? '+998 90 123 45 67'}'
+              : "Nobodlik sutkalik me'yordan oshib ketdi (${alert.actualValue.toStringAsFixed(1)}% > ${alert.threshold.toStringAsFixed(1)}%).\n\n"
+                "Zudlik bilan veterinarga murojaat qiling:\n"
+                "${vet?['name'] ?? 'Veterinar'}\nTel: ${vet?['phone'] ?? '+998 90 123 45 67'}");
+
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           icon: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 48),
-          title: Text(isRu ? 'Внимание: Высокий падёж!' : "Diqqat: Yuqori nobodlik!"),
-          content: Text(
-            isRu
-                ? 'Падёж превышает суточную норму (${alert.actualValue.toStringAsFixed(1)}% > ${alert.threshold.toStringAsFixed(1)}%).\n\n'
-                  'Срочно свяжитесь с ветеринаром:\n'
-                  '${vet?['name'] ?? 'Ветеринар'}\nТел: ${vet?['phone'] ?? '+998 90 123 45 67'}'
-                : "Nobodlik sutkalik me'yordan oshib ketdi (${alert.actualValue.toStringAsFixed(1)}% > ${alert.threshold.toStringAsFixed(1)}%).\n\n"
-                  "Zudlik bilan veterinarga murojaat qiling:\n"
-                  "${vet?['name'] ?? 'Veterinar'}\nTel: ${vet?['phone'] ?? '+998 90 123 45 67'}",
-          ),
+          title: Text(alertTitle),
+          content: Text(alertContent),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: Text(isRu ? 'Понятно' : 'Tushundim'),
+              child: Text(isEn ? 'Understood' : (isRu ? 'Понятно' : 'Tushundim')),
             ),
           ],
         ),
       );
     } else {
+      final successMsg = _lang == 'en'
+          ? 'Record saved successfully'
+          : (_lang == 'ru' ? 'Запись успешно сохранена' : 'Qayd muvaffaqiyatli saqlandi');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_lang == 'ru' ? 'Запись успешно сохранена' : 'Qayd muvaffaqiyatli saqlandi'),
+          content: Text(successMsg),
           backgroundColor: Colors.green,
         ),
       );
@@ -156,11 +167,12 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = _lang == 'en';
     final isRu = _lang == 'ru';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Запись падежа' : 'Nobodlik qaydi'),
+        title: Text(isEn ? 'Log Mortality' : (isRu ? 'Запись падежа' : 'Nobodlik qaydi')),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -171,14 +183,18 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  isRu ? 'Сколько птиц погибло?' : 'Nechta parranda nobud bo\'ldi?',
+                  isEn
+                      ? 'How many birds were lost today?'
+                      : (isRu ? 'Сколько птиц погибло?' : 'Nechta parranda nobud bo\'ldi?'),
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  isRu
-                      ? 'Текущее поголовье: $_currentCount голов'
-                      : 'Jami mavjud parranda: $_currentCount bosh',
+                  isEn
+                      ? 'Current living flock: $_currentCount birds'
+                      : (isRu
+                          ? 'Текущее поголовье: $_currentCount голов'
+                          : 'Jami mavjud parranda: $_currentCount bosh'),
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
@@ -187,21 +203,29 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
                   keyboardType: TextInputType.number,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: isRu ? 'Количество погибших (голов)' : 'Nobud bo\'lganlar soni (bosh)',
+                    labelText: isEn
+                        ? 'Number of dead birds'
+                        : (isRu ? 'Количество погибших (голов)' : 'Nobud bo\'lganlar soni (bosh)'),
                     hintText: '0',
                     prefixIcon: const Icon(Icons.heart_broken_outlined, color: Colors.red),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
-                      return isRu ? 'Введите число' : 'Son kiriting';
+                      return isEn
+                          ? 'Enter a count'
+                          : (isRu ? 'Введите число' : 'Son kiriting');
                     }
                     final n = int.tryParse(v.trim());
                     if (n == null || n < 0) {
-                      return isRu ? 'Число не может быть отрицательным' : 'Son musbat bo\'lishi kerak';
+                      return isEn
+                          ? 'Number cannot be negative'
+                          : (isRu ? 'Число не может быть отрицательным' : 'Son musbat bo\'lishi kerak');
                     }
                     if (n > _currentCount) {
-                      return isRu ? 'Не может превышать текущее поголовье' : 'Mavjud parrandalar sonidan ko\'p bo\'la olmaydi';
+                      return isEn
+                          ? 'Cannot exceed current flock size'
+                          : (isRu ? 'Не может превышать текущее поголовье' : 'Mavjud parrandalar sonidan ko\'p bo\'la olmaydi');
                     }
                     return null;
                   },
@@ -231,9 +255,11 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          isRu
-                              ? 'Норма естественного отхода: не более 1% за сутки.'
-                              : "Tabiiy nobodlik me'yori: sutkasiga 1% dan oshmasligi kerak.",
+                          isEn
+                              ? 'Normal daily mortality threshold: must not exceed 1% per day.'
+                              : (isRu
+                                  ? 'Норма естественного отхода: не более 1% за сутки.'
+                                  : "Tabiiy nobodlik me'yori: sutkasiga 1% dan oshmasligi kerak."),
                           style: TextStyle(color: Colors.blue.shade900, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -255,7 +281,7 @@ class _LogMortalityScreenState extends State<LogMortalityScreen> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          isRu ? 'Сохранить запись' : 'Qaydni saqlash',
+                          isEn ? 'Save Entry' : (isRu ? 'Сохранить запись' : 'Qaydni saqlash'),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                 ),

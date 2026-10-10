@@ -18,9 +18,10 @@ class CourseRepository {
 
   final Map<String, List<CourseLesson>> _lessonsCache = {};
 
-  /// Get all lessons for the specified language ('uz' or 'ru')
+  /// Get all lessons for the specified language ('uz', 'ru', or 'en')
   Future<List<CourseLesson>> getLessons(String language) async {
-    final lang = language.toLowerCase() == 'ru' ? 'ru' : 'uz';
+    final lower = language.toLowerCase();
+    final lang = lower == 'en' ? 'en' : (lower == 'ru' ? 'ru' : 'uz');
     if (_lessonsCache.containsKey(lang)) {
       return _lessonsCache[lang]!;
     }
@@ -42,7 +43,8 @@ class CourseRepository {
 
   /// Get a specific lesson by number and language
   Future<CourseLesson?> getLesson(int lessonNumber, String language) async {
-    final lang = language.toLowerCase() == 'ru' ? 'ru' : 'uz';
+    final lower = language.toLowerCase();
+    final lang = lower == 'en' ? 'en' : (lower == 'ru' ? 'ru' : 'uz');
     final path = 'knowledge/course/$lang/lesson_$lessonNumber.json';
 
     try {

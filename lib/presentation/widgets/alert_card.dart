@@ -8,6 +8,7 @@ class AlertCard extends StatelessWidget {
   final AlertSeverity severity;
   final String? vetPhone;
   final String? vetName;
+  final String locale;
   final VoidCallback? onCallVet;
 
   const AlertCard({
@@ -16,6 +17,7 @@ class AlertCard extends StatelessWidget {
     this.severity = AlertSeverity.warning,
     this.vetPhone,
     this.vetName,
+    this.locale = 'uz',
     this.onCallVet,
   });
 
@@ -27,15 +29,19 @@ class AlertCard extends StatelessWidget {
     String? vetName,
     VoidCallback? onCallVet,
   }) {
-    final message = locale == 'ru'
-        ? (alert.messageRu ?? 'Внимание: показатели отклонились от нормы!')
-        : (alert.messageUz ?? "Diqqat: ko'rsatkichlar me'yordan chetga chiqdi!");
+    final lower = locale.toLowerCase();
+    final message = lower == 'en'
+        ? (alert.messageEn ?? alert.messageRu ?? 'Warning: Parameters deviated from target norms!')
+        : (lower == 'ru'
+            ? (alert.messageRu ?? 'Внимание: показатели отклонились от нормы!')
+            : (alert.messageUz ?? "Diqqat: ko'rsatkichlar me'yordan chetga chiqdi!"));
     return AlertCard(
       key: key,
       message: message,
       severity: alert.severity,
       vetPhone: vetPhone,
       vetName: vetName,
+      locale: lower,
       onCallVet: onCallVet,
     );
   }
@@ -43,10 +49,22 @@ class AlertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCritical = severity == AlertSeverity.critical;
+    final isEn = locale == 'en';
+    final isRu = locale == 'ru';
     final bgColor = isCritical ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
     final borderColor = isCritical ? const Color(0xFFFCA5A5) : const Color(0xFFFCD34D);
     final iconColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
     final buttonColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
+
+    final headerTitle = isEn
+        ? (isCritical ? 'CRITICAL RISK / EMERGENCY' : 'WARNING / HEALTH ALERT')
+        : (isCritical ? 'XAVF! / ОПАСНОСТЬ!' : 'OGOHLANTIRISH / ПРЕДУПРЕЖДЕНИЕ');
+
+    final callLabel = isEn
+        ? (vetPhone != null ? "Call: $vetPhone" : "Call District Veterinarian")
+        : (isRu
+            ? (vetPhone != null ? "Звонок: $vetPhone" : "Позвонить ветеринару")
+            : (vetPhone != null ? "Qo'ng'iroq: $vetPhone" : "Veterinarga qo'ng'iroq"));
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -84,7 +102,7 @@ class AlertCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    isCritical ? 'XAVF! / ОПАСНОСТЬ!' : 'OGOHLANTIRISH / ПРЕДУПРЕЖДЕНИЕ',
+                    headerTitle,
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 13.5,
@@ -121,14 +139,17 @@ class AlertCard extends StatelessWidget {
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: const Text("Veterinar bilan bog'lanish"),
+                            title: Text(isEn
+                                ? "Contact Veterinarian"
+                                : (isRu ? "Связаться с ветеринаром" : "Veterinar bilan bog'lanish")),
                             content: Text(
-                              "${vetName ?? 'Hududiy veterinar'}\nTelefon: ${vetPhone ?? '+998 90 123 45 67'}",
+                              "${vetName ?? (isEn ? 'District Veterinarian' : (isRu ? 'Районный ветеринар' : 'Hududiy veterinar'))}\n"
+                              "${isEn ? 'Phone' : (isRu ? 'Телефон' : 'Telefon')}: ${vetPhone ?? '+998 90 123 45 67'}",
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx),
-                                child: const Text("Yopish"),
+                                child: Text(isEn ? "Close" : (isRu ? "Закрыть" : "Yopish")),
                               ),
                             ],
                           ),
@@ -145,7 +166,7 @@ class AlertCard extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.phone_in_talk, size: 18),
                   label: Text(
-                    vetPhone != null ? "Qo'ng'iroq: $vetPhone" : "Veterinarga qo'ng'iroq",
+                    callLabel,
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
                 ),

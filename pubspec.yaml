@@ -50,6 +50,7 @@ dependencies:
   image_picker: ^1.2.4
   flutter_tts: ^4.2.5
   http: ^1.6.0
+  web: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -67,7 +68,9 @@ flutter:
   assets:
     - assets/images/
     - knowledge/
+    - knowledge/broilers/en/
     - knowledge/broilers/ru/
     - knowledge/broilers/uz/
+    - knowledge/course/en/
     - knowledge/course/ru/
     - knowledge/course/uz/

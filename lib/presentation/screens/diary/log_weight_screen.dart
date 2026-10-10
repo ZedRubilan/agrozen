@@ -67,34 +67,45 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
       final vets = await _knowledgeRepo.getVetByDistrict(district);
       if (!mounted) return;
       final vet = vets.isNotEmpty ? vets.first : null;
+      final isEn = _lang == 'en';
       final isRu = _lang == 'ru';
+
+      final alertTitle = isEn
+          ? 'Warning: Below Target Weight!'
+          : (isRu ? 'Внимание: Отставание в весе!' : "Diqqat: Vazn ortda qolmoqda!");
+      final alertContent = isEn
+          ? 'Sample weight (${weightGrams.toInt()} g) is >15% below Day $_batchDay benchmark (${alert.threshold.toInt()} g).\n\n'
+            'Inspect feed quality, house temperature, and consult your veterinarian:\n'
+            '${vet?['name'] ?? 'District Veterinarian'}\nTel: ${vet?['phone'] ?? '+998 90 123 45 67'}'
+          : (isRu
+              ? 'Вес (${weightGrams.toInt()} г) ниже нормы (${alert.threshold.toInt()} г) более чем на 15%.\n\n'
+                'Проверьте качество корма, температуру и обратитесь к ветеринару:\n'
+                '${vet?['name'] ?? 'Ветеринар'}\nТел: ${vet?['phone'] ?? '+998 90 123 45 67'}'
+              : "Parranda vazni (${weightGrams.toInt()} g) $_batchDay-kun me'yoridan (${alert.threshold.toInt()} g) 15% dan ortiq kam.\n\n"
+                "Yem sifatini, xona haroratini tekshiring va veterinarga murojaat qiling:\n"
+                "${vet?['name'] ?? 'Veterinar'}\nTel: ${vet?['phone'] ?? '+998 90 123 45 67'}");
 
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
           icon: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 48),
-          title: Text(isRu ? 'Внимание: Отставание в весе!' : "Diqqat: Vazn ortda qolmoqda!"),
-          content: Text(
-            isRu
-                ? 'Вес (${weightGrams.toInt()} г) ниже нормы (${alert.threshold.toInt()} г) более чем на 15%.\n\n'
-                  'Проверьте качество корма, температуру и обратитесь к ветеринару:\n'
-                  '${vet?['name'] ?? 'Ветеринар'}\nТел: ${vet?['phone'] ?? '+998 90 123 45 67'}'
-                : "Parranda vazni (${weightGrams.toInt()} g) $_batchDay-kun me'yoridan (${alert.threshold.toInt()} g) 15% dan ortiq kam.\n\n"
-                  "Yem sifatini, xona haroratini tekshiring va veterinarga murojaat qiling:\n"
-                  "${vet?['name'] ?? 'Veterinar'}\nTel: ${vet?['phone'] ?? '+998 90 123 45 67'}",
-          ),
+          title: Text(alertTitle),
+          content: Text(alertContent),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(isRu ? 'Понятно' : 'Tushundim'),
+              child: Text(isEn ? 'Understood' : (isRu ? 'Понятно' : 'Tushundim')),
             ),
           ],
         ),
       );
     } else {
+      final successMsg = _lang == 'en'
+          ? 'Benchmark weight saved'
+          : (_lang == 'ru' ? 'Контрольный вес сохранён' : 'Nazorat vazni saqlandi');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_lang == 'ru' ? 'Контрольный вес сохранён' : 'Nazorat vazni saqlandi'),
+          content: Text(successMsg),
           backgroundColor: Colors.green,
         ),
       );
@@ -148,11 +159,12 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = _lang == 'en';
     final isRu = _lang == 'ru';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Контрольный вес' : 'Nazorat vazni'),
+        title: Text(isEn ? 'Sample Weight' : (isRu ? 'Контрольный вес' : 'Nazorat vazni')),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -164,14 +176,18 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  isRu ? 'Какой средний вес птицы?' : "Parrandaning o'rtacha vazni qancha?",
+                  isEn
+                      ? 'What is the average flock weight?'
+                      : (isRu ? 'Какой средний вес птицы?' : "Parrandaning o'rtacha vazni qancha?"),
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  isRu
-                      ? 'Взвесьте 5-10 случайных птиц и введите среднее значение (День $_batchDay)'
-                      : "5-10 ta tasodifiy parrandani torting va o'rtacha qiymatni kiriting ($_batchDay-kun)",
+                  isEn
+                      ? 'Weigh 5–10 random birds and input average weight in grams (Day $_batchDay)'
+                      : (isRu
+                          ? 'Взвесьте 5-10 случайных птиц и введите среднее значение (День $_batchDay)'
+                          : "5-10 ta tasodifiy parrandani torting va o'rtacha qiymatni kiriting ($_batchDay-kun)"),
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
@@ -180,19 +196,25 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: isRu ? 'Средний вес (грамм)' : "O'rtacha vazn (gramm)",
+                    labelText: isEn
+                        ? 'Average weight (grams)'
+                        : (isRu ? 'Средний вес (грамм)' : "O'rtacha vazn (gramm)"),
                     hintText: '450',
                     prefixIcon: const Icon(Icons.scale, color: Colors.teal),
-                    suffixText: isRu ? 'г' : 'g',
+                    suffixText: isEn ? 'g' : (isRu ? 'г' : 'g'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
-                      return isRu ? 'Введите вес' : 'Vaznni kiriting';
+                      return isEn
+                          ? 'Enter weight'
+                          : (isRu ? 'Введите вес' : 'Vaznni kiriting');
                     }
                     final n = double.tryParse(v.trim());
                     if (n == null || n <= 0) {
-                      return isRu ? 'Число должно быть больше 0' : '0 dan katta son kiriting';
+                      return isEn
+                          ? 'Value must be greater than 0'
+                          : (isRu ? 'Число должно быть больше 0' : '0 dan katta son kiriting');
                     }
                     return null;
                   },
@@ -201,10 +223,10 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildQuickChip(isRu ? '+50 г' : '+50 g', () => _addQuick(50)),
-                    _buildQuickChip(isRu ? '+100 г' : '+100 g', () => _addQuick(100)),
-                    _buildQuickChip(isRu ? '+250 г' : '+250 g', () => _addQuick(250)),
-                    _buildQuickChip(isRu ? '+500 г' : '+500 g', () => _addQuick(500)),
+                    _buildQuickChip(isEn ? '+50 g' : (isRu ? '+50 г' : '+50 g'), () => _addQuick(50)),
+                    _buildQuickChip(isEn ? '+100 g' : (isRu ? '+100 г' : '+100 g'), () => _addQuick(100)),
+                    _buildQuickChip(isEn ? '+250 g' : (isRu ? '+250 г' : '+250 g'), () => _addQuick(250)),
+                    _buildQuickChip(isEn ? '+500 g' : (isRu ? '+500 г' : '+500 g'), () => _addQuick(500)),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -221,9 +243,11 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          isRu
-                              ? 'Ориентиры: 7 день ~180г, 14 день ~500г, 21 день ~900г, 28 день ~1400г, 42 день ~2400г.'
-                              : "Mo'ljallar: 7-kun ~180g, 14-kun ~500g, 21-kun ~900g, 28-kun ~1400g, 42-kun ~2400g.",
+                          isEn
+                              ? 'Target benchmarks: Day 7 ~180g, Day 14 ~500g, Day 21 ~900g, Day 28 ~1400g, Day 42 ~2400g.'
+                              : (isRu
+                                  ? 'Ориентиры: 7 день ~180г, 14 день ~500г, 21 день ~900г, 28 день ~1400г, 42 день ~2400г.'
+                                  : "Mo'ljallar: 7-kun ~180g, 14-kun ~500g, 21-kun ~900g, 28-kun ~1400g, 42-kun ~2400g."),
                           style: TextStyle(color: Colors.teal.shade900, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -245,7 +269,7 @@ class _LogWeightScreenState extends State<LogWeightScreen> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          isRu ? 'Сохранить запись' : 'Qaydni saqlash',
+                          isEn ? 'Save Entry' : (isRu ? 'Сохранить запись' : 'Qaydni saqlash'),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                 ),

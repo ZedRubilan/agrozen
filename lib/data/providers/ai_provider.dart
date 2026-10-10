@@ -38,10 +38,11 @@ class AiResponse extends Equatable {
 }
 
 class GeminiAiProvider implements AiProvider {
-  final SupabaseClient _client;
+  final SupabaseClient? _customClient;
 
-  GeminiAiProvider({SupabaseClient? client})
-      : _client = client ?? SupabaseConfig.client;
+  GeminiAiProvider({SupabaseClient? client}) : _customClient = client;
+
+  SupabaseClient get _client => _customClient ?? SupabaseConfig.client;
 
   @override
   Future<AiResponse> askQuestion({

@@ -24,6 +24,7 @@ class AlertEngine {
         threshold: norms.mortalityThresholdPercent,
         messageRu: 'Внимание! Падёж за сутки ($deaths голов, ${rate.toStringAsFixed(1)}%) выше нормы. Срочно обратитесь к ветеринару!',
         messageUz: "Diqqat! Sutkalik nobodlik ($deaths bosh, ${rate.toStringAsFixed(1)}%) me'yordan yuqori. Zudlik bilan veterinarga murojaat qiling!",
+        messageEn: 'Warning! Daily mortality ($deaths birds, ${rate.toStringAsFixed(1)}%) exceeds norm. Contact a veterinarian immediately!',
       );
     }
     return null;
@@ -47,6 +48,7 @@ class AlertEngine {
         threshold: target,
         messageRu: 'Вес птицы (${weightGrams.toStringAsFixed(0)}г) значительно ниже нормы (${target.toStringAsFixed(0)}г) для дня $batchDay. Проверьте кормление и обратитесь к ветеринару.',
         messageUz: "Parranda og'irligi (${weightGrams.toStringAsFixed(0)}g) $batchDay-kun uchun me'yordan (${target.toStringAsFixed(0)}g) ancha past. Oziqlantirish tekshiring va veterinarga murojaat qiling.",
+        messageEn: 'Flock weight (${weightGrams.toStringAsFixed(0)}g) is significantly below target (${target.toStringAsFixed(0)}g) for Day $batchDay. Review feeding and contact your veterinarian.',
       );
     }
     return null;

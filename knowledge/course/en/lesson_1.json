@@ -1,0 +1,16 @@
+{
+  "lesson_number": 1,
+  "title": "Barn Preparation and Disinfection",
+  "content": "Before day-old chicks arrive, the poultry barn must be completely cleared of old litter, power-washed under pressure, and sanitized. Whitewashing walls with 20% slaked lime significantly reduces bacterial load. Turn on heaters 24 hours prior to placement so the floor and bedding reach 32-33°C. The dry bedding (wood shavings) should be at least 5–7 cm deep.",
+  "quiz": {
+    "question": "What floor/bedding temperature is required upon day-old chick placement?",
+    "options": [
+      "18-20°C",
+      "24-26°C",
+      "32-33°C",
+      "38-40°C"
+    ],
+    "correct_option_index": 2,
+    "explanation": "Bedding temperature must reach 32-33°C at placement to prevent hypothermia and yolk sac infections."
+  }
+}

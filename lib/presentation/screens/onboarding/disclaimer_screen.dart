@@ -44,11 +44,18 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
       final granted = await notifications.requestPermissions();
       if (granted) {
         final lang = prefs.getString('app_language') ?? 'uz';
+        final notifTitle = lang == 'en'
+            ? 'AgroZen: Today\'s Plan'
+            : (lang == 'ru' ? 'AgroZen: план на сегодня' : 'AgroZen: bugungi reja');
+        final notifBody = lang == 'en'
+            ? 'Open your daily broiler plan: target temperature, feed norms, and flock tasks.'
+            : (lang == 'ru'
+                ? 'Откройте план дня: температура, корм, вода и задачи для вашей партии.'
+                : "Kunlik rejani oching: harorat, yem, suv va partiyangiz vazifalari.");
+
         await notifications.scheduleDailyMorningNotification(
-          title: lang == 'ru' ? 'AgroZen: план на сегодня' : 'AgroZen: bugungi reja',
-          body: lang == 'ru'
-              ? 'Откройте план дня: температура, корм, вода и задачи для вашей партии.'
-              : "Kunlik rejani oching: harorat, yem, suv va partiyangiz vazifalari.",
+          title: notifTitle,
+          body: notifBody,
         );
         await prefs.setBool('daily_reminder_set', true);
       } else {

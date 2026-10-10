@@ -47,9 +47,12 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
     if (!mounted) return;
     setState(() => _isSaving = false);
 
+    final successMsg = _lang == 'en'
+        ? 'Feed consumption recorded'
+        : (_lang == 'ru' ? 'Расход корма сохранён' : 'Yem sarfi saqlandi');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_lang == 'ru' ? 'Расход корма сохранён' : 'Yem sarfi saqlandi'),
+        content: Text(successMsg),
         backgroundColor: Colors.green,
       ),
     );
@@ -103,11 +106,12 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEn = _lang == 'en';
     final isRu = _lang == 'ru';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isRu ? 'Расход корма' : 'Yem sarfi'),
+        title: Text(isEn ? 'Feed Consumption' : (isRu ? 'Расход корма' : 'Yem sarfi')),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -118,14 +122,18 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  isRu ? 'Сколько корма выдано?' : 'Qancha yem berildi?',
+                  isEn
+                      ? 'How much feed was distributed?'
+                      : (isRu ? 'Сколько корма выдано?' : 'Qancha yem berildi?'),
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  isRu
-                      ? 'Укажите общий вес выданного комбикорма (в килограммах)'
-                      : "Berilgan jami aralash yem og'irligini kiriting (kilogrammda)",
+                  isEn
+                      ? 'Enter total batch feed distributed today (in kilograms)'
+                      : (isRu
+                          ? 'Укажите общий вес выданного комбикорма (в килограммах)'
+                          : "Berilgan jami aralash yem og'irligini kiriting (kilogrammda)"),
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
@@ -134,19 +142,25 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: isRu ? 'Расход корма (кг)' : 'Yem miqdori (kg)',
+                    labelText: isEn
+                        ? 'Feed amount (kg)'
+                        : (isRu ? 'Расход корма (кг)' : 'Yem miqdori (kg)'),
                     hintText: '25.0',
                     prefixIcon: const Icon(Icons.grain, color: Colors.amber),
-                    suffixText: isRu ? 'кг' : 'kg',
+                    suffixText: isEn ? 'kg' : (isRu ? 'кг' : 'kg'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
-                      return isRu ? 'Введите вес корма' : 'Yem miqdorini kiriting';
+                      return isEn
+                          ? 'Enter feed weight'
+                          : (isRu ? 'Введите вес корма' : 'Yem miqdorini kiriting');
                     }
                     final n = double.tryParse(v.trim());
                     if (n == null || n <= 0) {
-                      return isRu ? 'Число должно быть больше 0' : '0 dan katta son kiriting';
+                      return isEn
+                          ? 'Value must be greater than 0'
+                          : (isRu ? 'Число должно быть больше 0' : '0 dan katta son kiriting');
                     }
                     return null;
                   },
@@ -175,9 +189,11 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          isRu
-                              ? 'Кормите птицу строго по фазам (Старт -> Рост -> Финиш) и не допускайте порчи корма.'
-                              : "Parrandalarni qat'iy bosqichlar bo'yicha boqing (Start -> O'sish -> Finish) va yem buzilishiga yo'l qo'ymang.",
+                          isEn
+                              ? 'Feed strictly by phases (Starter -> Grower -> Finisher) and keep feed storage dry.'
+                              : (isRu
+                                  ? 'Кормите птицу строго по фазам (Старт -> Рост -> Финиш) и не допускайте порчи корма.'
+                                  : "Parrandalarni qat'iy bosqichlar bo'yicha boqing (Start -> O'sish -> Finish) va yem buzilishiga yo'l qo'ymang."),
                           style: TextStyle(color: Colors.brown.shade800, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -199,7 +215,7 @@ class _LogFeedScreenState extends State<LogFeedScreen> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : Text(
-                          isRu ? 'Сохранить запись' : 'Qaydni saqlash',
+                          isEn ? 'Save Entry' : (isRu ? 'Сохранить запись' : 'Qaydni saqlash'),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                 ),

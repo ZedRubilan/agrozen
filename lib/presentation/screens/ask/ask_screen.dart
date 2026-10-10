@@ -61,6 +61,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   final _visionAnalyzer = PoultryVisionAnalyzer();
   final _ttsService = TtsService();
   final _flockContextService = FlockContextService();
+  final _aiProvider = GeminiAiProvider();
 
   late AnimationController _pulseController;
   late Animation<double> _pulseScale;
@@ -168,7 +169,7 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
 
   Future<void> _startVoiceRecording() async {
     try {
-      final path = await _voice.startRecording();
+      final path = await _voice.startRecording(language: _lang);
       _recordingPath = path;
       if (!mounted) return;
       _pulseController.repeat(reverse: true);
@@ -458,12 +459,14 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         risk = RiskLevel.low;
       } else if (SupabaseConfig.isConfigured) {
         try {
-          final ai = GeminiAiProvider();
+          final questionLabel = _lang == 'en'
+              ? 'Question'
+              : (_lang == 'ru' ? 'Вопрос' : 'Savol');
           final promptWithContext = _liveContext != null
-              ? '${_liveContext!.toPromptContextBlock(_lang)}\n${_flockContextService.getConversationHistorySnippet(_lang)}\nSavol: $text'
+              ? '${_liveContext!.toPromptContextBlock(_lang)}\n${_flockContextService.getConversationHistorySnippet(_lang)}\n$questionLabel: $text'
               : text;
 
-          final response = await ai.askQuestion(
+          final response = await _aiProvider.askQuestion(
             question: promptWithContext,
             language: _lang,
             relevantTopicContents: const [],
@@ -849,7 +852,11 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${_liveContext!.batchDay}-kun dossier biriktirildi',
+                      _lang == 'en'
+                          ? 'Day ${_liveContext!.batchDay} dossier attached'
+                          : (_lang == 'ru'
+                              ? 'День ${_liveContext!.batchDay}: досье подключено'
+                              : '${_liveContext!.batchDay}-kun dossier biriktirildi'),
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 12.5,
@@ -861,7 +868,11 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${_liveContext!.district} • ${_liveContext!.currentCount} bosh',
+                  _lang == 'en'
+                      ? '${_liveContext!.district} • ${_liveContext!.currentCount} birds'
+                      : (_lang == 'ru'
+                          ? '${_liveContext!.district} • ${_liveContext!.currentCount} голов'
+                          : '${_liveContext!.district} • ${_liveContext!.currentCount} bosh'),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppTheme.textSecondary,
@@ -1314,50 +1325,59 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEAF5ED),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.psychology_rounded, size: 18, color: Color(0xFF15803D)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppStrings.tr(
-                          lang: _lang,
-                          uz: 'AgroZen Maslahatchi',
-                          ru: 'AgroZen Консультант',
-                          en: 'AgroZen Advisor',
-                        ),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: -0.2,
-                        ),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEAF5ED),
+                        shape: BoxShape.circle,
                       ),
-                      if (lastAiMessage.source != null)
-                        Text(
-                          lastAiMessage.source!,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.textMuted,
-                            fontWeight: FontWeight.w600,
+                      child: const Center(
+                        child: Icon(Icons.psychology_rounded, size: 18, color: Color(0xFF15803D)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppStrings.tr(
+                              lang: _lang,
+                              uz: 'AgroZen Maslahatchi',
+                              ru: 'AgroZen Консультант',
+                              en: 'AgroZen Advisor',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.textPrimary,
+                              letterSpacing: -0.2,
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                ],
+                          if (lastAiMessage.source != null)
+                            Text(
+                              lastAiMessage.source!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textMuted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               // TTS Play/Stop Button
               InkWell(
                 onTap: () => _toggleSpeak(lastAiMessage.text),

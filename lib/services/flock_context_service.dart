@@ -1,7 +1,9 @@
+import '../data/models/weather_data.dart';
 import '../data/repositories/knowledge_repository.dart';
 import '../domain/alerts/alert_models.dart';
 import '../domain/scheduler/day_calculator.dart';
 import 'daily_counters.dart';
+import 'weather_service.dart';
 
 /// Represents a turn in the ongoing conversation for multi-turn context memory.
 class ConversationTurn {
@@ -39,6 +41,10 @@ class LiveFlockContext {
   final double targetWeightG;
   final String growthPhase;
   final Map<String, dynamic>? localVet;
+  final double? outsideTemp;
+  final int? outsideHumidity;
+  final String? weatherCondition;
+  final double? windSpeed;
 
   const LiveFlockContext({
     required this.farmerName,
@@ -55,6 +61,10 @@ class LiveFlockContext {
     required this.targetWeightG,
     required this.growthPhase,
     this.localVet,
+    this.outsideTemp,
+    this.outsideHumidity,
+    this.weatherCondition,
+    this.windSpeed,
   });
 
   /// Total recommended flock feed in kilograms for today based on bird count and norm.
@@ -66,34 +76,79 @@ class LiveFlockContext {
     final isRu = lang == 'ru';
     final isEn = lang == 'en';
 
+    final hasWeather = outsideTemp != null;
+    final outT = outsideTemp ?? 24.0;
+    final outH = outsideHumidity ?? 50;
+    final cond = weatherCondition ?? 'clear';
+    final wind = windSpeed ?? 10.0;
+    final tempDelta = outT - targetTemperatureC;
+    final isHotDelta = tempDelta > 3.0 || outT >= 32.0;
+    final isColdDelta = tempDelta < -8.0 || outT <= 14.0;
+
     if (isEn) {
+      final weatherAdvisory = isHotDelta
+          ? '  ⚠ HOT WEATHER ADVISORY: Outside (${outT.toStringAsFixed(1)}°C) is significantly above flock target (${targetTemperatureC.toStringAsFixed(1)}°C). Advise tunnel ventilation (2-2.5 m/s), check evaporative cooling pads if RH<70%, ensure water lines remain chilled (<20°C), and shift heavy feeding to cooler night hours.'
+          : (isColdDelta
+              ? '  ❄ COLD WEATHER ADVISORY: Outside (${outT.toStringAsFixed(1)}°C) is much colder than house target (${targetTemperatureC.toStringAsFixed(1)}°C). Enforce minimum ventilation timer without floor drafts, pre-heat incoming fresh air, and ensure brooder heaters keep bedding warm.'
+              : '  ✓ Outside temperature (${outT.toStringAsFixed(1)}°C) is moderate relative to flock target (${targetTemperatureC.toStringAsFixed(1)}°C).');
+
+      final weatherBlock = hasWeather
+          ? '''\n• Outdoor Telemetry ($district): ${outT.toStringAsFixed(1)}°C, $outH% RH, Condition: $cond (Wind: ${wind.toStringAsFixed(1)} km/h)
+• Climate Differential: Outside is ${tempDelta >= 0 ? '+${tempDelta.toStringAsFixed(1)}°C warmer' : '${tempDelta.toStringAsFixed(1)}°C cooler'} than house target (${targetTemperatureC.toStringAsFixed(1)}°C)
+$weatherAdvisory'''
+          : '';
+
       return '''[LIVE FLOCK DOSSIER - AGROZEN]:
 • Farmer: $farmerName, Region: $district, Uzbekistan
 • Flock: Ross-308 / Cobb-500 Broilers, Day $batchDay of 42 (Phase: $growthPhase)
 • Birds: $currentCount alive (Initial: $initialCount, Today's mortality: $todayMortality)
 • Current Feed: ${todayFeedKg.toStringAsFixed(1)} kg logged today (Target norm: ~${recommendedFlockFeedKg.toStringAsFixed(1)} kg [${targetDailyFeedPerBirdG.toStringAsFixed(0)}g/bird])
 • Current Weight: ${lastWeightG > 0 ? '${lastWeightG.toStringAsFixed(0)}g' : 'Not weighed yet'} (Target benchmark: ~${targetWeightG.toStringAsFixed(0)}g)
-• Target House Temperature: ${targetTemperatureC.toStringAsFixed(1)}°C
+• Target House Temperature: ${targetTemperatureC.toStringAsFixed(1)}°C$weatherBlock
 • Local Veterinarian on duty: ${localVet != null ? '${localVet!['name']} (${localVet!['phone']})' : 'District Veterinary Department'}
 ---''';
     } else if (isRu) {
+      final weatherAdvisory = isHotDelta
+          ? '  ⚠ ПРЕДУПРЕЖДЕНИЕ О ЖАРЕ: На улице (${outT.toStringAsFixed(1)}°C) существенно жарче нормы птичника (${targetTemperatureC.toStringAsFixed(1)}°C). Рекомендуйте туннельную вентиляцию (2-2.5 м/с), охлаждающие панели при влажности <70%, прохладную воду в поилках (<20°C) и перенос обильного кормления на прохладные ночные часы.'
+          : (isColdDelta
+              ? '  ❄ ПРЕДУПРЕЖДЕНИЕ О ХОЛОДЕ: На улице (${outT.toStringAsFixed(1)}°C) намного холоднее нормы птичника (${targetTemperatureC.toStringAsFixed(1)}°C). Обеспечьте минимальную вентиляцию по таймеру без сквозняков по полу, подогревайте приточный воздух и следите за работой обогревателей.'
+              : '  ✓ Температура на улице (${outT.toStringAsFixed(1)}°C) умеренная относительно нормы птичника (${targetTemperatureC.toStringAsFixed(1)}°C).');
+
+      final weatherBlock = hasWeather
+          ? '''\n• Погода на улице ($district): ${outT.toStringAsFixed(1)}°C, влажность $outH%, $cond (ветер ${wind.toStringAsFixed(1)} км/ч)
+• Разница температур: Снаружи на ${tempDelta >= 0 ? '+${tempDelta.toStringAsFixed(1)}°C теплее' : '${tempDelta.toStringAsFixed(1)}°C холоднее'} нормы в птичнике (${targetTemperatureC.toStringAsFixed(1)}°C)
+$weatherAdvisory'''
+          : '';
+
       return '''[ДОСЬЕ ТЕКУЩЕЙ ПАРТИИ - AGROZEN]:
 • Фермер: $farmerName, Район: $district, Узбекистан
 • Партия: Бройлеры Ross-308 / Cobb-500, День $batchDay из 42 (Фаза: $growthPhase)
 • Поголовье: $currentCount живых (Начальное: $initialCount, Падёж за сутки: $todayMortality)
 • Корм: ${todayFeedKg.toStringAsFixed(1)} кг внесено сегодня (Норма Ross-308: ~${recommendedFlockFeedKg.toStringAsFixed(1)} кг [${targetDailyFeedPerBirdG.toStringAsFixed(0)}г/голову])
 • Контрольный вес: ${lastWeightG > 0 ? '${lastWeightG.toStringAsFixed(0)}г' : 'Ещё не взвешивали'} (Эталонная норма: ~${targetWeightG.toStringAsFixed(0)}г)
-• Норма температуры в птичнике: ${targetTemperatureC.toStringAsFixed(1)}°C
+• Норма температуры в птичнике: ${targetTemperatureC.toStringAsFixed(1)}°C$weatherBlock
 • Дежурный районный ветеринар: ${localVet != null ? '${localVet!['name']} (${localVet!['phone']})' : 'Районная ветслужба'}
 ---''';
     } else {
+      final weatherAdvisory = isHotDelta
+          ? '  ⚠ JAZIRAMA ISSIQ OGOHLANTIRISHI: Tashqarida (${outT.toStringAsFixed(1)}°C) xona me\'yoridan (${targetTemperatureC.toStringAsFixed(1)}°C) ancha issiq. Tunnel ventilyatsiya (2-2.5 m/s), namlik <70% bo\'lsa sovutish panellari, quvurlardagi sovuq suv (<20°C) va kechki salqinda yemlashni maslahat bering.'
+          : (isColdDelta
+              ? '  ❄ SOVUQ HAVO ESLATMASI: Tashqarida (${outT.toStringAsFixed(1)}°C) xona me\'yoridan (${targetTemperatureC.toStringAsFixed(1)}°C) ancha sovuq. Pol sathida skvoznyaksiz minimal ventilyatsiya qiling, kiruvchi havoni iliting va jo\'jalar to\'planib qolmasligi uchun isitgichlarni nazorat qiling.'
+              : '  ✓ Tashqi harorat (${outT.toStringAsFixed(1)}°C) xona me\'yoriga (${targetTemperatureC.toStringAsFixed(1)}°C) nisbatan mo\'tadil.');
+
+      final weatherBlock = hasWeather
+          ? '''\n• Tashqi ob-havo ($district): ${outT.toStringAsFixed(1)}°C, namlik $outH%, $cond (shamol ${wind.toStringAsFixed(1)} km/s)
+• Harorat farqi: Tashqari xona me'yoridan (${targetTemperatureC.toStringAsFixed(1)}°C) ${tempDelta >= 0 ? '+${tempDelta.toStringAsFixed(1)}°C issiqroq' : '${tempDelta.toStringAsFixed(1)}°C sovuqroq'}
+$weatherAdvisory'''
+          : '';
+
       return '''[JORIY PARTIYA VA FERMER DOSYESI - AGROZEN]:
 • Fermer: $farmerName, Hudud: $district, O'zbekiston
 • Partiya: Ross-308 / Cobb-500 broylerlari, $batchDay-kun (42 kundan, Bosqich: $growthPhase)
 • Bosh soni: $currentCount ta tirik (Boshlang'ich: $initialCount ta, Bugungi nobodlik: $todayMortality ta)
 • Bugungi yem: ${todayFeedKg.toStringAsFixed(1)} kg berildi (Ross-308 me'yori: ~${recommendedFlockFeedKg.toStringAsFixed(1)} kg [${targetDailyFeedPerBirdG.toStringAsFixed(0)}g/bosh])
 • O'rtacha vazn: ${lastWeightG > 0 ? '${lastWeightG.toStringAsFixed(0)}g' : "Hali tortilmadi"} (Me'yoriy andoza: ~${targetWeightG.toStringAsFixed(0)}g)
-• Xonadagi me'yoriy harorat: ${targetTemperatureC.toStringAsFixed(1)}°C
+• Xonadagi me'yoriy harorat: ${targetTemperatureC.toStringAsFixed(1)}°C$weatherBlock
 • Tuman veterinari: ${localVet != null ? '${localVet!['name']} (${localVet!['phone']})' : "Tuman veterinariya bo'limi"}
 ---''';
     }
@@ -198,6 +253,17 @@ class FlockContextService {
       localVet = null;
     }
 
+    // Live Outdoor Weather
+    WeatherData? weather;
+    try {
+      weather = await WeatherService().getDistrictWeather(district).timeout(
+            const Duration(milliseconds: 1500),
+            onTimeout: () => WeatherData.fallback(district),
+          );
+    } catch (_) {
+      weather = WeatherData.fallback(district);
+    }
+
     return LiveFlockContext(
       farmerName: farmerName,
       district: district,
@@ -213,6 +279,10 @@ class FlockContextService {
       targetWeightG: targetWeightG,
       growthPhase: growthPhase,
       localVet: localVet,
+      outsideTemp: weather.temperature,
+      outsideHumidity: weather.humidity,
+      weatherCondition: weather.condition,
+      windSpeed: weather.windSpeed,
     );
   }
 
