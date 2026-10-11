@@ -58,6 +58,7 @@ class WeatherForecastDay extends Equatable {
 
 class WeatherData extends Equatable {
   final String district;
+  final String? locality;
   final double temperature;
   final int humidity;
   final double windSpeed;
@@ -71,6 +72,7 @@ class WeatherData extends Equatable {
 
   const WeatherData({
     required this.district,
+    this.locality,
     required this.temperature,
     required this.humidity,
     required this.windSpeed,
@@ -83,8 +85,8 @@ class WeatherData extends Equatable {
     this.dailyForecast = const [],
   });
 
-  /// Regional climate modifiers across Uzbekistan's 13 provinces so each region
-  /// reflects its true geographic microclimate (temp offset °C, humidity offset %, wind km/h).
+  /// Regional climate modifiers across Uzbekistan's 13 provinces and key foothill districts
+  /// so each area reflects its true geographic microclimate (temp offset °C, humidity offset %, wind km/h).
   static const Map<String, ({double tempDelta, int humDelta, double wind, String condHint})>
       _regionalOffsets = {
     'Toshkent': (tempDelta: 0.0, humDelta: 0, wind: 11.0, condHint: 'clear'),
@@ -93,6 +95,7 @@ class WeatherData extends Equatable {
     'Andijon': (tempDelta: 0.5, humDelta: 6, wind: 8.5, condHint: 'partly_cloudy'),
     "Farg'ona": (tempDelta: 1.0, humDelta: 5, wind: 9.0, condHint: 'clear'),
     'Namangan': (tempDelta: 0.8, humDelta: 4, wind: 9.5, condHint: 'clear'),
+    'Chortoq': (tempDelta: 0.4, humDelta: -3, wind: 6.5, condHint: 'clear'),
     'Qashqadaryo': (tempDelta: 3.0, humDelta: -8, wind: 13.0, condHint: 'clear'),
     'Surxondaryo': (tempDelta: 4.5, humDelta: -12, wind: 14.0, condHint: 'hot'),
     'Jizzax': (tempDelta: 1.2, humDelta: -3, wind: 12.5, condHint: 'clear'),
@@ -102,7 +105,7 @@ class WeatherData extends Equatable {
     "Qoraqalpog'iston": (tempDelta: -3.0, humDelta: -8, wind: 18.0, condHint: 'cloudy'),
   };
 
-  factory WeatherData.fallback(String district) {
+  factory WeatherData.fallback(String district, {String? locality}) {
     final now = DateTime.now();
     double baseTemp = 22.0;
     int baseHum = 50;
@@ -115,10 +118,14 @@ class WeatherData extends Equatable {
       baseHum = 70;
     } else {
       baseTemp = 23.0;
-      baseHum = 46;
+      baseHum = 44;
     }
 
-    final mod = _regionalOffsets[district] ??
+    final lookupKey = (locality != null && _regionalOffsets.containsKey(locality))
+        ? locality
+        : district;
+    final mod = _regionalOffsets[lookupKey] ??
+        _regionalOffsets[district] ??
         (tempDelta: 0.0, humDelta: 0, wind: 12.0, condHint: 'clear');
     final temp = (baseTemp + mod.tempDelta).clamp(-10.0, 45.0);
     final hum = (baseHum + mod.humDelta).clamp(20, 95);
@@ -136,6 +143,7 @@ class WeatherData extends Equatable {
 
     return WeatherData(
       district: district,
+      locality: locality,
       temperature: temp,
       humidity: hum,
       windSpeed: wind,
@@ -184,8 +192,11 @@ class WeatherData extends Equatable {
     });
   }
 
-  factory WeatherData.seasonalFallback({required String districtName}) =>
-      WeatherData.fallback(districtName);
+  factory WeatherData.seasonalFallback({
+    required String districtName,
+    String? locality,
+  }) =>
+      WeatherData.fallback(districtName, locality: locality);
 
   String get districtName => district;
 
@@ -252,6 +263,7 @@ class WeatherData extends Equatable {
 
   WeatherData copyWith({
     String? district,
+    String? locality,
     double? temperature,
     int? humidity,
     double? windSpeed,
@@ -265,6 +277,7 @@ class WeatherData extends Equatable {
   }) {
     return WeatherData(
       district: district ?? this.district,
+      locality: locality ?? this.locality,
       temperature: temperature ?? this.temperature,
       humidity: humidity ?? this.humidity,
       windSpeed: windSpeed ?? this.windSpeed,
@@ -295,6 +308,7 @@ class WeatherData extends Equatable {
 
     return WeatherData(
       district: json['district'] as String? ?? 'Toshkent',
+      locality: json['locality'] as String?,
       temperature: (json['temperature'] as num?)?.toDouble() ?? 24.0,
       humidity: (json['humidity'] as num?)?.toInt() ?? 50,
       windSpeed: (json['wind_speed'] as num?)?.toDouble() ?? 10.0,
@@ -312,6 +326,7 @@ class WeatherData extends Equatable {
 
   Map<String, dynamic> toJson() => {
         'district': district,
+        if (locality != null) 'locality': locality,
         'temperature': temperature,
         'humidity': humidity,
         'wind_speed': windSpeed,
@@ -328,6 +343,7 @@ class WeatherData extends Equatable {
   @override
   List<Object?> get props => [
         district,
+        locality,
         temperature,
         humidity,
         windSpeed,

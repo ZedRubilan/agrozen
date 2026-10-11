@@ -308,5 +308,50 @@ void main() {
         [-2, -1, 0, 1, 2, 3],
       );
     });
+
+    test('17. LocationService resolves Chartak (Chortoq, Namangan — 41.0736, 71.8236) and intercepts Uzbek ISP Tashkent NAT gateway trap', () async {
+      final chartakLoc = LocationService.resolveNearestLocality(41.0736, 71.8236);
+      expect(chartakLoc, isNotNull);
+      expect(chartakLoc!.nameUz, 'Chortoq');
+      expect(chartakLoc.district, 'Namangan');
+      expect(
+        LocationService.formatLocationLabel(
+          district: chartakLoc.district,
+          locality: chartakLoc.nameUz,
+          lang: 'en',
+        ),
+        'Chartak (Chortoq), Namangan',
+      );
+
+      // Verify Uzbek ISP Tashkent NAT gateway IP (84.54.73.201 -> 41.2646, 69.2163) resolves to Chortoq, Namangan instead of Tashkent
+      SharedPreferences.setMockInitialValues({});
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'success': true,
+            'ip': '84.54.73.201',
+            'city': 'Tashkent',
+            'latitude': 41.2646471,
+            'longitude': 69.2162682,
+            'connection': {
+              'isp': 'The Joint-Stock Company Uzbektelecom',
+            },
+          }),
+          200,
+        );
+      });
+
+      final service = LocationService(
+        client: mockClient,
+        permissionChecker: () async => true,
+      );
+
+      final result = await service.detectAndSaveLocation();
+      expect(result.success, isTrue);
+      expect(result.district, 'Namangan');
+      expect(result.locality, 'Chortoq');
+      expect(result.latitude, closeTo(41.0736, 0.001));
+      expect(result.longitude, closeTo(71.8236, 0.001));
+    });
   });
 }

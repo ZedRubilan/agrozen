@@ -47,40 +47,46 @@ class WeatherService {
     return getDistrictWeather(district);
   }
 
-  /// Fetch weather for the farmer's district (using exact GPS coordinates when
-  /// auto-detected for this district, or the district's canonical coordinates).
+  /// Fetch weather for the farmer's district (using exact GPS or town coordinates when
+  /// saved for this district, or the district's canonical coordinates).
   Future<WeatherData> getDistrictWeather(String district) async {
-    // 1. Try local cache if fresh (< 2 hours old)
+    String? savedLocality;
+    double? customLat;
+    double? customLon;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedDistrict = prefs.getString('farmer_district');
+      final loc = prefs.getString('farmer_locality');
+      final savedLat = prefs.getDouble('farmer_lat');
+      final savedLon = prefs.getDouble('farmer_lon');
+      if (savedDistrict == district) {
+        savedLocality = loc;
+        if (savedLat != null && savedLon != null) {
+          customLat = savedLat;
+          customLon = savedLon;
+        }
+      }
+    } catch (_) {}
+
+    // 1. Try local cache if fresh (< 2 hours old) and matching locality
     try {
       final cached = await _getCachedWeather(district);
       if (cached != null) {
         final age = DateTime.now().difference(cached.timestamp);
-        if (age.inHours < 2) {
+        final localityMatches =
+            savedLocality == null || cached.locality == savedLocality;
+        if (age.inHours < 2 && localityMatches) {
           return cached;
         }
       }
     } catch (_) {}
 
-    // 2. Resolve coordinates (exact GPS override if saved for this district, else canonical)
+    // 2. Resolve coordinates (exact GPS / town override if saved for this district, else canonical)
     final defaultCoords =
         districtCoordinates[district] ?? districtCoordinates['Toshkent']!;
-    double lat = defaultCoords.lat;
-    double lon = defaultCoords.lon;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedDistrict = prefs.getString('farmer_district');
-      final isAuto = prefs.getBool('location_auto_detected') ?? false;
-      final savedLat = prefs.getDouble('farmer_lat');
-      final savedLon = prefs.getDouble('farmer_lon');
-      if (isAuto &&
-          savedDistrict == district &&
-          savedLat != null &&
-          savedLon != null) {
-        lat = savedLat;
-        lon = savedLon;
-      }
-    } catch (_) {}
+    final double lat = customLat ?? defaultCoords.lat;
+    final double lon = customLon ?? defaultCoords.lon;
 
     // 3. Fetch live current + 6-day forecast data from Open-Meteo
     final url = Uri.parse(
@@ -94,7 +100,7 @@ class WeatherService {
 
     try {
       final response =
-          await _client.get(url).timeout(const Duration(milliseconds: 2500));
+          await _client.get(url).timeout(const Duration(milliseconds: 8000));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final current = data['current'] as Map<String, dynamic>?;
@@ -118,6 +124,7 @@ class WeatherService {
 
           final weather = WeatherData(
             district: district,
+            locality: savedLocality,
             temperature: temp,
             humidity: hum,
             windSpeed: wind,
@@ -144,7 +151,7 @@ class WeatherService {
       if (stale != null) return stale;
     } catch (_) {}
 
-    return WeatherData.fallback(district);
+    return WeatherData.fallback(district, locality: savedLocality);
   }
 
   static List<WeatherForecastDay> _parseDailyForecast(
@@ -175,7 +182,8 @@ class WeatherService {
           final dayOffset = i - 2; // -2, -1, 0, +1, +2, +3
           final maxT = (maxTemps[i] as num?)?.toDouble() ?? baseTemp + 3;
           final minT = (minTemps[i] as num?)?.toDouble() ?? baseTemp - 3;
-          final avgT = dayOffset == 0 ? baseTemp : ((maxT + minT) / 2.0);
+          final avgT =
+              dayOffset == 0 ? baseTemp : (maxT * 0.75 + minT * 0.25);
           final wCode = (codes != null && i < codes.length)
               ? ((codes[i] as num?)?.toInt() ?? 0)
               : 0;
@@ -207,7 +215,9 @@ class WeatherService {
   }
 
   static String mapWeatherCode(int code, double temp) {
-    if (code >= 51 && code <= 67) return 'rain';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return 'rain';
+    }
     if (code >= 71 && code <= 86) return 'snow';
     if (code >= 95) return 'thunderstorm';
     if (code == 1 || code == 2) return 'partly_cloudy';

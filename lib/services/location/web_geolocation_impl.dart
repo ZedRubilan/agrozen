@@ -2,12 +2,33 @@ import 'dart:async';
 import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
-/// Web implementation using HTML5 `navigator.geolocation.getCurrentPosition`.
+/// Web implementation using HTML5 `navigator.geolocation.getCurrentPosition`
+/// with automatic fallback from high-accuracy GPS to low-accuracy Wi-Fi/cell triangulation.
 class WebGeolocationDelegate {
   bool get isSupported => true;
 
   Future<({double lat, double lon})?> getCurrentPosition({
-    Duration timeout = const Duration(seconds: 5),
+    Duration timeout = const Duration(seconds: 7),
+  }) async {
+    final highAcc = await _requestPosition(
+      enableHighAccuracy: true,
+      timeout: timeout,
+      maximumAgeMs: 300000,
+    );
+    if (highAcc != null) return highAcc;
+
+    // Fallback to low-accuracy (Wi-Fi / cell positioning) if satellite GPS times out
+    return _requestPosition(
+      enableHighAccuracy: false,
+      timeout: const Duration(seconds: 6),
+      maximumAgeMs: 3600000,
+    );
+  }
+
+  Future<({double lat, double lon})?> _requestPosition({
+    required bool enableHighAccuracy,
+    required Duration timeout,
+    required int maximumAgeMs,
   }) async {
     final completer = Completer<({double lat, double lon})?>();
 
@@ -37,9 +58,9 @@ class WebGeolocationDelegate {
           }
         }).toJS,
         web.PositionOptions(
-          enableHighAccuracy: true,
+          enableHighAccuracy: enableHighAccuracy,
           timeout: timeout.inMilliseconds,
-          maximumAge: 300000,
+          maximumAge: maximumAgeMs,
         ),
       );
     } catch (_) {
@@ -52,3 +73,4 @@ class WebGeolocationDelegate {
     return completer.future;
   }
 }
+

@@ -38,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentNavIndex = 0;
 
   String _farmerName = 'Fermer';
-  String _district = 'Toshkent';
+  String _district = 'Namangan';
+  String? _locality = 'Chortoq';
   String _lang = 'uz';
   int _initialCount = 500;
   int _currentCount = 495;
@@ -92,8 +93,18 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     final prefs = await DailyCounters.rolled();
 
+    // Auto-repair stale 'Toshkent' IP-geolocation fallback to Chortoq (Chartak), Namangan
+    final storedDistrict = prefs.getString('farmer_district');
+    final migratedChartak = prefs.getBool('chartak_geo_fix_v1') ?? false;
+    if (!migratedChartak &&
+        (storedDistrict == null || storedDistrict == 'Toshkent')) {
+      await LocationService.saveManualLocality(LocationService.chartakLocality);
+      await prefs.setBool('chartak_geo_fix_v1', true);
+    }
+
     _farmerName = prefs.getString('farmer_name') ?? 'Fermer';
-    _district = prefs.getString('farmer_district') ?? 'Toshkent';
+    _district = prefs.getString('farmer_district') ?? 'Namangan';
+    _locality = prefs.getString('farmer_locality');
     _lang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
     _initialCount = prefs.getInt('initial_count') ?? 500;
     _currentCount = prefs.getInt('current_count') ?? _initialCount;
@@ -369,6 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       index: 5,
                       child: WeatherClimateCard(
                         district: _district,
+                        locality: _locality,
                         batchDay: _batchDay,
                         targetHouseTemp: targetTemp.toDouble(),
                         language: _lang,
@@ -640,8 +652,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Top Greeting Bar with Live Status Beacon & Avatar
+  /// Top Greeting Bar with Live Status Beacon, Interactive Location Pill & Avatar
   Widget _buildTopHeaderBar(BuildContext context) {
+    final locationLabel = LocationService.formatLocationLabel(
+      district: _district,
+      locality: _locality,
+      lang: _lang,
+    );
+    final hasCustomLocality = _locality != null &&
+        _locality!.trim().isNotEmpty &&
+        _locality!.trim().toLowerCase() != _district.trim().toLowerCase();
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -674,21 +695,68 @@ class _HomeScreenState extends State<HomeScreen> {
                   const PulseBeacon(size: 7, color: Color(0xFF22C55E)),
                 ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                AppStrings.tr(
-                  lang: _lang,
-                  uz: '$_district viloyati • Ross-308',
-                  ru: '$_district обл. • Ross-308',
-                  en: '$_district region • Ross-308',
+              const SizedBox(height: 5),
+              TactileCard(
+                onTap: _enableHomeGeolocation,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                    border: Border.all(
+                      color: const Color(0xFFDCFCE7),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(10),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isDetectingHomeLocation
+                            ? Icons.sync_rounded
+                            : Icons.location_on_rounded,
+                        size: 13.5,
+                        color: const Color(0xFF16A34A),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          hasCustomLocality
+                              ? '$locationLabel • Ross-308'
+                              : AppStrings.tr(
+                                  lang: _lang,
+                                  uz: '$_district viloyati • Ross-308',
+                                  ru: '$_district обл. • Ross-308',
+                                  en: '$_district region • Ross-308',
+                                ),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF14532D),
+                            fontWeight: FontWeight.w800,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.my_location_rounded,
+                        size: 11.5,
+                        color: Color(0xFF22C55E),
+                      ),
+                    ],
+                  ),
                 ),
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: AppTheme.textMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -742,46 +810,78 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Row(
       children: [
-        // Pill 1: Target Barn Temp
+        // Pill 1: Target Barn Temp (Indoor Brooder Norm)
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEFCE8),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFEF08A), width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Icon(Icons.thermostat_rounded, size: 18, color: Color(0xFFD97706)),
-                    Text(
-                      '$targetTemp °C',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF854D0E),
+          child: TactileCard(
+            onTap: () => context.push('/daily-plan'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFD97706).withAlpha(14),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD97706).withAlpha(28),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.thermostat_rounded,
+                          size: 15,
+                          color: Color(0xFFD97706),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  AppStrings.tr(lang: _lang, uz: 'Bino harorati', ru: 'Темп. птичника', en: 'Barn Temp'),
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF713F12), fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  AppStrings.tr(lang: _lang, uz: "Me'yor • Ross-308", ru: 'Норма • Ross-308', en: 'Norm • Ross-308'),
-                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF713F12), fontWeight: FontWeight.w800),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        switchInCurve: Curves.easeOutCubic,
+                        child: Text(
+                          '$targetTemp °C',
+                          key: ValueKey('pill_temp_$targetTemp'),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    AppStrings.tr(lang: _lang, uz: 'Bino harorati', ru: 'Темп. птичника', en: 'Barn Temp'),
+                    style: const TextStyle(fontSize: 10, color: Color(0xFF78350F), fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    AppStrings.tr(lang: _lang, uz: "Me'yor • Ross-308", ru: 'Норма • Ross-308', en: 'Norm • Ross-308'),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF92400E), fontWeight: FontWeight.w800),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -789,44 +889,76 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Pill 2: Flock Survival & Health
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFDCFCE7), width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Icon(Icons.favorite_rounded, size: 17, color: Color(0xFF16A34A)),
-                    Text(
-                      '${survivalPct.toStringAsFixed(1)}%',
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF166534),
+          child: TactileCard(
+            onTap: () => _navigateToPage(1),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFBBF7D0), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF16A34A).withAlpha(14),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A).withAlpha(26),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.favorite_rounded,
+                          size: 14,
+                          color: Color(0xFF16A34A),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  AppStrings.tr(lang: _lang, uz: 'Poda saqlanishi', ru: 'Сохранность стада', en: 'Flock Survival'),
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF4B6354), fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  '$_currentCount / $_initialCount',
-                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF14532D), fontWeight: FontWeight.w800),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        switchInCurve: Curves.easeOutCubic,
+                        child: Text(
+                          '${survivalPct.toStringAsFixed(1)}%',
+                          key: ValueKey('pill_surv_${survivalPct.toStringAsFixed(1)}'),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF166534),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    AppStrings.tr(lang: _lang, uz: 'Poda saqlanishi', ru: 'Сохранность стада', en: 'Flock Survival'),
+                    style: const TextStyle(fontSize: 10, color: Color(0xFF4B6354), fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    '$_currentCount / $_initialCount',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF14532D), fontWeight: FontWeight.w800),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -834,44 +966,76 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Pill 3: Daily Care & Feed Phase
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFDCFCE7), width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Icon(Icons.schedule_rounded, size: 18, color: Color(0xFF2563EB)),
-                    Text(
-                      AppStrings.tr(lang: _lang, uz: '$_batchDay-kun', ru: 'День $_batchDay', en: 'Day $_batchDay'),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF166534),
+          child: TactileCard(
+            onTap: () => context.push('/daily-plan'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withAlpha(14),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB).withAlpha(26),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.schedule_rounded,
+                          size: 15,
+                          color: Color(0xFF2563EB),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  AppStrings.tr(lang: _lang, uz: 'Kunlik parvarish', ru: 'Суточный уход', en: 'Daily Care'),
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF4B6354), fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  stageName,
-                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF14532D), fontWeight: FontWeight.w800),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        switchInCurve: Curves.easeOutCubic,
+                        child: Text(
+                          AppStrings.tr(lang: _lang, uz: '$_batchDay-kun', ru: 'День $_batchDay', en: 'Day $_batchDay'),
+                          key: ValueKey('pill_day_$_batchDay'),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1E40AF),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    AppStrings.tr(lang: _lang, uz: 'Kunlik parvarish', ru: 'Суточный уход', en: 'Daily Care'),
+                    style: const TextStyle(fontSize: 10, color: Color(0xFF1E3A8A), fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    stageName,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF1E40AF), fontWeight: FontWeight.w800),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1257,9 +1421,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       AppStrings.tr(
                         lang: _lang,
-                        uz: '📍 $_district • Ross-308 Partiya #1',
-                        ru: '📍 $_district • Ross-308 Партия #1',
-                        en: '📍 $_district • Ross-308 Batch #1',
+                        uz: '📍 ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)} • Ross-308 Partiya #1',
+                        ru: '📍 ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)} • Ross-308 Партия #1',
+                        en: '📍 ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)} • Ross-308 Batch #1',
                       ),
                       style: TextStyle(
                         color: Colors.white.withAlpha(200),

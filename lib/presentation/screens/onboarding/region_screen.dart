@@ -15,6 +15,7 @@ class RegionScreen extends StatefulWidget {
 
 class _RegionScreenState extends State<RegionScreen> {
   String _selectedDistrict = AppConstants.districts.first;
+  UzbekistanLocality? _selectedLocality;
   String? _autoDetectedDistrict;
   String? _gpsStatusText;
   bool _isDetectingGps = false;
@@ -37,6 +38,15 @@ class _RegionScreenState extends State<RegionScreen> {
       if (saved != null && AppConstants.districts.contains(saved)) {
         _selectedDistrict = saved;
       }
+      final savedLocality = prefs.getString('farmer_locality');
+      if (savedLocality != null) {
+        for (final loc in LocationService.uzbekistanLocalities) {
+          if (loc.nameUz.toLowerCase() == savedLocality.toLowerCase()) {
+            _selectedLocality = loc;
+            break;
+          }
+        }
+      }
     });
   }
 
@@ -57,11 +67,25 @@ class _RegionScreenState extends State<RegionScreen> {
       if (result.success) {
         _selectedDistrict = result.district;
         _autoDetectedDistrict = result.district;
+        _selectedLocality = null;
+        if (result.locality != null) {
+          for (final loc in LocationService.uzbekistanLocalities) {
+            if (loc.nameUz.toLowerCase() == result.locality!.toLowerCase()) {
+              _selectedLocality = loc;
+              break;
+            }
+          }
+        }
+        final label = LocationService.formatLocationLabel(
+          district: result.district,
+          locality: result.locality,
+          lang: _lang,
+        );
         _gpsStatusText = isRu
-            ? 'Геолокация включена: ${result.district}'
+            ? 'Геолокация включена: $label'
             : (isEn
-                ? 'Geolocation detected: ${result.district}'
-                : 'Geolokatsiya aniqlandi: ${result.district}');
+                ? 'Geolocation detected: $label'
+                : 'Geolokatsiya aniqlandi: $label');
       } else {
         _gpsStatusText = isRu
             ? 'Не удалось определить GPS — выберите регион из списка'
@@ -73,7 +97,9 @@ class _RegionScreenState extends State<RegionScreen> {
   }
 
   Future<void> _proceed() async {
-    if (_autoDetectedDistrict != _selectedDistrict) {
+    if (_selectedLocality != null) {
+      await LocationService.saveManualLocality(_selectedLocality!);
+    } else if (_autoDetectedDistrict != _selectedDistrict) {
       await LocationService.saveManualDistrict(_selectedDistrict);
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -93,6 +119,11 @@ class _RegionScreenState extends State<RegionScreen> {
     final filtered = AppConstants.districts.where((d) {
       return d.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
+    final matchedTowns = _searchQuery.trim().isEmpty
+        ? const <UzbekistanLocality>[]
+        : LocationService.uzbekistanLocalities
+            .where((loc) => loc.matchesQuery(_searchQuery))
+            .toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF7),
@@ -284,11 +315,72 @@ class _RegionScreenState extends State<RegionScreen> {
               Expanded(
                 child: ListView.separated(
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  itemCount: filtered.length,
+                  itemCount: matchedTowns.length + filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final district = filtered[index];
-                    final isSelected = district == _selectedDistrict;
+                    if (index < matchedTowns.length) {
+                      final town = matchedTowns[index];
+                      final isTownSelected = _selectedLocality?.nameUz == town.nameUz;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        decoration: BoxDecoration(
+                          color: isTownSelected ? const Color(0xFFEAF5ED) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isTownSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+                            width: isTownSelected ? 2 : 1.2,
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () => setState(() {
+                              _selectedDistrict = town.district;
+                              _selectedLocality = town;
+                            }),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: isTownSelected
+                                          ? theme.colorScheme.primary.withAlpha(25)
+                                          : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.place_rounded,
+                                      color: isTownSelected ? theme.colorScheme.primary : Colors.grey.shade600,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Text(
+                                      town.fullLabel(_lang),
+                                      style: TextStyle(
+                                        fontWeight: isTownSelected ? FontWeight.w800 : FontWeight.w600,
+                                        color: isTownSelected ? const Color(0xFF1B5E20) : const Color(0xFF1E293B),
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isTownSelected)
+                                    Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary, size: 22),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final district = filtered[index - matchedTowns.length];
+                    final isSelected = district == _selectedDistrict && _selectedLocality == null;
 
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 160),
@@ -313,7 +405,10 @@ class _RegionScreenState extends State<RegionScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () => setState(() => _selectedDistrict = district),
+                          onTap: () => setState(() {
+                            _selectedDistrict = district;
+                            _selectedLocality = null;
+                          }),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             child: Row(

@@ -27,7 +27,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     with AppLanguageController<SettingsScreen> {
   String _lang = 'uz';
   String _name = 'Fermer';
-  String _district = 'Toshkent';
+  String _district = 'Namangan';
+  String? _locality;
   int _currentCount = 500;
   bool _isLoading = true;
   bool _isAutoDetected = false;
@@ -61,7 +62,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     setState(() {
       _lang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
       _name = prefs.getString('farmer_name') ?? 'Fermer';
-      _district = prefs.getString('farmer_district') ?? 'Toshkent';
+      _district = prefs.getString('farmer_district') ?? 'Namangan';
+      _locality = prefs.getString('farmer_locality');
       _currentCount = prefs.getInt('current_count') ?? 500;
       _isAutoDetected = prefs.getBool('location_auto_detected') ?? false;
       _isLoading = false;
@@ -83,6 +85,17 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (!mounted) return;
     setState(() {
       _district = newDistrict;
+      _locality = null;
+      _isAutoDetected = false;
+    });
+  }
+
+  Future<void> _changeLocalityManually(UzbekistanLocality locality) async {
+    await LocationService.saveManualLocality(locality);
+    if (!mounted) return;
+    setState(() {
+      _district = locality.district;
+      _locality = locality.nameUz;
       _isAutoDetected = false;
     });
   }
@@ -96,6 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       _isDetectingGps = false;
       if (result.success) {
         _district = result.district;
+        _locality = result.locality;
         _isAutoDetected = true;
       }
     });
@@ -104,7 +118,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   Future<void> _openRegionPickerModal() async {
     final isRu = _lang == 'ru';
     final isEn = _lang == 'en';
-    final selected = await showModalBottomSheet<String>(
+    String searchQuery = '';
+
+    await showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF0E291A),
       shape: const RoundedRectangleBorder(
@@ -112,113 +128,216 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
       isScrollControlled: true,
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(60),
-                      borderRadius: BorderRadius.circular(99),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final matchedTowns = searchQuery.trim().isEmpty
+                ? <UzbekistanLocality>[
+                    LocationService.chartakLocality,
+                    ...LocationService.uzbekistanLocalities
+                        .where((l) => l.nameUz != 'Chortoq')
+                        .take(5),
+                  ]
+                : LocationService.uzbekistanLocalities
+                    .where((l) => l.matchesQuery(searchQuery))
+                    .toList();
+            final matchedDistricts = AppConstants.districts
+                .where(
+                  (d) =>
+                      searchQuery.trim().isEmpty ||
+                      d.toLowerCase().contains(searchQuery.toLowerCase()),
+                )
+                .toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 18,
+                  right: 18,
+                  top: 14,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 18,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(60),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  isRu
-                      ? 'Выберите регион фермы'
-                      : (isEn ? 'Select Farm Region' : 'Ferma hududini tanlang'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 340),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: AppConstants.districts.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (context, idx) {
-                        final item = AppConstants.districts[idx];
-                        final isSelected = item == _district;
-                        return Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => Navigator.pop(ctx, item),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 11,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFF34D399).withAlpha(45)
-                                    : Colors.white.withAlpha(12),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF34D399)
-                                      : Colors.white.withAlpha(24),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.location_on_rounded,
-                                    size: 16,
-                                    color: isSelected
-                                        ? const Color(0xFF6EE7B7)
-                                        : Colors.white.withAlpha(170),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      item,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13.5,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w800
-                                            : FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    const Icon(
-                                      Icons.check_circle_rounded,
-                                      size: 18,
-                                      color: Color(0xFF6EE7B7),
-                                    ),
-                                ],
+                    const SizedBox(height: 14),
+                    Text(
+                      isRu
+                          ? 'Выберите город или регион фермы'
+                          : (isEn
+                              ? 'Select Farm Town or Region'
+                              : 'Shahar/tuman yoki viloyatni tanlang'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      onChanged: (val) =>
+                          setModalState(() => searchQuery = val),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: isRu
+                            ? 'Поиск (напр. Чартак, Наманган)...'
+                            : (isEn
+                                ? 'Search (e.g. Chartak, Namangan)...'
+                                : 'Qidirish (masalan: Chortoq, Chartak)...'),
+                        hintStyle: TextStyle(
+                          color: Colors.white.withAlpha(130),
+                          fontSize: 12.5,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF6EE7B7),
+                          size: 18,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withAlpha(18),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: Colors.white.withAlpha(35),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: Colors.white.withAlpha(35),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final town in matchedTowns.take(6))
+                          ActionChip(
+                            backgroundColor: _locality == town.nameUz
+                                ? const Color(0xFF10B981)
+                                : Colors.white.withAlpha(18),
+                            side: BorderSide(
+                              color: _locality == town.nameUz
+                                  ? const Color(0xFF6EE7B7)
+                                  : Colors.white.withAlpha(35),
+                            ),
+                            label: Text(
+                              town.fullLabel(_lang),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              await _changeLocalityManually(town);
+                            },
                           ),
-                        );
-                      },
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 280),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: matchedDistricts.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 6),
+                          itemBuilder: (context, idx) {
+                            final item = matchedDistricts[idx];
+                            final isSelected =
+                                item == _district && _locality == null;
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  Navigator.pop(ctx);
+                                  await _changeDistrictManually(item);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 11,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF34D399).withAlpha(45)
+                                        : Colors.white.withAlpha(12),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF34D399)
+                                          : Colors.white.withAlpha(24),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.location_on_rounded,
+                                        size: 16,
+                                        color: isSelected
+                                            ? const Color(0xFF6EE7B7)
+                                            : Colors.white.withAlpha(170),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          item,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13.5,
+                                            fontWeight: isSelected
+                                                ? FontWeight.w800
+                                                : FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isSelected)
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 18,
+                                          color: Color(0xFF6EE7B7),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
-
-    if (selected != null && selected.isNotEmpty) {
-      await _changeDistrictManually(selected);
-    }
   }
 
   Future<void> _resetBatch() async {
@@ -467,15 +586,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 Text(
                                   _isAutoDetected
                                       ? (isRu
-                                          ? 'Автоопределено по GPS: $_district'
+                                          ? 'Автоопределено по GPS: ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)}'
                                           : (isEn
-                                              ? 'Auto-detected via GPS: $_district'
-                                              : 'GPS orqali aniqlangan: $_district'))
+                                              ? 'Auto-detected via GPS: ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)}'
+                                              : 'GPS orqali aniqlangan: ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)}'))
                                       : (isRu
-                                          ? 'Текущий регион: $_district'
+                                          ? 'Текущий регион: ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)}'
                                           : (isEn
-                                              ? 'Current region: $_district'
-                                              : 'Joriy hudud: $_district')),
+                                              ? 'Current region: ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)}'
+                                              : 'Joriy hudud: ${LocationService.formatLocationLabel(district: _district, locality: _locality, lang: _lang)}')),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey.shade600,
