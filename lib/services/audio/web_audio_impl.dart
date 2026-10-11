@@ -5,9 +5,10 @@ import 'dart:js_interop_unsafe';
 import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
 
-/// High-performance Web implementation of Text-to-Speech using native Web Speech API.
-/// Resolves Chrome issues: utterance reuse bug, 0.5 half-speed sluggishness,
-/// 15-second utterance timeout cutoff, and missing initial voices.
+/// High-performance Web implementation of Text-to-Speech using native Web Speech API
+/// and HTML5 Audio for Gemini Neural TTS.
+/// Prioritizes Microsoft Natural / Neural voices first, with automatic retry fallback
+/// to the default system TTS voice if an online voice fails.
 class WebTtsDelegate {
   Timer? _keepAliveTimer;
   bool _isSpeaking = false;
@@ -16,6 +17,10 @@ class WebTtsDelegate {
   List<String> _pendingChunks = [];
   int _currentChunkIndex = 0;
   String _currentLanguage = 'uz';
+  bool _useFallbackDefault = false;
+  bool _retriedCurrentChunk = false;
+  String? _activeVoiceName;
+  web.HTMLAudioElement? _activeAudioElement;
 
   bool get isSupported {
     try {
@@ -26,12 +31,84 @@ class WebTtsDelegate {
   }
 
   bool get isSpeaking => _isSpeaking;
+  String? get activeVoiceName => _activeVoiceName;
+
+  /// Checks whether the browser currently exposes a Microsoft Natural / Neural voice
+  /// for the requested language (or Turkish/Russian phonetic match for Uzbek).
+  bool hasMicrosoftNaturalVoice(String language) {
+    if (!isSupported) return false;
+    try {
+      final voices = web.window.speechSynthesis.getVoices().toDart;
+      final lang = language.toLowerCase();
+      final prefixes = lang == 'ru'
+          ? ['ru']
+          : (lang == 'uz' ? ['uz', 'tr', 'ru'] : ['en']);
+      for (final prefix in prefixes) {
+        for (final v in voices) {
+          if (v.lang.toLowerCase().startsWith(prefix) &&
+              _isMicrosoftNaturalVoice(v)) {
+            return true;
+          }
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  /// Plays base64-encoded audio (e.g., WAV from Gemini TTS) via HTML5 Audio.
+  /// Returns `true` if playback started and completed cleanly, or `false` if
+  /// playback failed so the caller can fall back to standard TTS.
+  Future<bool> playAudioBase64({
+    required String base64Data,
+    required String mimeType,
+    VoidCallback? onComplete,
+  }) async {
+    if (base64Data.isEmpty) return false;
+    await stop();
+
+    _sessionId++;
+    final session = _sessionId;
+    _isSpeaking = true;
+    _activeVoiceName = 'Gemini Voice';
+    _onCompleteCallback = onComplete;
+
+    final completer = Completer<bool>();
+
+    try {
+      final audio = web.HTMLAudioElement();
+      _activeAudioElement = audio;
+      audio.src = 'data:$mimeType;base64,$base64Data';
+
+      audio.onended = ((web.Event _) {
+        if (session != _sessionId) return;
+        _activeAudioElement = null;
+        _finishPlayback();
+        if (!completer.isCompleted) completer.complete(true);
+      }).toJS;
+
+      audio.onerror = ((web.Event _) {
+        if (session != _sessionId) return;
+        _activeAudioElement = null;
+        _isSpeaking = false;
+        if (!completer.isCompleted) completer.complete(false);
+      }).toJS;
+
+      await audio.play().toDart;
+      return await completer.future;
+    } catch (e) {
+      debugPrint('WebTtsDelegate playAudioBase64 error: $e');
+      _activeAudioElement = null;
+      _isSpeaking = false;
+      return false;
+    }
+  }
 
   /// Speaks text cleanly on Web, chunking long text into natural sentences
   /// to avoid Chrome's 15-second speech synthesis silent cutoff bug.
   Future<void> speak({
     required String text,
     required String language,
+    bool forceDefaultVoice = false,
     VoidCallback? onComplete,
   }) async {
     if (!isSupported || text.trim().isEmpty) {
@@ -45,21 +122,38 @@ class WebTtsDelegate {
     _isSpeaking = true;
     _onCompleteCallback = onComplete;
     _currentLanguage = language;
+    _useFallbackDefault = forceDefaultVoice;
+    _retriedCurrentChunk = false;
     _pendingChunks = _splitIntoNaturalChunks(text);
     _currentChunkIndex = 0;
+
+    // Warm up voice list if initially empty in Chrome
+    try {
+      web.window.speechSynthesis.getVoices();
+    } catch (_) {}
 
     _startKeepAlive();
     _playNextChunk(_sessionId);
   }
 
-  /// Cancels any active web utterance and cleans timers.
+  /// Cancels any active web utterance or HTML5 audio and cleans timers.
   Future<void> stop() async {
     _sessionId++;
     _stopKeepAlive();
     _isSpeaking = false;
     _pendingChunks = [];
     _currentChunkIndex = 0;
+    _retriedCurrentChunk = false;
     _onCompleteCallback = null;
+
+    try {
+      final audio = _activeAudioElement;
+      _activeAudioElement = null;
+      if (audio != null) {
+        audio.pause();
+        audio.src = '';
+      }
+    } catch (_) {}
 
     try {
       if (isSupported) {
@@ -81,38 +175,56 @@ class WebTtsDelegate {
     final chunk = _pendingChunks[_currentChunkIndex];
     if (chunk.trim().isEmpty) {
       _currentChunkIndex++;
+      _retriedCurrentChunk = false;
       _playNextChunk(session);
       return;
     }
 
     try {
       final synth = web.window.speechSynthesis;
-      // Chrome unpause heartbeat
       synth.resume();
 
       final utterance = web.SpeechSynthesisUtterance(chunk);
-      // On Web Speech API, 1.0 is standard normal speech rate (0.5 is dragging half-speed)
-      utterance.rate = 1.05;
+      utterance.rate = 1.03;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
-      final (targetVoice, targetLang) = _selectBestVoice(_currentLanguage);
+      final (targetVoice, targetLang) = _selectBestVoice(
+        _currentLanguage,
+        useFallbackDefault: _useFallbackDefault,
+      );
       if (targetVoice != null) {
         utterance.voice = targetVoice;
+        _activeVoiceName = targetVoice.name;
+      } else {
+        _activeVoiceName = 'System Default ($targetLang)';
       }
       utterance.lang = targetLang;
 
       utterance.onend = ((web.Event _) {
         if (!_isSpeaking || session != _sessionId) return;
         _currentChunkIndex++;
+        _retriedCurrentChunk = false;
         _playNextChunk(session);
       }).toJS;
 
       utterance.onerror = ((web.SpeechSynthesisErrorEvent err) {
         if (!_isSpeaking || session != _sessionId) return;
         if (err.error == 'canceled' || err.error == 'interrupted') return;
-        debugPrint('WebSpeechUtterance error: ${err.error}');
+        debugPrint(
+          'WebSpeechUtterance error (${_activeVoiceName ?? "default"}): ${err.error}',
+        );
+        // If Microsoft Natural / online voice failed, fall back to default system TTS
+        // and retry the current chunk instead of dropping the audio.
+        if (!_useFallbackDefault && !_retriedCurrentChunk) {
+          debugPrint('Falling back from natural voice to default system TTS.');
+          _useFallbackDefault = true;
+          _retriedCurrentChunk = true;
+          _playNextChunk(session);
+          return;
+        }
         _currentChunkIndex++;
+        _retriedCurrentChunk = false;
         _playNextChunk(session);
       }).toJS;
 
@@ -120,7 +232,14 @@ class WebTtsDelegate {
     } catch (e) {
       debugPrint('WebTtsDelegate _playNextChunk error: $e');
       if (!_isSpeaking || session != _sessionId) return;
+      if (!_useFallbackDefault && !_retriedCurrentChunk) {
+        _useFallbackDefault = true;
+        _retriedCurrentChunk = true;
+        _playNextChunk(session);
+        return;
+      }
       _currentChunkIndex++;
+      _retriedCurrentChunk = false;
       _playNextChunk(session);
     }
   }
@@ -133,43 +252,82 @@ class WebTtsDelegate {
     cb?.call();
   }
 
+  bool _isMicrosoftNaturalVoice(web.SpeechSynthesisVoice v) {
+    final name = v.name.toLowerCase();
+    return name.contains('microsoft') &&
+        (name.contains('natural') ||
+            name.contains('online') ||
+            name.contains('neural'));
+  }
+
+  bool _isNeuralOrCloudVoice(web.SpeechSynthesisVoice v) {
+    final name = v.name.toLowerCase();
+    return name.contains('natural') ||
+        name.contains('neural') ||
+        name.contains('google') ||
+        name.contains('microsoft') ||
+        !v.localService;
+  }
+
   /// Selects the best sounding voice available in the browser.
-  (web.SpeechSynthesisVoice?, String) _selectBestVoice(String language) {
+  /// Priority order when [useFallbackDefault] is false:
+  /// 1. Microsoft Natural / Online Neural voice (e.g., Microsoft Madina/Sardor/Dmitry/Aria Online Natural)
+  /// 2. Google Neural / Cloud voice
+  /// 3. Local / Default system voice
+  /// When [useFallbackDefault] is true, selects a local/default voice directly.
+  (web.SpeechSynthesisVoice?, String) _selectBestVoice(
+    String language, {
+    bool useFallbackDefault = false,
+  }) {
     final synth = web.window.speechSynthesis;
     final voices = synth.getVoices().toDart;
     final lang = language.toLowerCase();
 
-    if (lang == 'ru') {
-      // Prioritize natural Russian voices
-      for (final v in voices) {
-        final vLang = v.lang.toLowerCase();
-        if (vLang.startsWith('ru')) return (v, 'ru-RU');
+    final List<(String prefix, String tag)> candidates = lang == 'ru'
+        ? [('ru', 'ru-RU')]
+        : (lang == 'uz'
+            ? [('uz', 'uz-UZ'), ('tr', 'tr-TR'), ('ru', 'ru-RU')]
+            : [('en', 'en-US')]);
+
+    if (!useFallbackDefault) {
+      // 1. Check all candidate languages for a Microsoft Natural Voice first
+      for (final (prefix, tag) in candidates) {
+        for (final v in voices) {
+          if (v.lang.toLowerCase().startsWith(prefix) &&
+              _isMicrosoftNaturalVoice(v)) {
+            return (v, tag);
+          }
+        }
       }
-      return (null, 'ru-RU');
-    } else if (lang == 'uz') {
-      // 1. Look for native Uzbek voice
-      for (final v in voices) {
-        final vLang = v.lang.toLowerCase();
-        if (vLang.startsWith('uz')) return (v, 'uz-UZ');
+
+      // 2. Check for Google / Neural voices
+      for (final (prefix, tag) in candidates) {
+        for (final v in voices) {
+          if (v.lang.toLowerCase().startsWith(prefix) &&
+              _isNeuralOrCloudVoice(v)) {
+            return (v, tag);
+          }
+        }
       }
-      // 2. Turkish voice phonetically reads Latin Uzbek with exceptional accuracy
-      for (final v in voices) {
-        final vLang = v.lang.toLowerCase();
-        if (vLang.startsWith('tr')) return (v, 'tr-TR');
-      }
-      // 3. Clear Russian/multilingual voice as secondary fallback
-      for (final v in voices) {
-        final vLang = v.lang.toLowerCase();
-        if (vLang.startsWith('ru')) return (v, 'ru-RU');
-      }
-      return (null, 'uz-UZ');
-    } else {
-      for (final v in voices) {
-        final vLang = v.lang.toLowerCase();
-        if (vLang.startsWith('en')) return (v, 'en-US');
-      }
-      return (null, 'en-US');
     }
+
+    // 3. Fallback: prefer local service voice or first matching voice for language
+    for (final (prefix, tag) in candidates) {
+      for (final v in voices) {
+        if (v.lang.toLowerCase().startsWith(prefix) && v.localService) {
+          return (v, tag);
+        }
+      }
+      for (final v in voices) {
+        if (v.lang.toLowerCase().startsWith(prefix)) {
+          return (v, tag);
+        }
+      }
+    }
+
+    final defaultTag =
+        lang == 'ru' ? 'ru-RU' : (lang == 'uz' ? 'uz-UZ' : 'en-US');
+    return (null, defaultTag);
   }
 
   /// Splits long text into pleasant spoken phrases (100-200 chars) around punctuation.
@@ -195,8 +353,6 @@ class WebTtsDelegate {
   }
 
   /// Workaround for notorious Chromium issue where SpeechSynthesis pauses after 14s.
-  /// Note: we already chunk utterances under 180 chars (~10s), so only `resume()` is
-  /// needed; calling `pause()` before `resume()` causes audible word clipping.
   void _startKeepAlive() {
     _keepAliveTimer?.cancel();
     _keepAliveTimer = Timer.periodic(const Duration(seconds: 10), (_) {
@@ -219,6 +375,7 @@ class WebSpeechRecognitionDelegate {
   bool _isListening = false;
   String _accumulatedTranscript = '';
   Completer<void>? _endCompleter;
+  bool _retriedFallbackLang = false;
 
   bool get isSupported {
     try {
@@ -259,6 +416,7 @@ class WebSpeechRecognitionDelegate {
 
     _accumulatedTranscript = '';
     _isListening = true;
+    _retriedFallbackLang = false;
     _endCompleter = Completer<void>();
 
     final lang = language.toLowerCase();
@@ -287,7 +445,17 @@ class WebSpeechRecognitionDelegate {
 
     _recognizer!.onerror = ((web.SpeechRecognitionErrorEvent err) {
       debugPrint('WebSpeechRecognition error: ${err.error}');
-      if (err.error != 'no-speech') {
+      if (err.error == 'language-not-supported' &&
+          !_retriedFallbackLang &&
+          _recognizer != null) {
+        _retriedFallbackLang = true;
+        try {
+          _recognizer!.lang = 'tr-TR';
+          _recognizer!.start();
+          return;
+        } catch (_) {}
+      }
+      if (err.error != 'no-speech' && err.error != 'aborted') {
         onError?.call(err.error);
       }
     }).toJS;
@@ -344,3 +512,4 @@ class WebSpeechRecognitionDelegate {
     _accumulatedTranscript = '';
   }
 }
+

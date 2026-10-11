@@ -56,24 +56,25 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    testWidgets('1. Fresh Launch: Splash Screen routes to Onboarding when not onboarded', (tester) async {
+    testWidgets('1. Fresh Launch: Splash Screen routes instantaneously to Onboarding without loading spinner', (tester) async {
       SharedPreferences.setMockInitialValues({'is_onboarded': false});
 
       await tester.pumpWidget(createTestApp(const SplashScreen()));
 
       expect(find.text('AgroZen'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      await tester.pump(const Duration(seconds: 2));
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      await tester.pump(const Duration(milliseconds: 50));
       await tester.pumpAndSettle();
       expect(find.text('LanguageMock'), findsOneWidget);
     });
 
-    testWidgets('2. Language Selection Screen stores choice in SharedPreferences', (tester) async {
+    testWidgets('2. Language Selection Screen renders Payme-style hero slides, progress dots, uncropped flags, and stores choice in SharedPreferences', (tester) async {
       SharedPreferences.setMockInitialValues({});
 
       await tester.pumpWidget(createTestApp(const LanguageScreen()));
 
       expect(find.text("Tilni tanlang\nВыберите язык\nSelect Language"), findsOneWidget);
+      expect(find.text('1 / 4'), findsOneWidget);
       expect(find.text("O'zbekcha"), findsOneWidget);
       expect(find.text("Русский"), findsOneWidget);
       expect(find.text("English"), findsOneWidget);
@@ -337,6 +338,35 @@ void main() {
       expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
     });
 
+    testWidgets('12c. AskScreen in Field/Voice Mode responds warmly to "hello" and displays user question & full AI answer', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'app_language': 'uz',
+        'farmer_name': 'Rustam aka',
+        'current_count': 480,
+        'remaining_questions': 30,
+      });
+
+      await tester.pumpWidget(createTestApp(const AskScreen(startInFieldMode: true)));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // Type "hello" in Field Mode quick input bar
+      final input = find.byType(TextField);
+      expect(input, findsOneWidget);
+      await tester.enterText(input, 'hello');
+      await tester.tap(find.byIcon(Icons.send_rounded));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      // Should display user's question banner and a warm English greeting with flock status
+      expect(find.text('hello'), findsOneWidget);
+      expect(find.textContaining('Hello, Rustam aka!'), findsOneWidget);
+      expect(find.textContaining('480 birds'), findsOneWidget);
+      // Should NOT say "no info" or return unrelated broiler manual snippets
+      expect(find.textContaining('I could not find a specific answer'), findsNothing);
+      expect(find.textContaining("Bu savol bo'yicha tekshirilgan bazada"), findsNothing);
+    });
+
     testWidgets('13. Pre-Credit Course & Quiz Flow awards completion', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
@@ -524,6 +554,46 @@ void main() {
         find.textContaining('Day-old chicks cannot regulate their own body temperature'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('19. Single-Focus CourseListScreen allows inline 1-question check and direct step-by-step progression', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'app_language': 'uz',
+        'completed_lessons': <String>[],
+      });
+
+      await tester.pumpWidget(createTestApp(const CourseListScreen()));
+      await tester.pumpAndSettle();
+
+      // Initially focuses on Step 1 with 3 simple rules
+      expect(find.text('Tugallandi: 0 / 5'), findsOneWidget);
+      expect(find.text("Jo'jalar kelishidan oldin xonani tayyorlash"), findsOneWidget);
+      expect(find.text('33–34°C'), findsOneWidget);
+
+      // Tap the primary button to open the inline 1-question check
+      final inlineQuizBtn = find.byKey(const ValueKey('start_inline_quiz_btn_1'));
+      await tester.ensureVisible(inlineQuizBtn);
+      await tester.tap(inlineQuizBtn);
+      await tester.pumpAndSettle();
+
+      // Answer the Step 1 question inline
+      await tester.tap(find.text('33-34°C'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Javobni tekshirish'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("To'g'ri! 1-qadam bajarildi."), findsOneWidget);
+      expect(find.text('Tugallandi: 1 / 5'), findsOneWidget);
+
+      // Tap "Keyingi qadamga o'tish" to advance directly to Step 2 in place
+      final nextStepBtn = find.text("Keyingi qadamga o'tish");
+      await tester.ensureVisible(nextStepBtn);
+      await tester.tap(nextStepBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dastlabki 3 kun: hal qiluvchi davr'), findsOneWidget);
+      expect(find.text('8 soat / 80%'), findsOneWidget);
     });
   });
 }

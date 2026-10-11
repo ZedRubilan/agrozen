@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/constants.dart';
 import '../../../services/daily_counters.dart';
 import '../../../services/notification_service.dart';
+import '../../widgets/agro_icons.dart';
 import '../../widgets/tactile_button.dart';
 
 class DisclaimerScreen extends StatefulWidget {
@@ -88,8 +89,9 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Step Progress Badge
+              // Step Progress Badge with Payme-style Progress Dots
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -106,6 +108,10 @@ class _DisclaimerScreenState extends State<DisclaimerScreen> {
                         letterSpacing: 0.8,
                       ),
                     ),
+                  ),
+                  const AgroProgressDots(
+                    currentStep: 3,
+                    totalSteps: 4,
                   ),
                 ],
               ),

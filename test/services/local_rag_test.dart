@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
+import 'package:agrozen/services/flock_context_service.dart';
 import 'package:agrozen/services/local_rag.dart';
+import 'package:agrozen/services/tts_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -241,5 +243,118 @@ void main() {
       // Unknown topic falls back to the raw name instead of throwing.
       expect(LocalRag.titleFor('unknown_topic', 'ru'), 'unknown_topic');
     });
+
+    test('responds warmly to "hello", "salom", and "привет" instead of returning null or unrelated articles', () async {
+      final realRag = LocalRag(KnowledgeRepository());
+
+      // Even if UI fallback language is 'uz', typing "hello" detects English and replies warmly
+      final enHello = await realRag.answer(
+        question: 'hello',
+        language: 'uz',
+      );
+      expect(enHello, isNotNull);
+      expect(enHello!.answer.toLowerCase(), contains('hello'));
+      expect(enHello.answer, isNot(contains('Verified excerpt from')));
+
+      final uzSalom = await realRag.answer(
+        question: 'Assalomu alaykum, qalaysiz?',
+        language: 'uz',
+      );
+      expect(uzSalom, isNotNull);
+      expect(uzSalom!.answer, contains('Assalomu alaykum'));
+
+      final ruPrivet = await realRag.answer(
+        question: 'Привет, как дела?',
+        language: 'uz',
+      );
+      expect(ruPrivet, isNotNull);
+      expect(ruPrivet!.answer, contains('Здравствуйте'));
+    });
+
+    test('stopwords like "what", "are", "for" do not falsely match unrelated broiler manuals', () async {
+      final rag = _ragWith({
+        'knowledge/broilers/en/01_preparation.md':
+            '# Preparation\n\nPrepare the poultry barn carefully for incoming chicks. What is needed is clean litter.',
+      });
+
+      // Unrelated question containing only stopwords ("what", "are", "for") + unrelated noun
+      final unrelated = await rag.answer(
+        question: 'What are the rules for football?',
+        language: 'en',
+      );
+      expect(unrelated, isNull);
+    });
+
+    test('answers live flock status queries with personalized LiveFlockContext telemetry', () async {
+      final rag = _ragWith(const {});
+      const mockContext = LiveFlockContext(
+        farmerName: 'Sardor aka',
+        district: 'Samarqand',
+        language: 'en',
+        batchDay: 14,
+        initialCount: 500,
+        currentCount: 492,
+        todayMortality: 0,
+        todayFeedKg: 25.0,
+        lastWeightG: 505.0,
+        targetTemperatureC: 27.0,
+        targetWeightG: 510.0,
+        targetDailyFeedPerBirdG: 53.0,
+        growthPhase: 'Grower',
+        localVet: {'name': 'Dr. Alisher', 'phone': '+998901234567'},
+      );
+
+      final statusRes = await rag.answer(
+        question: 'How are my chicks doing?',
+        language: 'en',
+        context: mockContext,
+      );
+      expect(statusRes, isNotNull);
+      expect(statusRes!.answer, contains('Day 14'));
+      expect(statusRes.answer, contains('492'));
+      expect(statusRes.answer, contains('27°C'));
+      expect(statusRes.answer, contains('Dr. Alisher'));
+    });
+  });
+
+  group('TTS Voice Priority (Microsoft Natural & Gemini Voice -> Default TTS Fallback)', () {
+    test('selectBestNativeVoice prioritizes Microsoft Natural voice first, then Gemini/Neural, then Default TTS', () {
+      final voices = [
+        {'name': 'en-US-default-local', 'locale': 'en-US'},
+        {'name': 'Google en-US Network', 'locale': 'en-US'},
+        {'name': 'Microsoft Aria Online (Natural) - English (United States)', 'locale': 'en-US'},
+      ];
+
+      final primary = TtsService.selectBestNativeVoice(voices, 'en');
+      expect(primary, isNotNull);
+      expect(primary!['name'], contains('Microsoft Aria Online (Natural)'));
+
+      // When Microsoft Natural is absent, selects Gemini / Neural / Network voice
+      final withoutMs = [
+        {'name': 'en-US-default-local', 'locale': 'en-US'},
+        {'name': 'Gemini Neural Voice', 'locale': 'en-US'},
+      ];
+      final secondTier = TtsService.selectBestNativeVoice(withoutMs, 'en');
+      expect(secondTier, isNotNull);
+      expect(secondTier!['name'], equals('Gemini Neural Voice'));
+
+      // When forceDefault is true (fallback mode), selects local default voice
+      final fallback = TtsService.selectBestNativeVoice(voices, 'en', forceDefault: true);
+      expect(fallback, isNotNull);
+      expect(fallback!['name'], equals('en-US-default-local'));
+    });
+
+    test('wrapPcm16LeToWav wraps raw 24kHz PCM bytes with a valid 44-byte RIFF WAVE header', () {
+      final pcm = Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8]);
+      final wav = TtsService.wrapPcm16LeToWav(pcm, sampleRate: 24000, channels: 1);
+
+      expect(wav.length, equals(44 + pcm.length));
+      expect(ascii.decode(wav.sublist(0, 4)), equals('RIFF'));
+      expect(ascii.decode(wav.sublist(8, 12)), equals('WAVE'));
+      expect(ascii.decode(wav.sublist(12, 16)), equals('fmt '));
+      expect(ascii.decode(wav.sublist(36, 40)), equals('data'));
+      expect(wav.sublist(44), equals(pcm));
+    });
   });
 }
+

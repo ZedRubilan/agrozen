@@ -10,6 +10,7 @@ import 'package:agrozen/presentation/widgets/tactile_button.dart';
 import 'package:agrozen/presentation/widgets/flock_pathway_card.dart';
 import 'package:agrozen/presentation/widgets/desktop_web_shell.dart';
 import 'package:agrozen/presentation/widgets/weather_climate_card.dart';
+import 'package:agrozen/presentation/widgets/agro_icons.dart';
 import 'package:agrozen/domain/alerts/alert_models.dart';
 import 'package:agrozen/data/models/daily_plan.dart';
 
@@ -351,6 +352,71 @@ void main() {
       expect(find.text("O'sish"), findsOneWidget);
       expect(find.text("Finish"), findsOneWidget);
       expect(find.text("Hosil"), findsOneWidget);
+    });
+
+    testWidgets('WeatherClimateCard supports clicking forecast days, telemetry tips, and checking off microclimate tasks', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: WeatherClimateCard(
+                district: 'Samarqand',
+                batchDay: 14,
+                targetHouseTemp: 26.0,
+                language: 'uz',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap D+1 forecast pill to switch to tomorrow's forecast (15-kun)
+      await tester.tap(find.text('D+1'));
+      await tester.pumpAndSettle();
+      expect(find.text('15-kun • Ross-308'), findsOneWidget);
+
+      // Tap Bugun to return to today (14-kun)
+      await tester.tap(find.text('Bugun'));
+      await tester.pumpAndSettle();
+      expect(find.text('14-kun • Ross-308'), findsOneWidget);
+
+      // Tap the wind telemetry metric chip to reveal contextual tip
+      await tester.tap(find.byIcon(Icons.air_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
+
+      // Expand the microclimate checklist panel
+      await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('0/3'), findsOneWidget);
+
+      // Tap the first microclimate checklist item to check it off
+      await tester.tap(find.textContaining("Xona haroratini jo'ja sathida"));
+      await tester.pumpAndSettle();
+      expect(find.text('1/3'), findsOneWidget);
+
+      // Tap the second microclimate checklist item to check it off
+      await tester.tap(find.textContaining('Shamollatish klapanlarini tekshirish'));
+      await tester.pumpAndSettle();
+      expect(find.text('2/3'), findsOneWidget);
+    });
+
+    testWidgets('AgroChickIcon renders natural rounded photographic logo inside ClipOval', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: AgroChickIcon(size: 72),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AgroChickIcon), findsOneWidget);
+      expect(find.byType(ClipOval), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
     });
   });
 }

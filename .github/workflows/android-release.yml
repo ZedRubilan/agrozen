@@ -1,0 +1,92 @@
+name: Android Release APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-release:
+    name: Build Android Release & Publish to Releases
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Free Runner Disk Space (Prevent Disk Full Errors)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk/25* /usr/local/lib/android/sdk/ndk/26* /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Flutter (Stable, Zero Cache Quota)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: false
+
+      - name: Install Dependencies
+        run: |
+          chmod +x android/gradlew
+          flutter pub get
+
+      - name: Verify Code & Run Tests
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Build Android Release APK (with Supabase & Gemini Keys)
+        run: |
+          flutter build apk --release \
+            --build-number="${{ github.run_number }}" \
+            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
+            --dart-define=GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            --dart-define=GOOGLE_CLOUD_STT_KEY="${{ secrets.GOOGLE_CLOUD_STT_KEY }}"
+
+      - name: Prepare Release APK Assets
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk "AgroZen-release.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "AgroZen-v1.0.${{ github.run_number }}-release.apk"
+          ls -lh AgroZen*.apk
+
+      - name: Publish APK to GitHub Releases Page (Zero Actions Artifact Storage)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v1.0.${{ github.run_number }}"
+          TITLE="AgroZen Android Release v1.0.${{ github.run_number }}"
+          NOTES="Automated Android Release APK built from commit ${{ github.sha }} with configured Supabase & Gemini environment keys."
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "AgroZen-release.apk" "AgroZen-v1.0.${{ github.run_number }}-release.apk" --clobber
+          else
+            gh release create "$TAG" \
+              "AgroZen-release.apk" \
+              "AgroZen-v1.0.${{ github.run_number }}-release.apk" \
+              --title "$TITLE" \
+              --notes "$NOTES" \
+              --latest
+          fi
+
+          # Keep only the 3 most recent automated releases so GitHub remains clean
+          OLD_TAGS=$(gh release list --limit 30 --json tagName --jq '.[3:][].tagName')
+          for old_tag in $OLD_TAGS; do
+            echo "Pruning older release $old_tag..."
+            gh release delete "$old_tag" --cleanup-tag --yes || true
+          done

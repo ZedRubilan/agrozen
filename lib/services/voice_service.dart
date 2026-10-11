@@ -40,8 +40,12 @@ class VoiceService {
   }
 
   /// Requests mic permission and starts capturing.
-  /// On Web, initializes native Chrome/Safari SpeechRecognition alongside the audio recorder.
-  Future<String> startRecording({String language = 'uz'}) async {
+  /// On Web, uses native Chrome/Edge/Safari SpeechRecognition with live partial results,
+  /// falling back to audio recording only when Web Speech Recognition is unavailable.
+  Future<String> startRecording({
+    String language = 'uz',
+    void Function(String partialText)? onPartialResult,
+  }) async {
     _lastWebTranscript = null;
     _lastRecordingPath = null;
 
@@ -50,16 +54,11 @@ class VoiceService {
         language: language,
         onResult: (text) {
           _lastWebTranscript = text;
+          onPartialResult?.call(text);
         },
       );
       if (started) {
-        try {
-          await _recorder.start(
-            const RecordConfig(encoder: AudioEncoder.opus),
-            path: '',
-          );
-        } catch (_) {}
-        return 'web_audio';
+        return 'web_speech_only';
       }
     }
 
@@ -110,6 +109,7 @@ class VoiceService {
       if (text.isNotEmpty) {
         _lastWebTranscript = text;
       }
+      return 'web_speech_only';
     }
 
     try {
@@ -167,8 +167,8 @@ class VoiceService {
     'could not recognize the speech.',
   };
 
-  /// Sends [audioPath] to the `transcribe-voice` Edge Function or returns
-  /// native browser SpeechRecognition transcript (on Web).
+  /// Sends [audioPath] to the `transcribe-voice` Edge Function, direct Gemini audio API,
+  /// or returns native browser SpeechRecognition transcript (on Web).
   Future<String> transcribe(String audioPath, {required String language}) async {
     final norm = language.trim().toLowerCase();
     final lang = norm.startsWith('ru')
@@ -176,7 +176,7 @@ class VoiceService {
         : (norm.startsWith('en') ? 'en' : 'uz');
 
     try {
-      // 1. If Web Speech Recognition captured speech during recording on Chrome:
+      // 1. If Web Speech Recognition captured speech during recording on Chrome/Edge/Safari:
       if (kIsWeb &&
           _lastWebTranscript != null &&
           _lastWebTranscript!.trim().isNotEmpty) {
@@ -185,8 +185,17 @@ class VoiceService {
         return transcript;
       }
 
-      // 2. Otherwise require configured cloud backend:
-      if (!SupabaseConfig.isConfigured && _clientFactory == null) {
+      if (audioPath == 'web_speech_only') {
+        throw const VoiceUnavailable(
+          'Could not recognize the speech.',
+          reason: VoiceUnavailableReason.transcribeFailed,
+        );
+      }
+
+      // 2. Otherwise require configured cloud backend or Gemini key:
+      if (!SupabaseConfig.isConfigured &&
+          !SupabaseConfig.hasGeminiKey &&
+          _clientFactory == null) {
         throw const VoiceUnavailable(
           'Voice transcription needs the cloud backend, which is not configured.',
           reason: VoiceUnavailableReason.notConfigured,
@@ -233,37 +242,69 @@ class VoiceService {
         bytes = await file.readAsBytes();
       }
 
-      final factory = _clientFactory;
-      final client =
-          factory != null ? await factory() : SupabaseConfig.client;
+      final audioBase64 = base64Encode(bytes);
 
-      final response = await client.functions.invoke(
-        'transcribe-voice',
-        body: {
-          'audio_base64': base64Encode(bytes),
-          'mime_type': mimeType,
-          'language': lang,
-        },
-      );
+      if (SupabaseConfig.isConfigured || _clientFactory != null) {
+        try {
+          final factory = _clientFactory;
+          final client =
+              factory != null ? await factory() : SupabaseConfig.client;
 
-      final data = response.data;
-      final Map<String, dynamic>? payload = data is Map
-          ? Map<String, dynamic>.from(data)
-          : (data is String
-              ? Map<String, dynamic>.from(jsonDecode(data) as Map)
-              : null);
+          final response = await client.functions.invoke(
+            'transcribe-voice',
+            body: {
+              'audio_base64': audioBase64,
+              'mime_type': mimeType,
+              'language': lang,
+            },
+          );
 
-      final text = (payload?['transcribed_text'] as String?)?.trim() ?? '';
-      if (response.status != 200 ||
-          text.isEmpty ||
-          _serverFallbackPhrases.contains(text.toLowerCase())) {
-        final serverError = payload?['error']?.toString();
-        throw VoiceUnavailable(
-          serverError ?? 'Could not recognize the speech.',
-          reason: VoiceUnavailableReason.transcribeFailed,
-        );
+          final data = response.data;
+          final Map<String, dynamic>? payload = data is Map
+              ? Map<String, dynamic>.from(data)
+              : (data is String
+                  ? Map<String, dynamic>.from(jsonDecode(data) as Map)
+                  : null);
+
+          final text = (payload?['transcribed_text'] as String?)?.trim() ?? '';
+          if (response.status == 200 &&
+              text.isNotEmpty &&
+              !_serverFallbackPhrases.contains(text.toLowerCase())) {
+            return text;
+          }
+          if (!SupabaseConfig.hasGeminiKey) {
+            final serverError = payload?['error']?.toString();
+            throw VoiceUnavailable(
+              serverError ?? 'Could not recognize the speech.',
+              reason: VoiceUnavailableReason.transcribeFailed,
+            );
+          }
+        } catch (edgeErr) {
+          if (!SupabaseConfig.hasGeminiKey) {
+            rethrow;
+          }
+          debugPrint(
+            'transcribe-voice edge function failed, falling back to direct Gemini: $edgeErr',
+          );
+        }
       }
-      return text;
+
+      if (SupabaseConfig.hasGeminiKey) {
+        final directText = await _transcribeDirectGemini(
+          audioBase64: audioBase64,
+          mimeType: mimeType,
+          lang: lang,
+        );
+        if (directText.isNotEmpty &&
+            !_serverFallbackPhrases.contains(directText.toLowerCase())) {
+          return directText;
+        }
+      }
+
+      throw const VoiceUnavailable(
+        'Could not recognize the speech.',
+        reason: VoiceUnavailableReason.transcribeFailed,
+      );
     } catch (e) {
       if (e is VoiceUnavailable) rethrow;
       throw VoiceUnavailable(
@@ -272,7 +313,10 @@ class VoiceService {
       );
     } finally {
       _lastRecordingPath = null;
-      if (!kIsWeb && audioPath.isNotEmpty && audioPath != 'web_audio') {
+      if (!kIsWeb &&
+          audioPath.isNotEmpty &&
+          audioPath != 'web_audio' &&
+          audioPath != 'web_speech_only') {
         try {
           final file = File(audioPath);
           if (await file.exists()) {
@@ -281,6 +325,64 @@ class VoiceService {
         } catch (_) {}
       }
     }
+  }
+
+  Future<String> _transcribeDirectGemini({
+    required String audioBase64,
+    required String mimeType,
+    required String lang,
+  }) async {
+    final apiKey = SupabaseConfig.geminiApiKey;
+    if (apiKey.isEmpty) return '';
+
+    final prompt = lang == 'ru'
+        ? 'Точно транскрибируй эту аудиозапись на русском языке. Верни только распознанный текст без комментариев.'
+        : (lang == 'en'
+            ? 'Accurately transcribe this audio recording. Return only the recognized speech text without commentary.'
+            : "Ushbu ovozli yozuvni o'zbek tilida (lotin alifbosida) aniq matnga aylantirib ber. Faqat aniqlangan nutq matnini qaytar, izoh yozma.");
+
+    final uri = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+    );
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
+          },
+          body: jsonEncode({
+            'contents': [
+              {
+                'role': 'user',
+                'parts': [
+                  {
+                    'inline_data': {
+                      'mime_type': mimeType,
+                      'data': audioBase64,
+                    },
+                  },
+                  {'text': prompt},
+                ],
+              },
+            ],
+            'generationConfig': {
+              'temperature': 0.1,
+              'maxOutputTokens': 256,
+            },
+          }),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      final text =
+          decoded['candidates']?[0]?['content']?['parts']?[0]?['text'];
+      if (text is String) {
+        return text.trim();
+      }
+    }
+    return '';
   }
 
   Future<void> dispose() async {

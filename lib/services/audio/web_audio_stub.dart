@@ -4,10 +4,22 @@ import 'dart:ui';
 class WebTtsDelegate {
   bool get isSupported => false;
   bool get isSpeaking => false;
+  String? get activeVoiceName => null;
+
+  bool hasMicrosoftNaturalVoice(String language) => false;
+
+  Future<bool> playAudioBase64({
+    required String base64Data,
+    required String mimeType,
+    VoidCallback? onComplete,
+  }) async {
+    return false;
+  }
 
   Future<void> speak({
     required String text,
     required String language,
+    bool forceDefaultVoice = false,
     VoidCallback? onComplete,
   }) async {
     onComplete?.call();
@@ -34,3 +46,4 @@ class WebSpeechRecognitionDelegate {
 
   Future<void> cancelListening() async {}
 }
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'agro_icons.dart';
 
 class LanguageSelector extends StatelessWidget {
   final String currentLanguage;
@@ -18,11 +19,13 @@ class LanguageSelector extends StatelessWidget {
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: const Color(0xFFEDF2EE),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFDCE6DF), width: 1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDCE6DF), width: 1.2),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        alignment: WrapAlignment.center,
         children: [
           _buildOption(
             context,
@@ -31,7 +34,6 @@ class LanguageSelector extends StatelessWidget {
             isSelected: currentLanguage == 'uz',
             theme: theme,
           ),
-          const SizedBox(width: 4),
           _buildOption(
             context,
             localeCode: 'ru',
@@ -39,7 +41,6 @@ class LanguageSelector extends StatelessWidget {
             isSelected: currentLanguage == 'ru',
             theme: theme,
           ),
-          const SizedBox(width: 4),
           _buildOption(
             context,
             localeCode: 'en',
@@ -62,28 +63,36 @@ class LanguageSelector extends StatelessWidget {
     return GestureDetector(
       onTap: () => onLanguageChanged?.call(localeCode),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? theme.colorScheme.primary : Colors.white.withAlpha(140),
+          borderRadius: BorderRadius.circular(13),
           boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withAlpha(60),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                )
-              ]
-            : null,
+              ? [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withAlpha(60),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF4A5D4E),
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-            fontSize: 13.5,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AgroFlagBadge(code: localeCode, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -23,12 +23,15 @@ interface AskQuestionRequest {
   farmer_id?: string;
   relevant_topic_contents?: string[];
   topic_names?: string[];
+  image_base64?: string;
+  image_mime_type?: string;
 }
 
 interface AskQuestionResponse {
   answer: string;
   sources_used: string[];
   remaining_questions: number;
+  is_fallback?: boolean;
 }
 
 const MAX_DAILY_QUESTIONS = 30;
@@ -50,7 +53,13 @@ serve(async (req: Request) => {
 
   try {
     const body: AskQuestionRequest = await req.json();
-    const { question, language = 'uz', farmer_id } = body;
+    const {
+      question,
+      language = 'uz',
+      farmer_id,
+      image_base64,
+      image_mime_type = 'image/jpeg',
+    } = body;
 
     const lang: 'uz' | 'ru' | 'en' =
       language === 'ru' ? 'ru' : (language === 'en' ? 'en' : 'uz');
@@ -205,10 +214,10 @@ Berilgan kontekstda tashqi harorat va ob-havo ko'rsatkichlari (Outdoor Telemetry
 - Agar tashqarida sovuq bo'lsa (<15°C yoki xona me'yoridan ancha past): pol sathida skvoznyak hosil qilmasdan minimal ventilyatsiyani taymer bilan boshqarish, kiruvchi havoni ilitish va isitgichlarni to'g'ri sozlashni maslahat bering.
 
 QAT'IY QOIDALAR VA CHEKLOVLAR:
-1. FAQAT quyida berilgan "Parrandachilik Yo'riqnomasi va Me'yorlari"ga tayangan holda gapiring.
+1. Salomlashish ("Salom", "Assalomu alaykum", "Qalaysiz"), minnatdorchilik va fermerning joriy partiya dosyesi (jo'jalar yoshi, soni, bugungi me'yorlar) bo'yicha savollarga samimiy, do'stona va tabiiy javob bering. Parrandachilik bo'yicha barcha texnik maslahatlarni berilgan "Parrandachilik Yo'riqnomasi va Me'yorlari"ga tayangan holda bering.
 2. TIBBIY VA VETERINARIYA CHEKLOVI: HECH QACHON dori vositalari, antibiotiklar yoki tibbiy dozalarni tayinlamang. O'zboshimchalik bilan dori berish qushlarni nobud qiladi. Kasallik alomatlarida zudlik bilan hududiy veterinarga murojaat qilishni tayinlang.
 3. KASALLIK TASHXISI: Qushlarga mustaqil tibbiy tashxis qo'ymang. Birinchi navbatda mikroiqlimni (harorat, to'shama quruqligi, shamollatish) tekshirishni maslahat bering.
-4. Agar berilgan yo'riqnomada ma'lumot bo'lmasa, to'qimang. Buni ochiq aytib, mahalliy mutaxassisga yo'naltiring.
+4. Agar parrandachilikka oid maxsus savol bo'yicha berilgan yo'riqnomada ma'lumot bo'lmasa, to'qimang. Buni ochiq aytib, mahalliy mutaxassisga yo'naltiring.
 
 NAMUNA (FEW-SHOT):
 Savol: "3-kunlik jo'jalarimga xona harorati necha bo'lishi kerak?"
@@ -232,7 +241,7 @@ Javob: "Tashqaridagi 38 gradus issiq 28-kunlik bo'rdoqilangan broylerlar uchun j
 - При холодной погоде (<15°C или существенно ниже нормы птичника): напоминайте о минимальной вентиляции по таймеру без сквозняков на уровне цыплят, предварительном прогреве приточного воздуха и стабильной работе обогревателей.
 
 СТРОГИЕ ПРАВИЛА И ОГРАНИЧЕНИЯ:
-1. Отвечайте ТОЛЬКО на основе предоставленного регламента и технологических норм.
+1. На приветствия ("Привет", "Здравствуйте", "Как дела"), благодарность и вопросы о текущем статусе партии фермера отвечайте тепло, дружелюбно и естественно. По всем технологическим вопросам птицеводства отвечайте строго на основе предоставленного регламента и норм.
 2. ВЕТЕРИНАРНОЕ ОГРАНИЧЕНИЕ: СТРОГО ЗАПРЕЩЕНО назначать лекарственные препараты, антибиотики и дозировки. Бесконтрольное лечение губит стадо. Всегда направляйте к районному ветеринару.
 3. ДИАГНОСТИКА: Не ставьте окончательные диагнозы. Рекомендуйте в первую очередь нормализовать микроклимат (температуру, вентиляцию, сухость подстилки).
 4. Если в регламенте нет точных данных, не выдумывайте. Направьте фермера к профильному специалисту.
@@ -259,7 +268,7 @@ When outdoor telemetry is present in the context, compare outdoor conditions aga
 - In cold weather (outside <15°C or much colder than house target): advise minimum ventilation managed by cycle timers without floor-level drafts, pre-heating incoming air, and checking brooder heating zones.
 
 STRICT SAFETY CONSTRAINTS:
-1. Ground all answers strictly in verified poultry management standards and the provided context.
+1. Respond warmly and naturally to greetings ("Hello", "Hi", "How are you"), small talk, and questions about the farmer's live flock dossier. Ground all poultry management advice strictly in verified poultry management standards and the provided context.
 2. VETERINARY RESTRICTION: NEVER prescribe medications, antibiotic dosages, or treatments. Self-medication causes flock mortality. Always direct the farmer to the district veterinary department.
 3. DIAGNOSIS: Do not issue definitive diagnoses. Advise immediate inspection of microclimate (temperature, ventilation, dry bedding).
 4. If facts are absent from the provided guidelines, state it clearly and advise contacting a licensed local poultry specialist.
@@ -297,10 +306,20 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
       Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash';
 
     let generatedAnswer = '';
+    let isFallback = false;
 
     if (geminiApiKey) {
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${preferredModel}:generateContent`;
+        const userParts: Array<Record<string, unknown>> = [{ text: userPrompt }];
+        if (image_base64 && typeof image_base64 === 'string' && image_base64.trim().length > 0) {
+          userParts.push({
+            inline_data: {
+              mime_type: image_mime_type || 'image/jpeg',
+              data: image_base64.trim(),
+            },
+          });
+        }
         const geminiPayload = JSON.stringify({
           system_instruction: {
             parts: [{ text: systemInstruction }],
@@ -308,7 +327,7 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
           contents: [
             {
               role: 'user',
-              parts: [{ text: userPrompt }],
+              parts: userParts,
             },
           ],
           generationConfig: {
@@ -368,6 +387,7 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
 
     // Graceful offline / template fallback if Gemini API is unavailable
     if (!generatedAnswer) {
+      isFallback = true;
       if (lang === 'en') {
         generatedAnswer = `Based on the AgroZen broiler handbook:\n\nPlease check that temperature, humidity, and ventilation in your poultry house match the recommended targets for your flock's age. At the first sign of illness or severe panting, contact your local district veterinarian immediately. Independent administration of antibiotics without a veterinary prescription is strictly prohibited.`;
       } else if (lang === 'ru') {
@@ -400,6 +420,7 @@ Javobingizni qat'iy yo'riqnomaga muvofiq, samimiy, nutqqa qulay va amaliy shakld
       answer: generatedAnswer,
       sources_used: combinedTopics,
       remaining_questions: remainingQuestions,
+      is_fallback: isFallback,
     };
 
     return new Response(JSON.stringify(responsePayload), {

@@ -10,19 +10,22 @@ import '../widgets/stat_card.dart';
 import '../widgets/weather_climate_card.dart';
 import '../widgets/flock_pathway_card.dart';
 import '../widgets/loan_profit_tracker_card.dart';
+import '../widgets/broiler_grower_toolkit_card.dart';
+import '../widgets/simple_chicken_tracker_card.dart';
 import '../widgets/animated_entry.dart';
 import 'diary/diary_screen.dart';
 import 'ask/ask_screen.dart';
 import 'course/course_list_screen.dart';
 import 'settings_screen.dart';
 import '../../services/daily_counters.dart';
+import '../../services/location_service.dart';
 import '../../core/localization/app_strings.dart';
 
 /// Redesigned HomeScreen:
 /// - Photographic-first, ultra-rounded organic layout built for farmers.
-/// - Emil Kowalski animation principles: staggered cascades, tactile responses, zero lag.
+/// - Progressive disclosure: only essential daily tracking appears up front;
+///   advanced FCR/EPEF, 42-day pathway, and financial tools expand on demand.
 /// - Swipeable PageView: seamless glide between Home, Diary, Voice AI, Courses, Settings.
-/// - Floating translucent capsule bottom navigation bar.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -39,15 +42,24 @@ class _HomeScreenState extends State<HomeScreen> {
   String _lang = 'uz';
   int _initialCount = 500;
   int _currentCount = 495;
+  int _isolatedCount = 0;
+  int _todayMortality = 0;
+  double _todayFeed = 0.0;
+  double _lastWeight = 0.0;
+  bool _showAdvancedTools = false;
   DateTime _arrivalDate = DateTime.now();
   int _batchDay = 1;
   NormsData? _norms;
   Map<String, dynamic>? _vet;
   List<AlertResult> _alerts = [];
   bool _isLoading = true;
+  bool _locationPromptResolved = true;
+  bool _isDetectingHomeLocation = false;
   Locale? _observedLocale;
+  String? _queuedEnhancedPrompt;
 
   final KnowledgeRepository _knowledgeRepo = KnowledgeRepository();
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
@@ -85,6 +97,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _lang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
     _initialCount = prefs.getInt('initial_count') ?? 500;
     _currentCount = prefs.getInt('current_count') ?? _initialCount;
+    _isolatedCount = DailyCounters.getIsolatedCount(prefs).clamp(0, _currentCount);
+    _todayMortality = DailyCounters.getMortality(prefs);
+    _todayFeed = DailyCounters.getFeed(prefs);
+    _lastWeight = prefs.getDouble('last_weight') ?? 0.0;
+    _locationPromptResolved = prefs.getBool('location_prompt_resolved') ?? false;
 
     final arrivalStr = prefs.getString('arrival_date');
     if (arrivalStr != null) {
@@ -96,24 +113,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final vets = await _knowledgeRepo.getVetByDistrict(_district);
     _vet = vets.isNotEmpty ? vets.first : null;
 
-    final todayMortality = DailyCounters.getMortality(prefs);
-    final lastWeight = prefs.getDouble('last_weight') ?? 0.0;
     final evaluatedAlerts = <AlertResult>[];
 
     if (_norms != null) {
       final engine = AlertEngine(_norms!);
-      if (todayMortality > 0) {
+      if (_todayMortality > 0) {
         final mAlert = engine.checkMortality(
-          deaths: todayMortality,
-          currentCount: _currentCount + todayMortality,
+          deaths: _todayMortality,
+          currentCount: _currentCount + _todayMortality,
         );
         if (mAlert != null) {
           evaluatedAlerts.add(mAlert);
         }
       }
-      if (lastWeight > 0) {
+      if (_lastWeight > 0) {
         final wAlert = engine.checkWeight(
-          weightGrams: lastWeight,
+          weightGrams: _lastWeight,
           batchDay: _batchDay,
         );
         if (wAlert != null) {
@@ -125,6 +140,56 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted) return;
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _updateIsolatedCount(int newCount) async {
+    final prefs = await DailyCounters.rolled();
+    final clamped = newCount.clamp(0, _currentCount);
+    await DailyCounters.setIsolatedCount(
+      prefs,
+      clamped,
+      maxCount: _currentCount,
+    );
+    if (!mounted) return;
+    setState(() => _isolatedCount = clamped);
+  }
+
+  Future<void> _quickAddOneMortality() async {
+    if (_currentCount <= 0) return;
+    final prefs = await DailyCounters.rolled();
+    await DailyCounters.addMortality(prefs, 1);
+    final updatedCurrent = (_currentCount - 1).clamp(0, _initialCount);
+    await prefs.setInt('current_count', updatedCurrent);
+    if (_isolatedCount > updatedCurrent) {
+      await DailyCounters.setIsolatedCount(
+        prefs,
+        updatedCurrent,
+        maxCount: updatedCurrent,
+      );
+    }
+    await _loadData();
+  }
+
+  Future<void> _enableHomeGeolocation() async {
+    if (_isDetectingHomeLocation) return;
+    setState(() => _isDetectingHomeLocation = true);
+    final result = await _locationService.detectAndSaveLocation();
+    if (!mounted) return;
+    setState(() {
+      _isDetectingHomeLocation = false;
+      _locationPromptResolved = true;
+    });
+    if (result.success) {
+      await _loadData();
+    } else {
+      await LocationService.markLocationPromptResolved();
+    }
+  }
+
+  Future<void> _dismissLocationPrompt() async {
+    await LocationService.markLocationPromptResolved();
+    if (!mounted) return;
+    setState(() => _locationPromptResolved = true);
   }
 
   int _getTemperatureForDay(int day) {
@@ -187,7 +252,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   DiaryScreen(isEmbeddedInPageView: true),
 
                   // PAGE 2: Ovozli AI (Field Voice & Vision Assistant)
-                  AskScreen(startInFieldMode: true, isEmbeddedInPageView: true),
+                  AskScreen(
+                    startInFieldMode: true,
+                    isEmbeddedInPageView: true,
+                    initialPrompt: _queuedEnhancedPrompt,
+                  ),
 
                   // PAGE 3: Kurs (Farmer Academy)
                   CourseListScreen(isEmbeddedInPageView: true),
@@ -228,6 +297,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
 
+                    // 1a. Geolocation Prompt Banner on App Entry (if not yet resolved)
+                    if (!_locationPromptResolved) ...[
+                      _buildLocationPromptBanner(),
+                      const SizedBox(height: 12),
+                    ],
+
                     // 1b. 3 Quick Telemetry Status Pills (Barn Temp, Survival, Daily Care)
                     StaggeredSlideFade(
                       index: 1,
@@ -249,65 +324,70 @@ class _HomeScreenState extends State<HomeScreen> {
                       index: 2,
                       child: _buildHeroFlockSanctuaryCard(context, targetTemp),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
-                    // 2b. Poultry Management Cards
+                    // 3. Simple 1-Tap Chicken Tracker & Categorizer (Healthy / Watchlist / Lost Today + Feed & Weight)
                     StaggeredSlideFade(
                       index: 3,
-                      child: _buildChooseYourFarmSection(context),
+                      child: SimpleChickenTrackerCard(
+                        batchDay: _batchDay,
+                        initialCount: _initialCount,
+                        currentCount: _currentCount,
+                        isolatedCount: _isolatedCount,
+                        todayMortality: _todayMortality,
+                        todayFeedKg: _todayFeed,
+                        lastWeightG: _lastWeight,
+                        language: _lang,
+                        onUpdateIsolatedCount: _updateIsolatedCount,
+                        onQuickAddMortality: _quickAddOneMortality,
+                        onOpenLogMortality: () async {
+                          await context.push('/diary/mortality');
+                          await _loadData();
+                        },
+                        onOpenLogFeed: () async {
+                          await context.push('/diary/feed');
+                          await _loadData();
+                        },
+                        onOpenLogWeight: () async {
+                          await context.push('/diary/weight');
+                          await _loadData();
+                        },
+                        onScanChickenPhoto: () => _navigateToPage(2),
+                      ),
                     ),
                     const SizedBox(height: 16),
-
-                    // 3. Glanceable Telemetry Stats (Me'yor Harorat & Parrandalar)
-                    StaggeredSlideFade(
-                      index: 2,
-                      child: _buildTelemetryStatsRow(context, targetTemp),
-                    ),
-                    const SizedBox(height: 18),
 
                     // 4. Photographic Farmer Action Hub (4 Direct Workflows)
                     StaggeredSlideFade(
-                      index: 3,
+                      index: 4,
                       child: _buildPhotographicActionHub(context),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
                     // 5. Atmospheric Weather & Microclimate Advisory Card
                     StaggeredSlideFade(
-                      index: 4,
+                      index: 5,
                       child: WeatherClimateCard(
                         district: _district,
                         batchDay: _batchDay,
                         targetHouseTemp: targetTemp.toDouble(),
                         language: _lang,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // 6. 42-Day Growth Pathway
-                    StaggeredSlideFade(
-                      index: 5,
-                      child: FlockPathwayCard(
-                        batchDay: _batchDay,
-                        language: _lang,
-                        onOpenPlan: () => context.push('/daily-plan'),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // 7. Financial & Loan Profit Tracker
-                    StaggeredSlideFade(
-                      index: 6,
-                      child: LoanProfitTrackerCard(
-                        initialCount: _initialCount,
-                        currentCount: _currentCount,
-                        batchDay: _batchDay,
-                        language: _lang,
+                        onDistrictChanged: (_) => _loadData(),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // 8. Gentle Swipe Guidance Pill
+                    // 6. Progressive Disclosure Section: Advanced Calculations & 42-Day Analytics (Collapsed by default)
+                    StaggeredSlideFade(
+                      index: 6,
+                      child: _buildProgressiveDisclosureSection(
+                        context,
+                        targetTemp,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // 7. Gentle Swipe Guidance Pill
                     StaggeredSlideFade(
                       index: 7,
                       child: _buildSwipeHintPill(),
@@ -322,7 +402,243 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Progressive Disclosure Drawer: keeps the Home screen calm and uncluttered,
+  /// revealing FCR/EPEF calculators, 42-day pathway, and financial tools only when needed.
+  Widget _buildProgressiveDisclosureSection(
+    BuildContext context,
+    int targetTemp,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () =>
+              setState(() => _showAdvancedTools = !_showAdvancedTools),
+          borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+              border: Border.all(
+                color: _showAdvancedTools
+                    ? const Color(0xFF86EFAC)
+                    : AppTheme.cardBorder,
+                width: 1.2,
+              ),
+              boxShadow: AppTheme.cardShadow,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF5ED),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.analytics_outlined,
+                    color: Color(0xFF15803D),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppStrings.tr(
+                          lang: _lang,
+                          uz: "Qo'shimcha hisob-kitoblar va 42-kunlik tahlil",
+                          ru: 'Доп. расчёты и аналитика (42 дня)',
+                          en: 'More Tools & 42-Day Analytics',
+                        ),
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        AppStrings.tr(
+                          lang: _lang,
+                          uz: _showAdvancedTools
+                              ? 'Yopish uchun bosing'
+                              : 'FCR kalkulyatori, 42-kun jadvali va daromad hisobi (kerak bo\'lganda oching)',
+                          ru: _showAdvancedTools
+                              ? 'Нажмите, чтобы свернуть'
+                              : 'Калькулятор FCR, график 42 дней и расчёт прибыли (откройте при необходимости)',
+                          en: _showAdvancedTools
+                              ? 'Tap to hide advanced tools'
+                              : 'FCR calculator, 42-day pathway & profit tracker (open when needed)',
+                        ),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _showAdvancedTools
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: const Color(0xFF15803D),
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_showAdvancedTools) ...[
+          const SizedBox(height: 16),
+          BroilerGrowerToolkitCard(
+            batchDay: _batchDay,
+            initialCount: _initialCount,
+            currentCount: _currentCount,
+            language: _lang,
+            onAskEnhancedPrompt: (enhancedPrompt) {
+              setState(() => _queuedEnhancedPrompt = enhancedPrompt);
+              _navigateToPage(2);
+            },
+          ),
+          const SizedBox(height: 16),
+          FlockPathwayCard(
+            batchDay: _batchDay,
+            language: _lang,
+            onOpenPlan: () => context.push('/daily-plan'),
+          ),
+          const SizedBox(height: 16),
+          LoanProfitTrackerCard(
+            initialCount: _initialCount,
+            currentCount: _currentCount,
+            batchDay: _batchDay,
+            language: _lang,
+          ),
+          const SizedBox(height: 16),
+          _buildTelemetryStatsRow(context, targetTemp),
+          const SizedBox(height: 16),
+          _buildChooseYourFarmSection(context),
+        ],
+      ],
+    );
+  }
+
   // --- SUB-WIDGETS ---
+
+  /// Geolocation Prompt Banner shown on app entry until resolved
+  Widget _buildLocationPromptBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F291A), Color(0xFF1A3D29)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF34D399).withAlpha(110),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFF34D399).withAlpha(35),
+              shape: BoxShape.circle,
+            ),
+            child: _isDetectingHomeLocation
+                ? const Padding(
+                    padding: EdgeInsets.all(9.0),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF6EE7B7),
+                    ),
+                  )
+                : const Icon(
+                    Icons.my_location_rounded,
+                    color: Color(0xFF6EE7B7),
+                    size: 20,
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.tr(
+                    lang: _lang,
+                    uz: 'Geolokatsiyani yoqasizmi?',
+                    ru: 'Включить геолокацию фермы?',
+                    en: 'Turn on farm geolocation?',
+                  ),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  AppStrings.tr(
+                    lang: _lang,
+                    uz: "Hududingiz va aniq ob-havo avtomatik aniqlanadi (Sozlamalarda o'zgartirish mumkin)",
+                    ru: 'Автовыбор региона и точной погоды (можно изменить в Настройках)',
+                    en: 'Auto-picks your region for real weather (changeable in Settings)',
+                  ),
+                  style: TextStyle(
+                    color: const Color(0xFFA7F3D0).withAlpha(220),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: _enableHomeGeolocation,
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              AppStrings.tr(lang: _lang, uz: 'Yoqish', ru: 'Вкл.', en: 'Turn On'),
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            onPressed: _dismissLocationPrompt,
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(4),
+            icon: Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: Colors.white.withAlpha(170),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Top Greeting Bar with Live Status Beacon & Avatar
   Widget _buildTopHeaderBar(BuildContext context) {

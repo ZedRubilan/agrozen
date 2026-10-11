@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/agro_icons.dart';
 import '../../widgets/tactile_button.dart';
 
 class BatchSetupScreen extends StatefulWidget {
@@ -104,8 +105,9 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Step Progress Indicator
+                // Step Progress Indicator with Payme-style Progress Dots
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -122,6 +124,10 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
                           letterSpacing: 0.8,
                         ),
                       ),
+                    ),
+                    const AgroProgressDots(
+                      currentStep: 2,
+                      totalSteps: 4,
                     ),
                   ],
                 ),

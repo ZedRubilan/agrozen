@@ -5,6 +5,11 @@ import '../../../app.dart';
 import '../../widgets/agro_icons.dart';
 import '../../widgets/tactile_button.dart';
 
+/// Redesigned Welcome & Language Screen:
+/// - Instantaneous entry (zero loading spinner).
+/// - Payme-inspired big photographic hero showcase with interactive feature slides & progress dots.
+/// - Crisp, uncropped 4:3 national flag badges (`AgroFlagBadge`) for O'zbekcha, Русский, and English.
+/// - Bottom step progress dots (`1 / 4`) + primary CTA button with circular arrow badge.
 class LanguageScreen extends StatefulWidget {
   const LanguageScreen({super.key});
 
@@ -12,8 +17,10 @@ class LanguageScreen extends StatefulWidget {
   State<LanguageScreen> createState() => _LanguageScreenState();
 }
 
-class _LanguageScreenState extends State<LanguageScreen> with AppLanguageController {
+class _LanguageScreenState extends State<LanguageScreen>
+    with AppLanguageController {
   String _selectedLanguage = 'uz';
+  int _activeSlideIndex = 0;
 
   Future<void> _proceed() async {
     final prefs = await SharedPreferences.getInstance();
@@ -23,233 +30,540 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
     context.go('/onboarding/region');
   }
 
-  String get _mascotGreeting {
-    if (_selectedLanguage == 'ru') return 'Привет! На каком языке общаемся?';
-    if (_selectedLanguage == 'en') return 'Hello! Which language do you prefer?';
-    return 'Salom! Qaysi tilda gaplashamiz?';
+  void _nextHeroSlide() {
+    setState(() {
+      _activeSlideIndex = (_activeSlideIndex + 1) % 3;
+    });
+  }
+
+  ({String badge, String title, String subtitle, String image}) _slideData(
+    int index,
+    String lang,
+  ) {
+    final isRu = lang == 'ru';
+    final isEn = lang == 'en';
+    switch (index) {
+      case 1:
+        return (
+          badge: isRu
+              ? 'ИИ-АССИСТЕНТ 24/7'
+              : (isEn ? '24/7 VOICE & AI ADVISOR' : 'OVOZLI AI YORDAMCHI'),
+          title: isRu
+              ? 'Умный голосовой помощник и диагностика стада'
+              : (isEn
+                  ? 'Natural Voice AI & Instant Flock Diagnostics'
+                  : "Tabiiy ovozli AI va tezkor parrandachilik tahlili"),
+          subtitle: isRu
+              ? 'Спрашивайте голосом в птичнике — получайте точные ответы по Ross-308'
+              : (isEn
+                  ? 'Hands-free voice guidance and real-time regional weather alerts'
+                  : "Parrandaxonada ovoz orqali so'rang va aniq tavsiyalar oling"),
+          image: 'assets/images/broiler_flock.jpg',
+        );
+      case 2:
+        return (
+          badge: isRu
+              ? 'АГРОКРЕДИТ И СЕРТИФИКАТ'
+              : (isEn ? 'ACADEMY & LOAN TRACKER' : 'AGROKREDIT VA SERTIFIKAT'),
+          title: isRu
+              ? 'Академия фермера и расчет чистой прибыли'
+              : (isEn
+                  ? '5-Module Academy & Bank Loan Profit Tracker'
+                  : "5 modulli akademiya, sertifikat va sof foyda hisobi"),
+          subtitle: isRu
+              ? 'Пройдите экспресс-курс и получите верифицированный сертификат'
+              : (isEn
+                  ? 'Complete the course to unlock your verified farmer certificate'
+                  : "Kursni yakunlab, imtiyozli kredit uchun sertifikatga ega bo'ling"),
+          image: 'assets/images/chick_starter.jpg',
+        );
+      case 0:
+      default:
+        return (
+          badge: isRu
+              ? 'ДОБРО ПОЖАЛОВАТЬ В AGROZEN'
+              : (isEn ? 'WELCOME TO AGROZEN' : 'AGROZENGA XUSH KELIBSIZ'),
+          title: isRu
+              ? 'Цифровая экосистема для вашей птицефермы'
+              : (isEn
+                  ? 'Next-Gen Smart Poultry Farming Companion'
+                  : "Zamonaviy parrandachilik va 42 kunlik aqlli nazorat"),
+          subtitle: isRu
+              ? 'Микроклимат по геолокации, дневник партии и нормы Ross-308'
+              : (isEn
+                  ? 'Live GPS microclimate, flock diary & Ross-308 growth standards'
+                  : "Geolokatsiya ob-havosi, partiya kundaligi va Ross-308 me'yorlari"),
+          image: 'assets/images/sunset_farm.jpg',
+        );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final slide = _slideData(_activeSlideIndex, _selectedLanguage);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9F5),
+      backgroundColor: const Color(0xFFF4F7F4),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Mascot bobbing animation with speech bubble
-              Center(
-                child: Column(
-                  children: [
-                    // Animated Speech bubble
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: ScaleTransition(
-                            scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
-                            child: child,
-                          ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Payme-Inspired Big Photographic Welcome Hero Card
+                  GestureDetector(
+                    onTap: _nextHeroSlide,
+                    onHorizontalDragEnd: (details) {
+                      final v = details.primaryVelocity ?? 0;
+                      if (v < -120) {
+                        setState(
+                          () => _activeSlideIndex = (_activeSlideIndex + 1) % 3,
                         );
-                      },
-                      child: Container(
-                        key: ValueKey<String>(_selectedLanguage),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      } else if (v > 120) {
+                        setState(
+                          () => _activeSlideIndex = (_activeSlideIndex + 2) % 3,
+                        );
+                      }
+                    },
+                    child: Container(
+                      height: 184,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0B2214).withAlpha(45),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(26),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Photographic Slide Background
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 240),
+                              child: Image.asset(
+                                slide.image,
+                                key: ValueKey<String>(slide.image),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const ColoredBox(
+                                  color: Color(0xFF0F2E1C),
+                                ),
+                              ),
+                            ),
+
+                            // Rich Cinematic Gradient Overlay
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    const Color(0xFF071A0E).withAlpha(155),
+                                    const Color(0xFF071A0E).withAlpha(80),
+                                    const Color(0xFF071A0E).withAlpha(235),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                              ),
+                            ),
+
+                            // Hero Content: Brand Header + Headline + Slide Dots & Little Arrow
+                            Padding(
+                              padding: const EdgeInsets.all(14.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Top Row: Rounded Photographic Logo + Step Progress Pill
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const AgroChickIcon(size: 34),
+                                          const SizedBox(width: 10),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'AgroZen',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w900,
+                                                  letterSpacing: -0.3,
+                                                ),
+                                              ),
+                                              Text(
+                                                slide.badge,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF6EE7B7),
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w800,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withAlpha(90),
+                                          borderRadius:
+                                              BorderRadius.circular(99),
+                                          border: Border.all(
+                                            color: Colors.white.withAlpha(40),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          '1 / 4',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+
+                                  // Animated Headline & Subtitle
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Column(
+                                      key: ValueKey<String>(
+                                        '${_activeSlideIndex}_$_selectedLanguage',
+                                      ),
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          slide.title,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.18,
+                                            letterSpacing: -0.3,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          slide.subtitle,
+                                          style: TextStyle(
+                                            color: Colors.white.withAlpha(215),
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w600,
+                                            height: 1.25,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+
+                                  // Bottom Row inside Hero: Interactive Slide Dots + Little Arrow Button
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      AgroProgressDots(
+                                        currentStep: _activeSlideIndex,
+                                        totalSteps: 3,
+                                        activeColor: const Color(0xFF4ADE80),
+                                        inactiveColor:
+                                            Colors.white.withAlpha(80),
+                                        onDotTapped: (idx) => setState(
+                                          () => _activeSlideIndex = idx,
+                                        ),
+                                      ),
+                                      Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withAlpha(35),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white.withAlpha(70),
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          color: Colors.white,
+                                          size: 15,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // 2. Section Header (preserves test finder while looking clean & modern)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Tilni tanlang\nВыберите язык\nSelect Language',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            height: 1.18,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5ED),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.translate_rounded,
+                              size: 14,
+                              color: Color(0xFF15803D),
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'UZ • RU • EN',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF15803D),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 3. Modern Language Cards with Uncropped 4:3 Vector Flags
+                  _buildModernLanguageCard(
+                    code: 'uz',
+                    title: "O'zbekcha",
+                    subtitle: "O'zbek tili (Lotin)",
+                    tag: 'UZB',
+                    isSelected: _selectedLanguage == 'uz',
+                  ),
+                  const SizedBox(height: 8),
+                  _buildModernLanguageCard(
+                    code: 'ru',
+                    title: 'Русский',
+                    subtitle: 'На русском языке',
+                    tag: 'RUS',
+                    isSelected: _selectedLanguage == 'ru',
+                  ),
+                  const SizedBox(height: 8),
+                  _buildModernLanguageCard(
+                    code: 'en',
+                    title: 'English',
+                    subtitle: 'International English',
+                    tag: 'ENG',
+                    isSelected: _selectedLanguage == 'en',
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 4. Bottom Onboarding Progress Bar + Arrow Continue Button
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF2D7A4C), width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(12),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: const Color(0xFFE2EBE4)),
                         ),
-                        child: Text(
-                          _mascotGreeting,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1B5E20),
+                        child: const AgroProgressDots(
+                          currentStep: 0,
+                          totalSteps: 4,
+                          activeColor: Color(0xFF15803D),
+                          inactiveColor: Color(0xFFCBD5E1),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TactileButton(
+                          height: 50,
+                          depth: 3,
+                          borderRadius: 18,
+                          backgroundColor: const Color(0xFF15803D),
+                          shadowColor: const Color(0xFF0F5328),
+                          onPressed: _proceed,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Flexible(
+                                child: Text(
+                                  'Davom etish / Далее / Continue',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.1,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withAlpha(35),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Colors.white,
+                                  size: 15,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    // Bobbing chick mascot with warm shadow
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 600),
-                      curve: Curves.elasticOut,
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: 0.88 + (value * 0.12),
-                          child: child,
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade100.withAlpha(140),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.amber.shade300.withAlpha(60),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const AgroChickIcon(size: 46),
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'Tilni tanlang\nВыберите язык\nSelect Language',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  height: 1.25,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "AgroZen ilovasidan qaysi tilda foydalanmoqchisiz?\nВыберите язык / Choose language",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Chunky Tactile Language Cards
-              _buildTactileLanguageCard(
-                code: 'uz',
-                title: "O'zbekcha",
-                subtitle: "Lotin yozuvida",
-                isSelected: _selectedLanguage == 'uz',
-              ),
-              const SizedBox(height: 10),
-              _buildTactileLanguageCard(
-                code: 'ru',
-                title: "Русский",
-                subtitle: "На русском языке",
-                isSelected: _selectedLanguage == 'ru',
-              ),
-              const SizedBox(height: 10),
-              _buildTactileLanguageCard(
-                code: 'en',
-                title: "English",
-                subtitle: "International English",
-                isSelected: _selectedLanguage == 'en',
-              ),
-              const SizedBox(height: 20),
-
-              // Tactile 3D Proceed Button
-              TactileButton(
-                height: 54,
-                depth: 3,
-                borderRadius: 16,
-                backgroundColor: theme.colorScheme.primary,
-                shadowColor: const Color(0xFF1B5E20),
-                onPressed: _proceed,
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Davom etish / Далее / Continue',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTactileLanguageCard({
+  Widget _buildModernLanguageCard({
     required String code,
     required String title,
     required String subtitle,
+    required String tag,
     required bool isSelected,
   }) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
+    const primary = Color(0xFF15803D);
 
     return GestureDetector(
       onTap: () => setState(() => _selectedLanguage = code),
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF0FDF4) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected ? primary : const Color(0xFFE2E8F0),
-            width: isSelected ? 2.5 : 2.0,
+            width: isSelected ? 2.2 : 1.3,
           ),
           boxShadow: [
             BoxShadow(
-              color: isSelected ? const Color(0xFF1B5E20) : const Color(0xFFCBD5E1),
-              offset: Offset(0, isSelected ? 4 : 3),
-              blurRadius: 0,
+              color: isSelected
+                  ? primary.withAlpha(24)
+                  : Colors.black.withAlpha(6),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
           children: [
-            AgroFlagBadge(code: code, size: 40),
-            const SizedBox(width: 16),
+            // Uncropped 4:3 National Flag Badge
+            AgroFlagBadge(code: code, size: 32),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: isSelected ? const Color(0xFF1B5E20) : const Color(0xFF1E293B),
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w900,
+                            color: isSelected
+                                ? const Color(0xFF0F5328)
+                                : const Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? primary.withAlpha(25)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          tag,
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: isSelected
+                                ? primary
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 1),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: const TextStyle(
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade600,
+                      color: Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -257,19 +571,23 @@ class _LanguageScreenState extends State<LanguageScreen> with AppLanguageControl
             ),
             AnimatedContainer(
               duration: const Duration(milliseconds: 160),
-              width: 28,
-              height: 28,
+              width: 26,
+              height: 26,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? primary : Colors.transparent,
+                color: isSelected ? primary : const Color(0xFFF8FAFC),
                 border: Border.all(
                   color: isSelected ? primary : const Color(0xFFCBD5E1),
-                  width: 2,
+                  width: 1.8,
                 ),
               ),
-              child: isSelected
-                  ? const Icon(Icons.check, size: 18, color: Colors.white)
-                  : null,
+              child: Icon(
+                isSelected
+                    ? Icons.check_rounded
+                    : Icons.arrow_forward_ios_rounded,
+                size: isSelected ? 16 : 11,
+                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+              ),
             ),
           ],
         ),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/localization/app_strings.dart';
+import '../../../data/repositories/course_repository.dart';
 import '../../widgets/tactile_button.dart';
+import 'course_guide_data.dart';
 
 class QuizScreen extends StatefulWidget {
   final int lessonId;
@@ -17,6 +20,7 @@ class _QuizScreenState extends State<QuizScreen> {
   int _selectedOption = -1;
   bool _submitted = false;
   bool _isCorrect = false;
+  final CourseRepository _courseRepo = CourseRepository();
 
   @override
   void initState() {
@@ -26,127 +30,12 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _loadLang() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() => _lang = prefs.getString('app_language') ?? 'uz');
-  }
-
-  Map<String, dynamic> _getQuizData(int id, String lang) {
-    switch (id) {
-      case 1:
-        if (lang == 'en') {
-          return {
-            'question': 'To what temperature should the barn be preheated 24 hours before chick arrival?',
-            'options': ['20-22°C', '26-28°C', '33-34°C', '40°C'],
-            'correct': 2,
-            'explanation': 'Day-old chicks cannot regulate their own body temperature; preheating the barn floor and air to 33-34°C prevents chilling and early mortality.',
-          };
-        } else if (lang == 'ru') {
-          return {
-            'question': 'До какой температуры необходимо прогреть птичник за 24 часа до завоза цыплят?',
-            'options': ['20-22°C', '26-28°C', '33-34°C', '40°C'],
-            'correct': 2,
-            'explanation': 'Суточные цыплята еще не могут сами удерживать тепло тела; прогрев пола и воздуха до 33-34°C защищает их от переохлаждения.',
-          };
-        } else {
-          return {
-            'question': "Jo'jalar kelishidan 24 soat oldin xonani qanday haroratgacha qizdirish lozim?",
-            'options': ['20-22°C', '26-28°C', '33-34°C', '40°C'],
-            'correct': 2,
-            'explanation': "Bir kunlik jo'jalar tana haroratini mustaqil boshqara olmaydi; xona va to'shamani 33-34°C gacha qizdirish ularni shamollashdan asraydi.",
-          };
-        }
-      case 2:
-        if (lang == 'en') {
-          return {
-            'question': 'What percentage of chicks must have found water and feed within the first 8 hours?',
-            'options': ['At least 80%', 'Around 40%', 'Does not matter', 'Only 20%'],
-            'correct': 0,
-            'explanation': 'According to Ross-308 standards, at least 80% of chicks should have full, soft crops 8 hours after placement to ensure uniform growth.',
-          };
-        } else if (lang == 'ru') {
-          return {
-            'question': 'Какой процент цыплят должен найти воду и корм в первые 8 часов?',
-            'options': ['Не менее 80%', 'Около 40%', 'Не имеет значения', 'Только 20%'],
-            'correct': 0,
-            'explanation': 'По стандарту Ross-308 через 8 часов после посадки минимум у 80% цыплят зоб должен быть мягким и наполненным кормом и водой.',
-          };
-        } else {
-          return {
-            'question': "Dastlabki 8 soat ichida jo'jalarning necha foizi suv va yemni topishi shart?",
-            'options': ["Kamida 80%", 'Taxminan 40%', "Farqi yo'q", 'Faqat 20%'],
-            'correct': 0,
-            'explanation': "Ross-308 standartiga ko'ra, 8 soatdan so'ng kamida 80% jo'janing jig'ildoni yumshoq va to'la bo'lishi bir tekis o'sishni ta'minlaydi.",
-          };
-        }
-      case 3:
-        if (lang == 'en') {
-          return {
-            'question': 'What is the primary risk of improper ventilation in the barn?',
-            'options': ['Increased appetite', 'Ammonia buildup and ascites (water belly)', 'Cold feet', 'No negative impact'],
-            'correct': 1,
-            'explanation': 'Poor air exchange traps ammonia and carbon dioxide, damaging the respiratory tract and causing ascites (water belly) in fast-growing broilers.',
-          };
-        } else if (lang == 'ru') {
-          return {
-            'question': 'К чему в первую очередь приводит отсутствие правильной вентиляции?',
-            'options': ['К улучшению аппетита', 'К накоплению аммиака и асциту (водянке)', 'К переохлаждению ног', 'Ни к чему'],
-            'correct': 1,
-            'explanation': 'Плохой воздухообмен приводит к скоплению аммиака и углекислого газа, что вызывает ожоги дыхательных путей и асцит (водянку).',
-          };
-        } else {
-          return {
-            'question': "To'g'ri shamollatish yo'qligi birinchi navbatda nimaga olib keladi?",
-            'options': ["Ishtaha ochilishiga", "Ammiak to'planishi va suv yig'ilishiga (assit)", "Oyoqlari sovushiga", "Hech narsaga"],
-            'correct': 1,
-            'explanation': "Havo almashinuvi yomon bo'lsa, ammiak va karbonat angidrid to'planib, nafas yo'llarini zararlaydi hamda assit (qorinda suv yig'ilishi) kelib chiqadi.",
-          };
-        }
-      case 4:
-        if (lang == 'en') {
-          return {
-            'question': 'How many main feeding phases are used in standard broiler production?',
-            'options': ['1 phase', '3 phases (Starter, Grower, Finisher)', '5 phases', 'Phases are optional'],
-            'correct': 1,
-            'explanation': 'Broilers require 3 distinct nutritional phases: Starter (high protein for organs/skeleton), Grower (muscle growth), and Finisher (energy for final weight).',
-          };
-        } else if (lang == 'ru') {
-          return {
-            'question': 'Сколько основных фаз кормления используется при выращивании бройлеров?',
-            'options': ['1 фаза', '3 фазы (Старт, Рост, Финиш)', '5 фаз', 'Фазы не нужны'],
-            'correct': 1,
-            'explanation': 'Применяются 3 фазы: Старт (высокий протеин для скелета и иммунитета), Рост (набор мышечной массы) и Финиш (энергия для убойного веса).',
-          };
-        } else {
-          return {
-            'question': "Broylerlarni boqishda nechta asosiy oziqlantirish fazasi qo'llaniladi?",
-            'options': ['1 ta faza', "3 ta faza (Start, O'sish, Finish)", '5 ta faza', "Faza kerak emas"],
-            'correct': 1,
-            'explanation': "Broylerlar 3 bosqichda oziqlantiriladi: Start (skelet va immunitet uchun yuqori oqsil), O'sish (mushak massasi) va Finish (yakuniy vazn uchun energiya).",
-          };
-        }
-      default:
-        if (lang == 'en') {
-          return {
-            'question': 'What emergency action should be taken if daily mortality exceeds 1%?',
-            'options': ['Administer antibiotics without consultation', 'Immediately isolate the barn and call the veterinarian', 'Just wait it out', 'Increase barn lighting'],
-            'correct': 1,
-            'explanation': 'Daily mortality above 1% is a critical red alert indicating potential infectious outbreak or acute climate failure; immediate veterinary intervention is mandatory.',
-          };
-        } else if (lang == 'ru') {
-          return {
-            'question': 'Что необходимо сделать при превышении суточного падежа в 1%?',
-            'options': ['Самостоятельно дать антибиотики', 'Срочно изолировать птичник и позвонить ветеринару', 'Просто подождать', 'Увеличить свет'],
-            'correct': 1,
-            'explanation': 'Суточный падеж выше 1% — критический сигнал возможной инфекции или сбоя микроклимата; требуется немедленная изоляция и вызов ветеринара.',
-          };
-        } else {
-          return {
-            'question': "Sutkalik nobodlik 1% dan oshganda nima qilish zarur?",
-            'options': ["Mustaqil antibiotik berish", "Hududni darhol cheklab, veterinarga murojaat qilish", "Kutish", "Chiroqni kuchaytirish"],
-            'correct': 1,
-            'explanation': "Kunlik nobodlik 1% dan oshishi xavfli infeksiya yoki mikroiqlim buzilishidan darak beradi; darhol binoni izolyatsiya qilib, veterinarni chaqirish shart.",
-          };
-        }
-    }
+    if (!mounted) return;
+    setState(() {
+      _lang = CourseGuideData.normalizeLang(
+        prefs.getString('app_language') ?? 'uz',
+      );
+    });
   }
 
   Future<void> _submitAnswer(int correct) async {
@@ -163,20 +52,29 @@ class _QuizScreenState extends State<QuizScreen> {
         list.add(idStr);
         await prefs.setStringList('completed_lessons', list);
       }
+      final farmerId = prefs.getString('farmer_id') ?? 'local_farmer';
+      await _courseRepo.saveProgress(
+        farmerId: farmerId,
+        lessonNumber: widget.lessonId,
+        quizPassed: true,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final quiz = _getQuizData(widget.lessonId, _lang);
-    final options = quiz['options'] as List<String>;
-    final correctIndex = quiz['correct'] as int;
-    final explanation = quiz['explanation'] as String? ?? '';
+    final module = CourseGuideData.getModule(widget.lessonId, _lang);
+    final options = module.quizOptions;
+    final correctIndex = module.correctOptionIndex;
+    final explanation = module.quizExplanation;
 
-    final titleText = _lang == 'en'
-        ? 'Quiz: Lesson ${widget.lessonId}'
-        : (_lang == 'ru' ? 'Тест: Урок ${widget.lessonId}' : 'Test: Dars ${widget.lessonId}');
+    final titleText = AppStrings.tr(
+      lang: _lang,
+      uz: 'Test: Dars ${widget.lessonId}',
+      ru: 'Тест: Урок ${widget.lessonId}',
+      en: 'Quiz: Lesson ${widget.lessonId}',
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF7),
@@ -197,7 +95,8 @@ class _QuizScreenState extends State<QuizScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                  border:
+                      Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(8),
@@ -210,13 +109,21 @@ class _QuizScreenState extends State<QuizScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary.withAlpha(20),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _lang == 'en' ? 'QUESTION' : (_lang == 'ru' ? 'ВОПРОС' : 'SAVOL'),
+                        AppStrings.tr(
+                          lang: _lang,
+                          uz: 'SAVOL',
+                          ru: 'ВОПРОС',
+                          en: 'QUESTION',
+                        ),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -227,7 +134,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      quiz['question'] as String,
+                      module.quizQuestion,
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -243,8 +150,12 @@ class _QuizScreenState extends State<QuizScreen> {
                 final isSelected = _selectedOption == index;
                 Color tileBg = Colors.white;
                 Color borderColor = const Color(0xFFE2E8F0);
-                IconData iconData = isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded;
-                Color iconColor = isSelected ? theme.colorScheme.primary : Colors.grey.shade400;
+                IconData iconData = isSelected
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_off_rounded;
+                Color iconColor = isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.grey.shade400;
 
                 if (_submitted) {
                   if (index == correctIndex) {
@@ -267,16 +178,24 @@ class _QuizScreenState extends State<QuizScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: InkWell(
-                    onTap: _submitted ? null : () => setState(() => _selectedOption = index),
+                    onTap: _submitted
+                        ? null
+                        : () => setState(() => _selectedOption = index),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: tileBg,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: borderColor,
-                          width: isSelected || (_submitted && index == correctIndex) ? 2 : 1.2,
+                          width: isSelected ||
+                                  (_submitted && index == correctIndex)
+                              ? 2
+                              : 1.2,
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -297,7 +216,8 @@ class _QuizScreenState extends State<QuizScreen> {
                               options[index],
                               style: TextStyle(
                                 fontSize: 15,
-                                fontWeight: isSelected || (_submitted && index == correctIndex)
+                                fontWeight: isSelected ||
+                                        (_submitted && index == correctIndex)
                                     ? FontWeight.w800
                                     : FontWeight.w600,
                                 color: const Color(0xFF1E293B),
@@ -318,10 +238,21 @@ class _QuizScreenState extends State<QuizScreen> {
                   borderRadius: 18,
                   backgroundColor: theme.colorScheme.primary,
                   shadowColor: const Color(0xFF1B4E31),
-                  onPressed: _selectedOption >= 0 ? () => _submitAnswer(correctIndex) : null,
+                  onPressed: _selectedOption >= 0
+                      ? () => _submitAnswer(correctIndex)
+                      : null,
                   child: Text(
-                    _lang == 'en' ? 'Check Answer' : (_lang == 'ru' ? 'Проверить ответ' : 'Javobni tekshirish'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                    AppStrings.tr(
+                      lang: _lang,
+                      uz: 'Javobni tekshirish',
+                      ru: 'Проверить ответ',
+                      en: 'Check Answer',
+                    ),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
                 )
               else
@@ -331,10 +262,14 @@ class _QuizScreenState extends State<QuizScreen> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: _isCorrect ? const Color(0xFFEAF5ED) : const Color(0xFFFEF2F2),
+                        color: _isCorrect
+                            ? const Color(0xFFEAF5ED)
+                            : const Color(0xFFFEF2F2),
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFDC2626),
+                          color: _isCorrect
+                              ? const Color(0xFF2D7A4C)
+                              : const Color(0xFFDC2626),
                           width: 1.5,
                         ),
                       ),
@@ -344,26 +279,34 @@ class _QuizScreenState extends State<QuizScreen> {
                           Row(
                             children: [
                               Icon(
-                                _isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                                color: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFDC2626),
+                                _isCorrect
+                                    ? Icons.check_circle_rounded
+                                    : Icons.cancel_rounded,
+                                color: _isCorrect
+                                    ? const Color(0xFF2D7A4C)
+                                    : const Color(0xFFDC2626),
                                 size: 26,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   _isCorrect
-                                      ? (_lang == 'en'
-                                          ? 'Correct! Lesson completed successfully.'
-                                          : (_lang == 'ru'
-                                              ? 'Правильно! Урок успешно сдан.'
-                                              : 'To\'g\'ri! Dars muvaffaqiyatli topshirildi.'))
-                                      : (_lang == 'en'
-                                          ? 'Incorrect. Please try again!'
-                                          : (_lang == 'ru'
-                                              ? 'Неверно. Попробуйте еще раз!'
-                                              : 'Noto\'g\'ri. Yana bir bor urinib ko\'ring!')),
+                                      ? AppStrings.tr(
+                                          lang: _lang,
+                                          uz: "To'g'ri! Dars muvaffaqiyatli topshirildi.",
+                                          ru: 'Правильно! Урок успешно сдан.',
+                                          en: 'Correct! Lesson completed successfully.',
+                                        )
+                                      : AppStrings.tr(
+                                          lang: _lang,
+                                          uz: "Noto'g'ri. Yana bir bor urinib ko'ring!",
+                                          ru: 'Неверно. Попробуйте еще раз!',
+                                          en: 'Incorrect. Please try again!',
+                                        ),
                                   style: TextStyle(
-                                    color: _isCorrect ? const Color(0xFF1B5E20) : const Color(0xFF991B1B),
+                                    color: _isCorrect
+                                        ? const Color(0xFF1B5E20)
+                                        : const Color(0xFF991B1B),
                                     fontWeight: FontWeight.w800,
                                     fontSize: 14,
                                   ),
@@ -387,12 +330,55 @@ class _QuizScreenState extends State<QuizScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if (_isCorrect && widget.lessonId < 5) ...[
+                      TactileButton(
+                        height: 54,
+                        depth: 4,
+                        borderRadius: 18,
+                        backgroundColor: const Color(0xFF15803D),
+                        shadowColor: const Color(0xFF0B2214),
+                        onPressed: () {
+                          context.pushReplacement(
+                            '/course/${widget.lessonId + 1}',
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Keyingi darsga o\'tish (${widget.lessonId + 1}-dars)',
+                                ru: 'К следующему уроку (Урок ${widget.lessonId + 1})',
+                                en: 'Continue to Lesson ${widget.lessonId + 1}',
+                              ),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     TactileButton(
                       height: 56,
                       depth: 4,
                       borderRadius: 18,
-                      backgroundColor: _isCorrect ? const Color(0xFF2D7A4C) : const Color(0xFFD97706),
-                      shadowColor: _isCorrect ? const Color(0xFF1B4E31) : const Color(0xFF92400E),
+                      backgroundColor: _isCorrect
+                          ? const Color(0xFF2D7A4C)
+                          : const Color(0xFFD97706),
+                      shadowColor: _isCorrect
+                          ? const Color(0xFF1B4E31)
+                          : const Color(0xFF92400E),
                       onPressed: () {
                         if (_isCorrect) {
                           context.pop();
@@ -405,9 +391,23 @@ class _QuizScreenState extends State<QuizScreen> {
                       },
                       child: Text(
                         _isCorrect
-                            ? (_lang == 'en' ? 'Done' : (_lang == 'ru' ? 'Готово' : 'Yakunlash'))
-                            : (_lang == 'en' ? 'Try Again' : (_lang == 'ru' ? 'Попробовать снова' : 'Qayta urinish')),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                            ? AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Yakunlash',
+                                ru: 'Готово',
+                                en: 'Done',
+                              )
+                            : AppStrings.tr(
+                                lang: _lang,
+                                uz: 'Qayta urinish',
+                                ru: 'Попробовать снова',
+                                en: 'Try Again',
+                              ),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],

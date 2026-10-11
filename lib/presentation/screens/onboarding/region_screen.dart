@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/constants.dart';
+import '../../../services/location_service.dart';
+import '../../widgets/agro_icons.dart';
 import '../../widgets/tactile_button.dart';
 
 class RegionScreen extends StatefulWidget {
@@ -13,8 +15,12 @@ class RegionScreen extends StatefulWidget {
 
 class _RegionScreenState extends State<RegionScreen> {
   String _selectedDistrict = AppConstants.districts.first;
+  String? _autoDetectedDistrict;
+  String? _gpsStatusText;
+  bool _isDetectingGps = false;
   String _searchQuery = '';
   String _lang = 'uz';
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
@@ -24,14 +30,56 @@ class _RegionScreenState extends State<RegionScreen> {
 
   Future<void> _loadLang() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
+      final saved = prefs.getString('farmer_district');
+      if (saved != null && AppConstants.districts.contains(saved)) {
+        _selectedDistrict = saved;
+      }
+    });
+  }
+
+  Future<void> _detectLocationWithGps() async {
+    if (_isDetectingGps) return;
+    setState(() {
+      _isDetectingGps = true;
+      _gpsStatusText = null;
+    });
+
+    final result = await _locationService.detectAndSaveLocation();
+    if (!mounted) return;
+    final isRu = _lang == 'ru';
+    final isEn = _lang == 'en';
+
+    setState(() {
+      _isDetectingGps = false;
+      if (result.success) {
+        _selectedDistrict = result.district;
+        _autoDetectedDistrict = result.district;
+        _gpsStatusText = isRu
+            ? 'Геолокация включена: ${result.district}'
+            : (isEn
+                ? 'Geolocation detected: ${result.district}'
+                : 'Geolokatsiya aniqlandi: ${result.district}');
+      } else {
+        _gpsStatusText = isRu
+            ? 'Не удалось определить GPS — выберите регион из списка'
+            : (isEn
+                ? 'GPS unavailable — please select your region below'
+                : "GPS aniqlanmadi — ro'yxatdan hududingizni tanlang");
+      }
     });
   }
 
   Future<void> _proceed() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('farmer_district', _selectedDistrict);
+    if (_autoDetectedDistrict != _selectedDistrict) {
+      await LocationService.saveManualDistrict(_selectedDistrict);
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('farmer_district', _selectedDistrict);
+      await prefs.setBool('location_prompt_resolved', true);
+    }
     if (!mounted) return;
     context.go('/onboarding/batch');
   }
@@ -60,8 +108,9 @@ class _RegionScreenState extends State<RegionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Onboarding Progress Header
+              // Onboarding Progress Header with Payme-style Progress Dots
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -78,6 +127,10 @@ class _RegionScreenState extends State<RegionScreen> {
                         letterSpacing: 0.8,
                       ),
                     ),
+                  ),
+                  const AgroProgressDots(
+                    currentStep: 1,
+                    totalSteps: 4,
                   ),
                 ],
               ),
@@ -96,11 +149,103 @@ class _RegionScreenState extends State<RegionScreen> {
               const SizedBox(height: 6),
               Text(
                 isRu
-                    ? 'Это необходимо для связи с местными ветеринарами'
-                    : (isEn ? 'Required for regional veterinarian connection & localized weather' : "Bu mahalliy veterinar shifokorlar bilan bog'lanish uchun zarur"),
+                    ? 'Включите геолокацию для точной погоды и связи с местными ветеринарами'
+                    : (isEn
+                        ? 'Turn on geolocation for accurate farm weather & regional veterinarian connection'
+                        : "Aniq ob-havo va mahalliy veterinar bilan bog'lanish uchun geolokatsiyani yoqing"),
                 style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Geolocation Auto-Detect Card
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _detectLocationWithGps,
+                  borderRadius: BorderRadius.circular(16),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0F291A), Color(0xFF1B432C)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF34D399).withAlpha(110),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF34D399).withAlpha(35),
+                            shape: BoxShape.circle,
+                          ),
+                          child: _isDetectingGps
+                              ? const Padding(
+                                  padding: EdgeInsets.all(9.0),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: Color(0xFF6EE7B7),
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.my_location_rounded,
+                                  color: Color(0xFF6EE7B7),
+                                  size: 20,
+                                ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isRu
+                                    ? 'Определить по геолокации (GPS)'
+                                    : (isEn
+                                        ? 'Auto-Detect My Location (GPS)'
+                                        : 'Geolokatsiya orqali avtomatik aniqlash'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _gpsStatusText ??
+                                    (isRu
+                                        ? 'Нажмите, чтобы автоматически выбрать ваш регион'
+                                        : (isEn
+                                            ? 'Tap to automatically pick your farm region'
+                                            : "Hududingizni avtomatik tanlash uchun bosing")),
+                                style: TextStyle(
+                                  color: const Color(0xFFA7F3D0).withAlpha(220),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.gps_fixed_rounded,
+                          color: Color(0xFF6EE7B7),
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -135,7 +280,7 @@ class _RegionScreenState extends State<RegionScreen> {
                   onChanged: (val) => setState(() => _searchQuery = val),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Expanded(
                 child: ListView.separated(
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,

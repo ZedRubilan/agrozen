@@ -20,6 +20,7 @@ class DailyCounters {
   static const String _mortalityKey = 'today_mortality';
   static const String _feedKey = 'today_feed';
   static const String _questionsKey = 'remaining_questions';
+  static const String _isolatedKey = 'isolated_count';
 
   /// Resets the daily counters if the stored day is not today.
   ///
@@ -61,6 +62,21 @@ class DailyCounters {
     await prefs.setDouble(_feedKey, getFeed(prefs) + kg);
   }
 
+  /// Number of weak/small chickens currently separated into the observation pen.
+  static int getIsolatedCount(SharedPreferences prefs) =>
+      prefs.getInt(_isolatedKey) ?? 0;
+
+  static Future<void> setIsolatedCount(
+    SharedPreferences prefs,
+    int count, {
+    int? maxCount,
+  }) async {
+    final clamped = count < 0
+        ? 0
+        : (maxCount != null && count > maxCount ? maxCount : count);
+    await prefs.setInt(_isolatedKey, clamped);
+  }
+
   static int getRemainingQuestions(
     SharedPreferences prefs, {
     int maxDailyQuestions = 30,
@@ -81,6 +97,7 @@ class DailyCounters {
     await prefs.remove(_mortalityKey);
     await prefs.remove(_feedKey);
     await prefs.remove(_questionsKey);
+    await prefs.remove(_isolatedKey);
     await prefs.remove('last_weight');
   }
 

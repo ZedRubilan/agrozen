@@ -1,0 +1,13 @@
+---
+description: Default Prompt Enhancer (enhance-prompt) and Ross-308 Broiler Grower standards for AgroZen
+alwaysApply: true
+---
+
+# Default Prompt Enhancer & AgroZen Standards
+
+1. **Always Enhance Prompts First**:
+   - Use `.agents/skills/enhance-prompt/SKILL.md` and `DESIGN.md` as the default pipeline for every user request in this repository.
+   - Convert conversational or voice-transcribed requests into structured specifications with **DESIGN SYSTEM (REQUIRED)**, **Feature/Page Structure**, and **Verifiable Acceptance Criteria**.
+2. **Ross-308 Broiler Grower Domain**:
+   - Ground all calculators, daily norms, lighting, stocking density, water/feed intake, and FCR/EPEF metrics in `lib/domain/broiler/broiler_grower_library.dart` and `knowledge/broilers/{uz,ru,en}/`.
+   - Maintain full trilingual support (`uz`, `ru`, `en`) and veterinary referral safety rules.

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// Eliminates raw emojis in favor of crisp, harmonious vector graphics that match
 /// the soft, organic Duolingo-style visual identity.
 
-/// A friendly, rounded cartoon chick icon.
+/// The natural, rounded photographic AgroZen logo badge (`assets/images/agrozen_logo.png`).
 class AgroChickIcon extends StatelessWidget {
   final double size;
   final Color? color;
@@ -28,12 +28,28 @@ class AgroChickIcon extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         shape: BoxShape.circle,
-        border: Border.all(color: fg.withAlpha(80), width: 1.5),
+        border: Border.all(color: fg.withAlpha(110), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(25),
+            blurRadius: size * 0.16,
+            offset: Offset(0, size * 0.05),
+          ),
+        ],
       ),
-      child: Center(
-        child: CustomPaint(
-          size: Size(size * 0.65, size * 0.65),
-          painter: _ChickPainter(color: fg),
+      clipBehavior: Clip.antiAlias,
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/agrozen_logo.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Center(
+            child: CustomPaint(
+              size: Size(size * 0.65, size * 0.65),
+              painter: _ChickPainter(color: fg),
+            ),
+          ),
         ),
       ),
     );
@@ -135,8 +151,9 @@ class AgroSproutIcon extends StatelessWidget {
   }
 }
 
-/// A friendly vector badge representing national flags (UZ, RU, EN)
-/// cleanly without ugly OS-dependent emoji flags.
+/// A crisp, uncropped 4:3 rounded-rectangle vector flag badge for UZ, RU, and EN.
+/// Uses custom canvas painting with safe inset margins so flag stripes, crescents,
+/// and crosses are never cut off by circular clipping.
 class AgroFlagBadge extends StatelessWidget {
   final String code; // 'uz', 'ru', 'en'
   final double size;
@@ -149,61 +166,195 @@ class AgroFlagBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = (size * 1.32).roundToDouble();
+    final height = size;
+    final radius = (size * 0.28).clamp(6.0, 14.0);
+
     return Container(
-      width: size,
-      height: size,
+      width: width,
+      height: height,
+      padding: const EdgeInsets.all(1.5),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade300, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: const Color(0xFFDCE6DF), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 4,
+            color: Colors.black.withAlpha(18),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      clipBehavior: Clip.antiAlias,
-      child: _buildFlagContent(),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular((radius - 1.5).clamp(4.0, 12.0)),
+        child: CustomPaint(
+          size: Size(width - 3, height - 3),
+          painter: _NationalFlagPainter(code: code.toLowerCase()),
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildFlagContent() {
-    switch (code.toLowerCase()) {
-      case 'uz':
-        return Column(
-          children: [
-            Expanded(child: Container(color: const Color(0xFF1EB53A))),
-            Container(height: 1.5, color: const Color(0xFFCE1126)),
-            Expanded(child: Container(color: Colors.white)),
-            Container(height: 1.5, color: const Color(0xFFCE1126)),
-            Expanded(child: Container(color: const Color(0xFF0099B5))),
-          ],
-        );
-      case 'ru':
-        return Column(
-          children: [
-            Expanded(child: Container(color: Colors.white)),
-            Expanded(child: Container(color: const Color(0xFF0039A6))),
-            Expanded(child: Container(color: const Color(0xFFD52B1E))),
-          ],
-        );
-      case 'en':
-      default:
-        return Container(
-          color: const Color(0xFF012169),
-          child: Center(
-            child: Text(
-              'EN',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: size * 0.42,
+class _NationalFlagPainter extends CustomPainter {
+  final String code;
+
+  const _NationalFlagPainter({required this.code});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(0, 0, w, h));
+
+    if (code == 'uz') {
+      // Uzbekistan Flag: Sky Blue top, Red line, White middle, Red line, Green bottom
+      final bluePaint = Paint()..color = const Color(0xFF0099B5);
+      final redPaint = Paint()..color = const Color(0xFFCE1126);
+      final whitePaint = Paint()..color = const Color(0xFFFFFFFF);
+      final greenPaint = Paint()..color = const Color(0xFF1EB53A);
+
+      canvas.drawRect(Rect.fromLTWH(0, 0, w, h * 0.31), bluePaint);
+      canvas.drawRect(Rect.fromLTWH(0, h * 0.31, w, h * 0.04), redPaint);
+      canvas.drawRect(Rect.fromLTWH(0, h * 0.35, w, h * 0.30), whitePaint);
+      canvas.drawRect(Rect.fromLTWH(0, h * 0.65, w, h * 0.04), redPaint);
+      canvas.drawRect(Rect.fromLTWH(0, h * 0.69, w, h * 0.31), greenPaint);
+
+      // White crescent in safe inset on the top-left blue band
+      final cx = w * 0.22;
+      final cy = h * 0.155;
+      final rOuter = h * 0.095;
+      canvas.drawCircle(Offset(cx, cy), rOuter, whitePaint);
+      canvas.drawCircle(
+        Offset(cx + rOuter * 0.38, cy),
+        rOuter * 0.82,
+        bluePaint,
+      );
+
+      // Subtle star dots to the right of the crescent
+      final dotRadius = (h * 0.022).clamp(0.8, 2.2);
+      for (int row = 0; row < 2; row++) {
+        for (int col = 0; col < 3; col++) {
+          canvas.drawCircle(
+            Offset(w * (0.36 + col * 0.065), h * (0.11 + row * 0.09)),
+            dotRadius,
+            whitePaint,
+          );
+        }
+      }
+    } else if (code == 'ru') {
+      // Russian Flag: White top, Royal Blue middle, Crimson Red bottom
+      final whitePaint = Paint()..color = const Color(0xFFFFFFFF);
+      final bluePaint = Paint()..color = const Color(0xFF0039A6);
+      final redPaint = Paint()..color = const Color(0xFFD52B1E);
+
+      canvas.drawRect(Rect.fromLTWH(0, 0, w, h / 3), whitePaint);
+      canvas.drawRect(Rect.fromLTWH(0, h / 3, w, h / 3), bluePaint);
+      canvas.drawRect(Rect.fromLTWH(0, (h * 2) / 3, w, h / 3), redPaint);
+    } else {
+      // English (UK Union Jack): Deep Navy field with white & red saltires and central cross
+      final navyPaint = Paint()..color = const Color(0xFF012169);
+      canvas.drawRect(Rect.fromLTWH(0, 0, w, h), navyPaint);
+
+      final whiteDiag = Paint()
+        ..color = Colors.white
+        ..strokeWidth = h * 0.22
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset.zero, Offset(w, h), whiteDiag);
+      canvas.drawLine(Offset(w, 0), Offset(0, h), whiteDiag);
+
+      final redDiag = Paint()
+        ..color = const Color(0xFFC8102E)
+        ..strokeWidth = h * 0.09
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset.zero, Offset(w, h), redDiag);
+      canvas.drawLine(Offset(w, 0), Offset(0, h), redDiag);
+
+      final whiteCross = Paint()..color = Colors.white;
+      canvas.drawRect(
+        Rect.fromLTWH(w * 0.38, 0, w * 0.24, h),
+        whiteCross,
+      );
+      canvas.drawRect(
+        Rect.fromLTWH(0, h * 0.34, w, h * 0.32),
+        whiteCross,
+      );
+
+      final redCross = Paint()..color = const Color(0xFFC8102E);
+      canvas.drawRect(
+        Rect.fromLTWH(w * 0.43, 0, w * 0.14, h),
+        redCross,
+      );
+      canvas.drawRect(
+        Rect.fromLTWH(0, h * 0.40, w, h * 0.20),
+        redCross,
+      );
+    }
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _NationalFlagPainter oldDelegate) =>
+      oldDelegate.code != code;
+}
+
+/// Payme-inspired animated progress dots indicator for multi-step onboarding.
+class AgroProgressDots extends StatelessWidget {
+  final int currentStep; // 0-indexed (0..totalSteps-1)
+  final int totalSteps;
+  final Color activeColor;
+  final Color inactiveColor;
+  final ValueChanged<int>? onDotTapped;
+
+  const AgroProgressDots({
+    super.key,
+    required this.currentStep,
+    this.totalSteps = 4,
+    this.activeColor = const Color(0xFF16A34A),
+    this.inactiveColor = const Color(0xFFCBD5E1),
+    this.onDotTapped,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(totalSteps, (index) {
+        final isActive = index == currentStep;
+        final isPassed = index < currentStep;
+        return GestureDetector(
+          onTap: onDotTapped != null ? () => onDotTapped!(index) : null,
+          behavior: HitTestBehavior.opaque,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3.5, vertical: 4),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: isActive ? 26 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? activeColor
+                    : (isPassed ? activeColor.withAlpha(110) : inactiveColor),
+                borderRadius: BorderRadius.circular(99),
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: activeColor.withAlpha(80),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
             ),
           ),
         );
-    }
+      }),
+    );
   }
 }
 

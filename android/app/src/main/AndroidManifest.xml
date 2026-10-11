@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <!-- Launch the phone dialer when the farmer calls a veterinarian. -->
     <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <!-- Geolocation permissions for automatic farm district & weather detection. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <queries>
         <intent>
             <action android:name="android.intent.action.DIAL"/>
@@ -18,7 +21,8 @@
     <application
         android:label="AgroZen"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
         <activity
             android:name=".MainActivity"
             android:exported="true"

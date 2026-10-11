@@ -5,6 +5,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrozen/data/models/weather_data.dart';
 import 'package:agrozen/domain/climate/climate_advisor.dart';
+import 'package:agrozen/services/location_service.dart';
 import 'package:agrozen/services/poultry_vision_analyzer.dart';
 import 'package:agrozen/services/tts_service.dart';
 import 'package:agrozen/services/weather_service.dart';
@@ -237,6 +238,75 @@ void main() {
       expect(tts.isPlaying, isFalse);
       await tts.stop();
       expect(tts.isPlaying, isFalse);
+    });
+  });
+
+  group('LocationService & Regional 6-Day Forecast Tests', () {
+    test('13. LocationService.resolveNearestDistrict maps exact coordinates to nearest Uzbekistan region', () {
+      expect(LocationService.resolveNearestDistrict(39.6542, 66.9597), 'Samarqand');
+      expect(LocationService.resolveNearestDistrict(42.4619, 59.6166), "Qoraqalpog'iston");
+      expect(LocationService.resolveNearestDistrict(37.2242, 67.2783), 'Surxondaryo');
+      expect(LocationService.resolveNearestDistrict(40.3842, 71.7843), "Farg'ona");
+    });
+
+    test('14. LocationService.detectAndSaveLocation persists nearest district, GPS coords, and resolves prompt', () async {
+      SharedPreferences.setMockInitialValues({});
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'success': true,
+            'latitude': 39.7747,
+            'longitude': 64.4286,
+          }),
+          200,
+        );
+      });
+
+      final service = LocationService(
+        client: mockClient,
+        permissionChecker: () async => true,
+      );
+
+      final result = await service.detectAndSaveLocation();
+      expect(result.success, isTrue);
+      expect(result.district, 'Buxoro');
+      expect(result.latitude, closeTo(39.7747, 0.001));
+      expect(result.longitude, closeTo(64.4286, 0.001));
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('farmer_district'), 'Buxoro');
+      expect(prefs.getBool('location_auto_detected'), isTrue);
+      expect(prefs.getBool('location_prompt_resolved'), isTrue);
+    });
+
+    test('15. LocationService.saveManualDistrict overrides auto-detected coords and updates farmer_district', () async {
+      SharedPreferences.setMockInitialValues({
+        'farmer_district': 'Buxoro',
+        'farmer_lat': 39.77,
+        'farmer_lon': 64.42,
+        'location_auto_detected': true,
+      });
+
+      await LocationService.saveManualDistrict('Namangan');
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('farmer_district'), 'Namangan');
+      expect(prefs.getBool('location_auto_detected'), isFalse);
+      expect(prefs.getDouble('farmer_lat'), isNull);
+      expect(prefs.getDouble('farmer_lon'), isNull);
+      expect(prefs.getBool('location_prompt_resolved'), isTrue);
+    });
+
+    test('16. WeatherData.fallback provides distinct regional temperatures and 6-day forecast (D-2..D+3)', () {
+      final surxondaryo = WeatherData.fallback('Surxondaryo');
+      final qoraqalpogiston = WeatherData.fallback("Qoraqalpog'iston");
+
+      expect(surxondaryo.temperature, greaterThan(qoraqalpogiston.temperature));
+      expect(surxondaryo.dailyForecast.length, 6);
+      expect(
+        surxondaryo.dailyForecast.map((d) => d.dayOffset).toList(),
+        [-2, -1, 0, 1, 2, 3],
+      );
     });
   });
 }
