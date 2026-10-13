@@ -65,6 +65,7 @@ Status as of 2026-10-13 (broiler photos done). Read this first when picking the 
 
 ## Other open items
 
+- **Release signing:** `android/app/build.gradle.kts` signs release builds with the CI runner's throwaway debug key, so every release has a different signature. Installing a new version over an old one fails with "App not installed", and users must uninstall first, which deletes their flock records. The release notes (`.github/release_notes.md`) explain this workaround. Fix: create one release keystore, store it as GitHub Secrets (base64 keystore, passwords, alias), and add a `release` signing config that reads them. Keep a backup of the keystore: if it is lost, users have to reinstall again.
 - **Gemini key in the APK:** the app still calls Gemini directly with a key baked into the build. Move those calls behind the Supabase Edge Functions. The plan is in `docs/TODO_GEMINI_VIA_EDGE.md`.
 - **Poster:** the A3 poster is in `docs/poster/` (`agrozen_poster.html`). Re-render it with `python3 docs/poster/render_poster.py`. The QR link and contacts are in the `CONFIG` block. The QR points to the public releases page; the repo was made public on 2026-10-13.
 - **Merge:** merge `redesign/photo-led-ui` into `main` when you're happy (this triggers the release workflow).

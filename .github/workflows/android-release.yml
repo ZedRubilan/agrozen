@@ -59,28 +59,30 @@ jobs:
             --dart-define=GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             --dart-define=GOOGLE_CLOUD_STT_KEY="${{ secrets.GOOGLE_CLOUD_STT_KEY }}"
 
-      - name: Prepare Release APK Assets
+      # One APK with a fixed name, so the download links in the release notes
+      # (and releases/latest/download/AgroZen-release.apk) always work.
+      - name: Prepare Release APK Asset
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk "AgroZen-release.apk"
-          cp build/app/outputs/flutter-apk/app-release.apk "AgroZen-v1.0.${{ github.run_number }}-release.apk"
-          ls -lh AgroZen*.apk
+          ls -lh AgroZen-release.apk
 
       - name: Publish APK to GitHub Releases Page (Zero Actions Artifact Storage)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v1.0.${{ github.run_number }}"
-          TITLE="AgroZen Android Release v1.0.${{ github.run_number }}"
-          NOTES="Automated Android Release APK built from commit ${{ github.sha }} with configured Supabase & Gemini environment keys."
+          TITLE="AgroZen $TAG — Android"
+          # Trilingual (uz/ru/en) install guide for people who have never used GitHub.
+          sed -e "s/__TAG__/$TAG/g" -e "s/__COMMIT__/${GITHUB_SHA::7}/g" .github/release_notes.md > release_notes.md
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "AgroZen-release.apk" "AgroZen-v1.0.${{ github.run_number }}-release.apk" --clobber
+            gh release upload "$TAG" "AgroZen-release.apk" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file release_notes.md
           else
             gh release create "$TAG" \
               "AgroZen-release.apk" \
-              "AgroZen-v1.0.${{ github.run_number }}-release.apk" \
               --title "$TITLE" \
-              --notes "$NOTES" \
+              --notes-file release_notes.md \
               --latest
           fi
 
