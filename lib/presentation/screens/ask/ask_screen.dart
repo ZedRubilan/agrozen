@@ -9,6 +9,7 @@ import 'package:agrozen/config/supabase_config.dart';
 import 'package:agrozen/core/localization/app_strings.dart';
 import 'package:agrozen/data/providers/ai_provider.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
+import 'package:agrozen/presentation/ui/broiler_photos.dart';
 import 'package:agrozen/presentation/ui/components.dart';
 import 'package:agrozen/presentation/widgets/agro_icons.dart';
 import 'package:agrozen/services/daily_counters.dart';
@@ -1259,7 +1260,7 @@ class _PhotoCheckCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: PhotoCard(
-          image: 'assets/images/chick_starter.jpg',
+          image: BroilerPhotos.chicksCloseup,
           padding: const EdgeInsets.all(AppSpace.lg),
           child: SizedBox(
             height: 120,

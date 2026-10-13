@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app.dart';
 import '../../../config/theme.dart';
 import '../../../core/localization/app_strings.dart';
+import '../../ui/broiler_photos.dart';
 import '../../widgets/agro_icons.dart';
 import 'onboarding_scaffold.dart';
 
@@ -92,7 +93,7 @@ class _WelcomeHero extends StatelessWidget {
               builder: (context, scale, child) =>
                   Transform.scale(scale: scale, child: child),
               child: Image.asset(
-                'assets/images/sunset_farm.jpg',
+                BroilerPhotos.farmAerial,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
                     const ColoredBox(color: AppColors.primaryDark),

@@ -7,7 +7,7 @@ Status as of 2026-10-13 (broiler photos done). Read this first when picking the 
 - **Branch:** `redesign/photo-led-ui` (pushed to `origin`, https://github.com/ZedRubilan/agrozen). **Not merged to `main` yet.**
 - **Commits:** `0540fe3` holds the whole redesign; this handoff file is the next commit.
 - **Release APK:** pushing or merging to `main` triggers `.github/workflows/android-release.yml`, which builds the APK and publishes a GitHub Release. To build locally instead, run `flutter build apk --release`. Output: `build/app/outputs/flutter-apk/app-release.apk` (about 64 MB).
-- **State at handoff:** `flutter analyze` is clean and `flutter test` passes all 242 tests.
+- **State at handoff:** `flutter analyze` is clean and `flutter test` passes all 243 tests.
 - **Not committed on purpose:** `zenustoz-main.zip` belongs to a different project ("ZenUstoz").
 
 ## Project rules (from `AGENTS.md`)
@@ -58,8 +58,9 @@ Status as of 2026-10-13 (broiler photos done). Read this first when picking the 
   - Used by the Today hero, the Settings profile card and the onboarding batch preview.
   - The Learn course card uses the finisher photo.
 - **Credits:** listed in `assets/images/CREDITS.md` and in `PhotoCredit.all`. Settings → About → *Photo credits* shows them in a dialog; tapping a row opens its Commons page (`ExternalActions.openLink`).
-- **Tests:** `test/presentation/broiler_photos_test.dart` checks the phase mapping, that each file exists and is under 250 KB, and that every photo is credited. The suite now has 242 tests.
-- **Still on older photos:** `chick_starter.jpg` (Assistant "check a photo", lesson video card) and `sunset_farm.jpg` (onboarding language hero). Their source and licence are not recorded anywhere. Replace them with credited Commons photos if that matters.
+- **Tests:** `test/presentation/broiler_photos_test.dart` checks the phase mapping, that each file exists and is under 250 KB, and that every photo is credited. The suite now has 243 tests.
+- **Old photos gone:** the app's remaining old photos were replaced with credited Commons photos (`chick_starter`, `sunset_farm`, `feed_grain`). Seven unused ones were deleted (`bento_telemetry`, `farmer_avatar`, `field_aerial`, `fields_showcase`, `hero_robot`, `tier_certificate`, `tractor_hero`). Only `agrozen_logo.png` and credited photos remain in `assets/images/`.
+- **Not touched:** `web/landing.html` (the marketing page) still uses its own uncredited copies in `web/images/`, including the laying-hen `broiler_flock.jpg`.
 - **Unused candidates:** the original search list is in git history (commit `99ef5bc`). Other good finds: `20130822-OC-RBN-2957` (USDA, public domain, finisher house with a farmer) and `Broiler Chicks.jpg` (Ibgroup2018, CC BY-SA 4.0, modern house with young birds). The Commons API rate-limits quickly; leave about a second between requests.
 
 ## Other open items

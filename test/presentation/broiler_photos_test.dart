@@ -54,9 +54,21 @@ void main() {
       );
     });
 
-    test('CC BY-SA photos link their licence', () {
+    test('every photo in assets/images has a credit', () {
+      final credited = PhotoCredit.all.map((c) => c.asset).toSet();
+      final photos = Directory('assets/images')
+          .listSync()
+          .whereType<File>()
+          .map((f) => f.path.replaceAll(r'\\', '/'))
+          .where((p) => p.endsWith('.jpg'));
+      for (final photo in photos) {
+        expect(credited, contains(photo), reason: photo);
+      }
+    });
+
+        test('CC BY-SA photos link their licence', () {
       for (final credit in PhotoCredit.all) {
-        if (credit.licence.startsWith('CC')) {
+        if (credit.licence.startsWith('CC BY')) {
           expect(credit.licenceUrl, isNotNull, reason: credit.asset);
         }
       }

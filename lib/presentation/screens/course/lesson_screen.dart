@@ -5,6 +5,7 @@ import '../../../config/theme.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../services/external_actions.dart';
 import '../../../services/lesson_progress.dart';
+import '../../ui/broiler_photos.dart';
 import '../../ui/components.dart';
 import 'course_guide_data.dart';
 import 'lesson_look.dart';
@@ -363,7 +364,7 @@ class _VideoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: PhotoCard(
-          image: 'assets/images/chick_starter.jpg',
+          image: BroilerPhotos.chicksFeederLine,
           child: SizedBox(
             height: 110,
             child: Row(

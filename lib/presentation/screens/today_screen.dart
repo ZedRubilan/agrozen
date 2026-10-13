@@ -235,7 +235,7 @@ class _TodayScreenState extends State<TodayScreen> {
       reveal(SectionHeader(title: _t('Foydali', 'Полезное', 'Useful'))),
       reveal(
         _PhotoLinkCard(
-          image: 'assets/images/feed_grain.jpg',
+          image: BroilerPhotos.feed,
           icon: Icons.calculate_rounded,
           title: _t('Hisob-kitoblar', 'Калькуляторы', 'Calculators'),
           subtitle: _t(

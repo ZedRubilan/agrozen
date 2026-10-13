@@ -57,7 +57,7 @@ Plus Jakarta Sans has no basic Cyrillic, so every style names `AppFonts.fallback
 - Cards float on a soft shadow (`AppShadow.card`), no outline. Raised elements (flock card over the hero, nav bar) use `AppShadow.raised`; solid discs and the hero tile use `AppShadow.glow(colour)`.
 - Gradients only in two places: the photo-hero shade and the one `sun` hero tile per screen.
 - Photos: real, relevant farm photos only (`assets/images/`), always with an `errorBuilder` fallback. One hero photo per tab at most; thumbnails on link cards.
-- Broiler photos follow the flock's age: `BroilerPhotos.forDay(day)` (`lib/presentation/ui/broiler_photos.dart`) returns `broiler_starter.jpg` (days 1–10, chicks), `broiler_grower.jpg` (11–24) or `broiler_finisher.jpg` (25–42), using the Ross-308 phase from `BroilerGrowerLibrary`. Used by the Today hero, the Settings profile card and the onboarding batch preview; the Learn course card uses the finisher photo. Bundled photos are about 1200 px on the long side and under 250 KB each. Each one is credited in `assets/images/CREDITS.md` and `PhotoCredit.all`, which Settings → About → Photo credits shows. CC BY-SA photos must be listed there with a licence link.
+- Broiler photos follow the flock's age: `BroilerPhotos.forDay(day)` (`lib/presentation/ui/broiler_photos.dart`) returns `broiler_starter.jpg` (days 1–10, chicks), `broiler_grower.jpg` (11–24) or `broiler_finisher.jpg` (25–42), using the Ross-308 phase from `BroilerGrowerLibrary`. Used by the Today hero, the Settings profile card and the onboarding batch preview; the Learn course card uses the finisher photo. Fixed photos: `chicks_closeup.jpg` (Assistant "check a photo"), `chicks_feeder_line.jpg` (lesson video card), `broiler_feed.jpg` (Today calculators card), `broiler_farm_aerial.jpg` (onboarding language hero). All paths are constants on `BroilerPhotos`. Never add a photo without a `PhotoCredit` entry; a test checks every `.jpg` in `assets/images/`. Bundled photos are about 1200 px on the long side and under 250 KB each. Each one is credited in `assets/images/CREDITS.md` and `PhotoCredit.all`, which Settings → About → Photo credits shows. CC BY-SA photos must be listed there with a licence link.
 - Content width is capped at 640 px; on desktop the app is centred in a phone frame (`DesktopWebShell`).
 
 ## 5. Components (`components.dart`)
@@ -85,7 +85,7 @@ Weather: `WeatherSummaryCard` = animated `WeatherScene` (sky from the WMO weathe
 
 ## 7. Onboarding
 Four steps sharing `OnboardingScaffold`: an animated 4-segment step bar with `1 / 4`, a gradient icon disc beside the title (none on step 1, which has the photo), content that `Reveal`s in, and one primary button (trailing arrow) pinned to the bottom on a raised white bar. `OptionCard` pops its check when selected.
-1. **Language** — `sunset_farm.jpg` hero (one slow zoom) with the `AgroChickIcon` logo; flags via `AgroFlagBadge`.
+1. **Language** — `broiler_farm_aerial.jpg` hero (one slow zoom) with the `AgroChickIcon` logo; flags via `AgroFlagBadge`.
 2. **Region** (green pin) — GPS as a prominent card with a blue disc (status line under it), search, town chips, district list with the selected row tinted.
 3. **Batch** (gold) — name, arrival date, count with 500 / 1 000 / 2 000 / 5 000 pills, and a live `PhotoCard` preview on the flock-age photo: today's batch day ring, phase and house temperature target for the chosen date.
 4. **Notice** (blue shield) — each safety point as its own card with a solid disc.
