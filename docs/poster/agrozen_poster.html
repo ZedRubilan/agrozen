@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroZen Poster</title>
+<!--
+  AgroZen A3 poster (420 × 297 mm, landscape).
+  Render to PDF/PNG:  python3 docs/poster/render_poster.py
+  Edit the CONFIG block in the <script> at the bottom for the QR link and contacts.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans:wght@500;700&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+  /* ---- AgroZen tokens (lib/config/theme.dart · DESIGN.md) ---- */
+  :root {
+    --primary: #15803D; --primary-dark: #14532D; --primary-soft: #E6F4EA;
+    --bg: #F4F7F4; --surface: #FFFFFF; --surface-muted: #F1F5F2; --border: #E2EBE4;
+    --ink: #0F172A; --ink-2: #52665A; --ink-3: #7A8E7E;
+    --warning: #B45309; --warning-soft: #FEF3C7;
+    --danger: #DC2626; --danger-soft: #FEE2E2;
+    --info: #1D4ED8; --info-soft: #DBEAFE;
+    --gold: #F59E0B; --sun: #F97316; --sun-deep: #EA580C; --hero-shade: #052E16;
+    --r-tile: 14px; --r-card: 18px; --r-hero: 24px;
+    --shadow-card: 0 1px 2px rgba(15,23,42,.04), 0 6px 18px rgba(20,83,45,.07);
+    --shadow-raised: 0 10px 30px rgba(5,46,22,.16);
+    --font: "Plus Jakarta Sans", "Noto Sans", system-ui, sans-serif;
+  }
+  @page { size: 420mm 297mm; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body { font-family: var(--font); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ms { font-family: "Material Symbols Rounded"; font-weight: normal; font-style: normal; line-height: 1;
+        letter-spacing: normal; text-transform: none; white-space: nowrap; direction: ltr;
+        font-feature-settings: "liga"; -webkit-font-smoothing: antialiased; display: inline-block; }
+
+  /* Working canvas 1782 × 1260 px (√2 ratio); render_poster.py scales it to exactly 420 × 297 mm */
+  .board { width: 1782px; height: 1260px; padding: 18px 24px 0; display: flex; flex-direction: column; gap: 9px;
+           overflow: hidden; position: relative; background:
+           radial-gradient(1200px 500px at 85% 110%, rgba(21,128,61,.07), transparent 60%), var(--bg); }
+
+  /* ---------- header ---------- */
+  .hero { position: relative; height: 140px; border-radius: var(--r-hero); overflow: hidden; flex: none;
+          box-shadow: var(--shadow-raised); color: #fff; display: flex; align-items: center; padding: 0 26px; gap: 22px; }
+  .hero > img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 62%; }
+  .hero::before { content: ""; position: absolute; inset: 0;
+     background: linear-gradient(90deg, rgba(5,46,22,.97) 0%, rgba(5,46,22,.92) 50%, rgba(5,46,22,.62) 78%, rgba(5,46,22,.80) 100%); }
+  .hero > img.bg { z-index: 0; }
+  .hero::before { z-index: 1; }
+  .hero > *:not(.bg) { position: relative; z-index: 2; }
+  .logo { width: 100px; height: 100px; border-radius: 50%; flex: none; box-shadow: 0 0 0 4px rgba(255,255,255,.22), 0 10px 30px rgba(0,0,0,.35); }
+  .hero h1 { margin: 0; font-size: 56px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+  .hero h1 .brand { color: #fff; }
+  .hero h1 .brand b { color: #86EFAC; font-weight: 800; }
+  .hero h1 .dash { color: #FDBA74; font-size: 26px; letter-spacing: 0; vertical-align: 10px; margin-left: 16px; }
+  .hero .tag { margin: 8px 0 0; font-size: 15px; font-weight: 600; color: #DCFCE7; max-width: 1200px; line-height: 1.4; }
+  .chips { display: flex; gap: 8px; margin-top: 10px; }
+  .glass { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 8px; border-radius: 999px;
+           background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28); font-size: 12px; font-weight: 700; color: #fff; }
+  .glass .ms { font-size: 16px; color: #86EFAC; }
+  .uni { margin-left: auto; display: flex; align-items: center; gap: 14px; padding: 12px 20px 12px 12px; border-radius: 20px;
+         background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(6px); flex: none; }
+  .uni .seal { width: 84px; height: 84px; border-radius: 50%; background: #fff; padding: 3px; flex: none; object-fit: contain;
+               box-shadow: 0 0 0 3px rgba(255,255,255,.35), 0 8px 20px rgba(0,0,0,.35); }
+  .uni .t1 { font-size: 20px; font-weight: 800; }
+  .uni .t2 { font-size: 13px; font-weight: 700; color: #86EFAC; margin-top: 2px; }
+  .uni .t3 { font-size: 12px; font-weight: 600; color: #DCFCE7; margin-top: 3px; }
+
+  /* ---------- grid + cards ---------- */
+  .row { display: grid; gap: 9px; flex: none; }
+  .row > .card { overflow: hidden; clip-path: inset(0 round var(--r-card)); }
+  .card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-card); padding: 12px 14px 14px; position: relative; min-width: 0; }
+  .label { display: flex; align-items: center; gap: 7px; margin: 0 0 9px; font-size: 11.5px; font-weight: 800;
+           letter-spacing: .9px; text-transform: uppercase; color: var(--primary-dark); }
+  .label .n { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; display: grid; place-items: center;
+              font-size: 10.5px; letter-spacing: 0; box-shadow: 0 3px 8px rgba(21,128,61,.35); }
+  .label.warm .n { background: var(--sun-deep); box-shadow: 0 3px 8px rgba(234,88,12,.35); }
+  .label.warm { color: #9A3412; }
+  .label .sub { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 4px; }
+  p { margin: 0; }
+  .body { font-size: 12.5px; line-height: 1.5; color: var(--ink); font-weight: 500; }
+  .muted { color: var(--ink-2); }
+  .disc { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none; }
+  .card .disc .ms { font-size: 17px; color: #fff; }
+  .t-primary { background: var(--primary); box-shadow: 0 4px 10px rgba(21,128,61,.30); }
+  .t-info { background: #2563EB; box-shadow: 0 4px 10px rgba(37,99,235,.30); }
+  .t-danger { background: var(--danger); box-shadow: 0 4px 10px rgba(220,38,38,.30); }
+  .t-warning { background: var(--gold); box-shadow: 0 4px 10px rgba(245,158,11,.35); }
+  .t-sun { background: linear-gradient(135deg, var(--sun), var(--sun-deep)); box-shadow: 0 4px 10px rgba(234,88,12,.35); }
+  .t-violet { background: #7C3AED; box-shadow: 0 4px 10px rgba(124,58,237,.30); }
+
+  /* row A */
+  .rowA { grid-template-columns: 690px 1fr; height: 272px; }
+  .about { display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .about-grid { display: grid; grid-template-columns: 132px 1fr; gap: 12px; margin-top: 10px; min-height: 0; }
+  .qr { background: var(--surface-muted); border-radius: var(--r-tile); padding: 9px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .qr .code { width: 86px; height: 86px; background: #fff; border-radius: 8px; padding: 5px; }
+  .qr .code svg { width: 100%; height: 100%; display: block; }
+  .qr .cap { font-size: 10.5px; font-weight: 700; color: var(--ink); margin-top: 6px; line-height: 1.3; }
+  .qr .cap span { color: var(--primary); }
+  .phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; min-height: 0; }
+  .ph { position: relative; border-radius: var(--r-tile); overflow: hidden; min-height: 0; }
+  .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,46,22,0) 40%, rgba(5,46,22,.88) 100%); }
+  .ph .cap { position: absolute; left: 9px; right: 9px; bottom: 8px; z-index: 1; color: #fff; }
+  .ph .cap b { display: block; font-size: 13px; font-weight: 800; }
+  .ph .cap span { font-size: 10.5px; font-weight: 600; color: #DCFCE7; }
+  .ph .pill { position: absolute; top: 8px; left: 8px; z-index: 1; font-size: 10px; font-weight: 800; color: #fff; padding: 3px 8px; border-radius: 999px; }
+
+  .how { display: grid; grid-template-rows: auto auto 1fr; }
+  .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; }
+  .step { position: relative; text-align: center; padding: 6px 7px 6px; background: var(--surface-muted); border-radius: var(--r-tile); margin: 0 9px; }
+  .step:first-child { margin-left: 0; } .step:last-child { margin-right: 0; }
+  .step .disc { margin: 0 auto 6px; width: 32px; height: 32px; }
+  .card .step .disc .ms { font-size: 19px; }
+  .step .num { position: absolute; top: 7px; left: 9px; font-size: 11px; font-weight: 800; color: var(--ink-3); }
+  .step b { display: block; font-size: 12.5px; font-weight: 800; }
+  .step span { display: block; font-size: 10.5px; line-height: 1.35; color: var(--ink-2); font-weight: 600; margin-top: 3px; }
+  .step + .step::before { content: "chevron_right"; font-family: "Material Symbols Rounded"; position: absolute; left: -16px; top: 50%;
+           transform: translateY(-50%); font-size: 18px; color: var(--primary); font-feature-settings: "liga"; }
+  .ai { margin-top: 7px; border-radius: var(--r-tile); background: linear-gradient(120deg, #ECFDF3, #F0FDF4 60%, #FFF7ED);
+        border: 1px solid #BBF7D0; padding: 9px 13px; display: grid; grid-template-columns: 1fr 1.08fr; gap: 14px; align-items: center; }
+  .ai h3 { margin: 0 0 5px; font-size: 12px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--primary-dark); display: flex; align-items: center; gap: 7px; }
+  .ai h3 .badge { background: var(--primary); color: #fff; border-radius: 7px; padding: 2px 6px; font-size: 11px; letter-spacing: 0; }
+  .chat { display: flex; flex-direction: column; gap: 6px; }
+  .bubble { font-size: 11.5px; line-height: 1.38; padding: 5px 10px; border-radius: 14px; font-weight: 600; max-width: 96%; }
+  .bubble.q { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+  .bubble.a { align-self: flex-start; background: #fff; color: var(--ink); border-bottom-left-radius: 4px; box-shadow: var(--shadow-card); display: flex; gap: 8px; }
+  .bubble.a img { width: 22px; height: 22px; border-radius: 50%; flex: none; margin-top: 1px; }
+  .bubble.a .src { display: block; font-size: 9.5px; color: var(--ink-3); margin-top: 3px; font-weight: 600; }
+
+  /* row B */
+  .rowB { grid-template-columns: 1fr 590px; height: 334px; }
+  .screens { padding-bottom: 0; background: linear-gradient(160deg, #0B3B1F 0%, var(--hero-shade) 70%); color: #fff; overflow: hidden; }
+  .screens .label { color: #BBF7D0; }
+  .screens .label .sub { color: #86EFAC; }
+  .screens::after { content: ""; position: absolute; right: -120px; top: -140px; width: 420px; height: 420px; border-radius: 50%;
+                    background: radial-gradient(circle, rgba(34,197,94,.28), transparent 65%); }
+  .phones { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 6px 0; position: relative; z-index: 1; }
+  .phone { width: 168px; text-align: center; display: flex; flex-direction: column; }
+  .phone .frame { order: 2; margin-top: 8px; width: 168px; height: 364px; border-radius: 24px; background: #0B0F14; padding: 5px; box-shadow: 0 14px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12); position: relative; }
+  .phone .frame img { width: 100%; height: 100%; border-radius: 17px; display: block; object-fit: cover; object-position: top; }
+  .phone:nth-child(even) { margin-top: 0; }
+  .phone b { order: 0; display: block; font-size: 13px; font-weight: 800; }
+  .phone span { order: 1; display: block; font-size: 10.5px; color: #BBF7D0; font-weight: 600; margin-top: 1px; }
+
+  .feats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; grid-auto-rows: 49px; }
+  .feat { display: flex; align-items: center; gap: 10px; background: var(--surface-muted); border-radius: var(--r-tile); padding: 8px 10px; }
+  .feat b { display: block; font-size: 12.5px; font-weight: 800; line-height: 1.2; }
+  .feat span { display: block; font-size: 10.5px; color: var(--ink-2); font-weight: 600; margin-top: 2px; line-height: 1.3; }
+
+  /* row C */
+  .rowC { grid-template-columns: 1fr 720px; height: 172px; }
+  .chartcard { display: grid; grid-template-columns: 1fr 270px; grid-template-rows: auto 1fr; gap: 6px 14px; }
+  .chartcard .label { grid-column: 1 / -1; margin-bottom: 0; }
+  #chart { width: 100%; height: 112px; display: block; overflow: visible; }
+  .miles { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; }
+  .mile { background: var(--surface-muted); border-radius: 12px; padding: 5px 9px; }
+  .mile .d { font-size: 10px; font-weight: 800; color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; }
+  .mile .w { font-size: 16px; font-weight: 800; color: var(--ink); line-height: 1.15; }
+  .mile .w small { font-size: 11px; font-weight: 700; color: var(--ink-2); }
+  .mile .m { font-size: 10px; font-weight: 600; color: var(--ink-2); margin-top: 1px; white-space: nowrap; }
+  .mile .m .ms { font-size: 12px; vertical-align: -2px; }
+  .mile .m .tc { color: var(--sun-deep); } .mile .m .fc { color: var(--gold); }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 22px 52px 52px; column-gap: 9px; row-gap: 6px; }
+  .kpis .label { grid-column: 1 / -1; margin-bottom: 0; }
+  .kpi { display: flex; align-items: center; gap: 10px; border-radius: var(--r-tile); padding: 0 12px; min-height: 0; background: var(--surface-muted); }
+  .kpi .v { font-size: 30px; font-weight: 800; letter-spacing: -.8px; line-height: 1; min-width: 56px; }
+  .kpi .k { font-size: 11px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+  .kpi .k span { display: block; color: var(--ink-2); font-weight: 600; font-size: 10.5px; }
+  .kpi.lead { background: linear-gradient(135deg, var(--sun), var(--sun-deep)); color: #fff; box-shadow: 0 8px 20px rgba(234,88,12,.30); }
+  .kpi.lead .k, .kpi.lead .k span { color: #fff; } .kpi.lead .k span { color: #FFEDD5; }
+
+  /* row D */
+  .rowD { grid-template-columns: 340px 1fr 380px 340px; flex: 1 1 auto; min-height: 0; }
+  .tech { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+  .tech div { border-left: 3px solid var(--primary); padding: 1px 0 1px 8px; }
+  .tech b { display: block; font-size: 12px; font-weight: 800; }
+  .tech span { display: block; font-size: 10.5px; color: var(--ink-2); font-weight: 600; }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .cmp th { font-size: 10.5px; font-weight: 800; color: var(--ink-2); text-align: center; padding: 6px 4px; background: var(--surface-muted); }
+  .cmp th:first-child { text-align: left; border-radius: 10px 0 0 10px; padding-left: 10px; }
+  .cmp th:last-child { border-radius: 0 10px 10px 0; color: #fff; background: var(--primary); }
+  .cmp td { padding: 5px 4px; border-bottom: 1px solid var(--border); text-align: center; font-weight: 700; color: var(--ink-3); }
+  .cmp td:first-child { text-align: left; color: var(--ink); font-weight: 600; padding-left: 10px; }
+  .cmp tr:last-child td { border-bottom: 0; }
+  .cmp td:last-child { background: var(--primary-soft); }
+  .cmp .y { color: var(--primary); font-size: 17px; vertical-align: middle; }
+  .cmp .p { color: var(--warning); font-size: 10.5px; font-weight: 700; }
+  .why { display: flex; flex-direction: column; gap: 3px; }
+  .why div { display: flex; gap: 8px; align-items: flex-start; }
+  .why .ms { color: var(--primary); font-size: 18px; flex: none; margin-top: 1px; }
+  .why b { display: block; font-size: 12px; font-weight: 800; }
+  .why span { display: block; font-size: 10.5px; color: var(--ink-2); font-weight: 600; line-height: 1.35; }
+  .safety { margin-top: 5px; display: flex; gap: 9px; align-items: center; background: var(--danger-soft); border-radius: 12px; padding: 7px 10px; }
+  .safety .ms { color: var(--danger); font-size: 20px; }
+  .safety p { font-size: 10.5px; font-weight: 700; color: #7F1D1D; line-height: 1.35; }
+  .road { display: flex; flex-direction: column; gap: 0; position: relative; }
+  .road .st { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding-bottom: 8px; position: relative; }
+  .road .st::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--border); }
+  .road .st:last-child::before { display: none; }
+  .road .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--primary); background: #fff; display: grid; place-items: center; }
+  .road .st.now .dot { background: var(--primary); color: #fff; }
+  .road .dot .ms { font-size: 14px; }
+  .road b { display: block; font-size: 12px; font-weight: 800; }
+  .road span { display: block; font-size: 10.5px; color: var(--ink-2); font-weight: 600; line-height: 1.35; }
+  .road em { font-style: normal; color: var(--ink-3); font-weight: 700; }
+
+  /* footer */
+  .foot { flex: none; height: 40px; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; font-size: 11.5px; padding: 0 4px; }
+  .foot b { font-weight: 800; }
+  .foot .credits { font-size: 9.5px; color: var(--ink-3); font-weight: 600; margin-top: 2px; max-width: 1400px; line-height: 1.35; }
+  .foot .right { text-align: right; font-weight: 700; }
+  .foot .right .ms { font-size: 14px; vertical-align: -3px; color: var(--primary); }
+  .band { flex: none; margin: 0 -24px; height: 34px; background: linear-gradient(90deg, var(--hero-shade), var(--primary-dark) 50%, var(--hero-shade));
+          display: flex; align-items: center; justify-content: space-around; color: #fff; font-size: 13.5px; font-weight: 800; letter-spacing: .2px; }
+  .band i { width: 6px; height: 6px; border-radius: 50%; background: #86EFAC; display: block; }
+  .band span b { color: #86EFAC; }
+</style>
+</head>
+<body>
+<main class="board">
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="hero">
+    <img class="bg" src="../../assets/images/broiler_finisher.jpg" alt="">
+    <img class="logo" src="../../assets/images/agrozen_logo.png" alt="AgroZen">
+    <div>
+      <h1><span class="brand">AGRO<b>ZEN</b></span><span class="dash">— BROYLER FERMERI UCHUN AQLLI AI YORDAMCHI</span></h1>
+      <p class="tag">Jo'ja kelgan kundan sotuvgacha — 42 kun davomida har kuni nima qilishni aytadi. Ross-308 / Cobb-500 standartlari asosida.</p>
+      <div class="chips">
+        <span class="glass"><span class="ms">translate</span>O'zbekcha · Русский · English</span>
+        <span class="glass"><span class="ms">phone_android</span>Android ilova · Veb-ilova</span>
+        <span class="glass"><span class="ms">wifi_off</span>Internetsiz ham ishlaydi</span>
+        <span class="glass"><span class="ms">verified_user</span>Dori yozmaydi — veterinarga yo'naltiradi</span>
+      </div>
+    </div>
+    <div class="uni">
+      <img class="seal" src="img/namdtu_logo.jpeg" alt="NamDTU">
+      <div>
+        <div class="t1">NamDTU</div>
+        <div class="t2">Sun'iy intellekt yo'nalishi</div>
+        <div class="t3">Milliy AI Xakaton · 2026</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== ROW A ===================== -->
+  <section class="row rowA">
+    <div class="card about">
+      <div>
+        <div class="label"><span class="n">01</span>Loyiha mazmuni</div>
+        <p class="body">Boshlovchi broyler fermerlari uchun mobil yordamchi. Partiya kelgan sanani kiritsangiz, ilova har kuni <b>harorat, yem, suv va vazn</b> maqsadini ko'rsatadi, yozuvlarni tekshiradi va xavfli holatda ogohlantiradi. AI maslahatchi matn yoki ovozga uch tilda javob beradi.</p>
+      </div>
+      <div class="about-grid">
+        <div class="qr">
+          <div class="code" id="qr"></div>
+          <div class="cap" id="qrcap">QR-kodni skanerlang<br><span>ilovani yuklab oling</span></div>
+        </div>
+        <div class="phases">
+          <div class="ph"><img src="../../assets/images/broiler_starter.jpg" alt=""><span class="pill" style="background:var(--gold)">1–10 kun</span><div class="cap"><b>Start</b><span>Issiqlik va suv</span></div></div>
+          <div class="ph"><img src="../../assets/images/broiler_grower.jpg" alt=""><span class="pill" style="background:var(--primary)">11–24 kun</span><div class="cap"><b>O'sish</b><span>Yem va shamollatish</span></div></div>
+          <div class="ph"><img src="../../assets/images/broiler_finisher.jpg" alt=""><span class="pill" style="background:var(--sun-deep)">25–42 kun</span><div class="cap"><b>Finish</b><span>Vazn va sotuvga tayyorlov</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card how">
+      <div class="label"><span class="n">02</span>Ishlash tartibi</div>
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div class="disc t-primary"><span class="ms">location_on</span></div><b>Til va hudud</b><span>Uch tildan biri, tuman GPS orqali</span></div>
+        <div class="step"><span class="num">2</span><div class="disc t-warning"><span class="ms">egg</span></div><b>Partiya</b><span>Kelgan sana va jo'jalar soni</span></div>
+        <div class="step"><span class="num">3</span><div class="disc t-sun"><span class="ms">today</span></div><b>Bugungi reja</b><span>1–42 kun: harorat, yem, suv, vazifalar</span></div>
+        <div class="step"><span class="num">4</span><div class="disc t-info"><span class="ms">edit_note</span></div><b>Kundalik</b><span>Nobudlik, yem, vazn — bir bosishda</span></div>
+        <div class="step"><span class="num">5</span><div class="disc t-danger"><span class="ms">notifications_active</span></div><b>Ogohlantirish</b><span>Nobudlik &gt;1% yoki vazn −15% bo'lsa</span></div>
+        <div class="step"><span class="num">6</span><div class="disc t-violet"><span class="ms">support_agent</span></div><b>AI + veterinar</b><span>Savol bering yoki vetga qo'ng'iroq</span></div>
+      </div>
+      <div class="ai">
+        <div>
+          <h3><span class="badge">AI</span>Sun'iy intellekt asosida ishlaydi</h3>
+          <p class="body" style="font-size:11.5px;line-height:1.45">AI <b>faqat tekshirilgan bilimlar bazasidan</b> (10 mavzu, 3 tilda) javob beradi va partiyangiz kuni, soni hamda bugungi me'yorni hisobga oladi. Internetsiz — lokal bazadan. <b style="color:var(--danger)">Dori va doza aytmaydi</b> — veterinarga yo'naltiradi.</p>
+        </div>
+        <div class="chat">
+          <div class="bubble q">Jo'jalarim isitgich tagiga to'planib qolyapti, nima qilay?</div>
+          <div class="bubble a"><img src="../../assets/images/agrozen_logo.png" alt=""><div>Bu sovuq belgisi. 3-kunda bino harorati <b>31,5°C</b> bo'lishi kerak — isitishni oshiring va jo'jalar teng tarqalganini kuzating.<span class="src">Manba: AgroZen bilimlar bazasi · Ross-308</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ROW B ===================== -->
+  <section class="row rowB">
+    <div class="card screens">
+      <div class="label"><span class="n">03</span>Ilova ko'rinishlari<span class="sub">— haqiqiy ekranlar: 18-kun, 2 000 boshli partiya</span></div>
+      <div class="phones">
+        <div class="phone"><div class="frame"><img src="shots/today.png" alt=""></div><b>Bugun</b><span>Kun halqasi va me'yorlar</span></div>
+        <div class="phone"><div class="frame"><img src="shots/diary.png" alt=""></div><b>Kundalik</b><span>Bir bosishda yozuv</span></div>
+        <div class="phone"><div class="frame"><img src="shots/assistant.png" alt=""></div><b>Yordamchi</b><span>AI chat va rasm tahlili</span></div>
+        <div class="phone"><div class="frame"><img src="shots/plan.png" alt=""></div><b>42 kunlik reja</b><span>Har kun uchun maqsadlar</span></div>
+        <div class="phone"><div class="frame"><img src="shots/learn.png" alt=""></div><b>O'rganish</b><span>5 dars va sertifikat</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label"><span class="n">04</span>Asosiy imkoniyatlar</div>
+      <div class="feats">
+        <div class="feat"><div class="disc t-primary"><span class="ms">calendar_month</span></div><div><b>42 kunlik reja</b><span>Ross-308 bo'yicha har kun</span></div></div>
+        <div class="feat"><div class="disc t-info"><span class="ms">edit_note</span></div><div><b>Partiya kundaligi</b><span>Nobudlik · yem · vazn</span></div></div>
+        <div class="feat"><div class="disc t-danger"><span class="ms">notifications_active</span></div><div><b>Aniq ogohlantirish</b><span>Qat'iy formula, taxmin emas</span></div></div>
+        <div class="feat"><div class="disc t-primary"><span class="ms">mic</span></div><div><b>Ovozli AI maslahat</b><span>Gapiring — tushunadi, o'qib beradi</span></div></div>
+        <div class="feat"><div class="disc t-info"><span class="ms">photo_camera</span></div><div><b>Rasm tekshirish</b><span>Jo'ja, axlat va to'shama holati</span></div></div>
+        <div class="feat"><div class="disc t-sun"><span class="ms">partly_cloudy_day</span></div><div><b>Ob-havo va mikroiqlim</b><span>Tashqarida va bino ichida</span></div></div>
+        <div class="feat"><div class="disc t-warning"><span class="ms">calculate</span></div><div><b>Kalkulyatorlar</b><span>FCR, EPEF, sof foyda</span></div></div>
+        <div class="feat"><div class="disc t-danger"><span class="ms">call</span></div><div><b>Tuman veterinari</b><span>13 hudud, bir bosishda qo'ng'iroq</span></div></div>
+        <div class="feat"><div class="disc t-warning"><span class="ms">workspace_premium</span></div><div><b>Kurs va sertifikat</b><span>Kredit olishdan oldin 5 dars</span></div></div>
+        <div class="feat"><div class="disc t-violet"><span class="ms">translate</span></div><div><b>Uch tilda</b><span>O'zbekcha · Русский · English</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ROW C ===================== -->
+  <section class="row rowC">
+    <div class="card chartcard">
+      <div class="label"><span class="n">05</span>42 kunlik o'sish standarti<span class="sub">— Ross-308 maqsadli tirik vazn, gramm (ilovadagi me'yorlar jadvali)</span></div>
+      <svg id="chart" role="img" aria-label="Ross-308 target live weight, days 1 to 42"></svg>
+      <div class="miles">
+        <div class="mile"><div class="d">1-kun</div><div class="w">42 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>32,5°C · <span class="ms fc">grain</span>12 g yem</div></div>
+        <div class="mile"><div class="d">14-kun</div><div class="w">510 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>26,5°C · <span class="ms fc">grain</span>54 g yem</div></div>
+        <div class="mile"><div class="d">28-kun</div><div class="w">1 745 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>20,5°C · <span class="ms fc">grain</span>145 g yem</div></div>
+        <div class="mile"><div class="d">42-kun</div><div class="w">3 125 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>18°C · <span class="ms fc">grain</span>215 g yem</div></div>
+      </div>
+    </div>
+
+    <div class="card kpis">
+      <div class="label warm"><span class="n">06</span>Natija — raqamlarda</div>
+      <div class="kpi lead"><div class="v">42</div><div class="k">kun<span>har kun uchun tayyor reja</span></div></div>
+      <div class="kpi"><div class="v" style="color:var(--primary)">3</div><div class="k">til<span>uz · ru · en, to'liq</span></div></div>
+      <div class="kpi"><div class="v" style="color:var(--info)">5</div><div class="k">dars<span>+ tayyorgarlik sertifikati</span></div></div>
+      <div class="kpi"><div class="v" style="color:var(--danger)">13</div><div class="k">hudud<span>veterinarlar ro'yxati</span></div></div>
+      <div class="kpi"><div class="v" style="color:var(--primary-dark)">0</div><div class="k">dori nomi<span>xavfsizlik qoidasi</span></div></div>
+      <div class="kpi"><div class="v" style="color:#7C3AED">243</div><div class="k">test<span>avtomatik tekshiruv</span></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== ROW D ===================== -->
+  <section class="row rowD">
+    <div class="card">
+      <div class="label"><span class="n">07</span>Texnologiya</div>
+      <div class="tech">
+        <div><b>Flutter 3 + Dart</b><span>Android va veb ilova</span></div>
+        <div><b>Gemini 2.5 Flash</b><span>AI javoblar (RAG)</span></div>
+        <div><b>Lokal RAG</b><span>Internetsiz javoblar</span></div>
+        <div><b>Supabase</b><span>PostgreSQL, Edge Functions</span></div>
+        <div><b>Speech-to-Text · TTS</b><span>Ovozli savol va javob</span></div>
+        <div><b>Open-Meteo</b><span>Ob-havo va prognoz</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label"><span class="n">08</span>Boshqa yo'llardan farqimiz</div>
+      <table class="cmp">
+        <thead><tr><th>Imkoniyat</th><th>Qog'oz daftar</th><th>Telegram guruh</th><th>Umumiy AI chat</th><th>AgroZen</th></tr></thead>
+        <tbody>
+          <tr><td>Har kun uchun Ross-308 reja</td><td>—</td><td>—</td><td><span class="p">qisman</span></td><td><span class="ms y">check_circle</span></td></tr>
+          <tr><td>Nobudlik va vazn bo'yicha ogohlantirish</td><td>—</td><td>—</td><td>—</td><td><span class="ms y">check_circle</span></td></tr>
+          <tr><td>Partiyangiz ma'lumotiga qarab javob</td><td>—</td><td><span class="p">qisman</span></td><td>—</td><td><span class="ms y">check_circle</span></td></tr>
+          <tr><td>Internetsiz ishlaydi</td><td><span class="ms y">check_circle</span></td><td>—</td><td>—</td><td><span class="ms y">check_circle</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="label"><span class="n">09</span>Nima uchun muhim</div>
+      <div class="why">
+        <div><span class="ms">check_circle</span><p><b>Yangi fermer yolg'iz emas</b><span>Har kuni aniq ko'rsatma — tajriba bo'lmasa ham</span></p></div>
+        <div><span class="ms">check_circle</span><p><b>Muammo erta seziladi</b><span>Nobudlik va vazn har kuni me'yor bilan solishtiriladi</span></p></div>
+        <div><span class="ms">check_circle</span><p><b>Kreditga tayyorgarlik</b><span>Kurs va sertifikat — bank va mikromoliya uchun</span></p></div>
+      </div>
+      <div class="safety"><span class="ms">health_and_safety</span><p>Ilova dori va doza tavsiya qilmaydi. Kasallik belgisida — tuman veterinariga qo'ng'iroq.</p></div>
+    </div>
+
+    <div class="card">
+      <div class="label"><span class="n">10</span>Yo'l xaritasi</div>
+      <div class="road">
+        <div class="st now"><div class="dot"><span class="ms">check</span></div><div><b>Hozir</b><span>Android ilova (v1.0.3) va veb-ilova, 3 tilda</span></div></div>
+        <div class="st"><div class="dot"></div><div><b>Keyingi qadam <em>(reja)</em></b><span>Fermerlar bilan pilot sinov va fikr-mulohaza</span></div></div>
+        <div class="st"><div class="dot"></div><div><b>Keyin <em>(reja)</em></b><span>Banklar bilan sertifikat hamkorligi, iOS versiya</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="foot">
+    <div>
+      <div><b>Muallif:</b> <span id="author"></span></div>
+      <div class="credits">Suratlar — Wikimedia Commons: USDA NRCS Texas; USDA, Bob Nichols (jamoat mulki) · Icem4k; Narek Avetisyan (CC BY-SA 4.0) · Wikideas1 (CC0) · Fred Miller, Arkansas Agricultural Experiment Station (CC BY-SA 2.0). Ilova ekranlari — AgroZen veb-versiyasidan olingan.</div>
+    </div>
+    <div class="right" id="contacts"></div>
+  </footer>
+  <div class="band">
+    <span>Har kuni <b>aniq reja</b></span><i></i>
+    <span><b>AI maslahat</b> — 3 tilda, ovozli</span><i></i>
+    <span>Xavfli holatda <b>darhol ogohlantirish</b></span><i></i>
+    <span><b>AgroZen</b> — fermer cho'ntagidagi yordamchi</span>
+  </div>
+</main>
+
+<script>
+  // ---------------- CONFIG (edit and re-render) ----------------
+  const CONFIG = {
+    qrUrl: "https://github.com/ZedRubilan/agrozen/releases/latest",
+    author: "Zamalitdinov Salimbek · NamDTU, 4-kurs, 37-ATT guruhi",
+    contacts: [
+      ["code", "github.com/ZedRubilan/agrozen"],
+    ],
+  };
+  // -------------------------------------------------------------
+
+  document.getElementById("author").textContent = CONFIG.author;
+  document.getElementById("contacts").innerHTML = CONFIG.contacts
+    .map(([icon, text]) => `<span class="ms">${icon}</span> ${text}`).join(" &nbsp;·&nbsp; ");
+
+  const qr = qrcode(0, "M");
+  qr.addData(CONFIG.qrUrl);
+  qr.make();
+  document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+  document.querySelector("#qr path").setAttribute("fill", "#052E16");
+
+  // Ross-308 target live weight (g), days 1–42 — knowledge/norms.json → daily_norms[].weight_g
+  const W = [42,55,70,90,115,145,185,215,250,295,340,395,450,510,575,645,720,800,880,965,1055,
+             1145,1240,1335,1435,1535,1640,1745,1850,1955,2060,2165,2270,2375,2480,2580,2680,2775,2870,2960,3045,3125];
+  // Phases — BroilerGrowerLibrary: pre-start 1–4, start 5–10, grower 11–24, finisher-1 25–35, finisher-2 36–42
+  const PH = [
+    { a: 1, b: 4, name: "Pre-start", fill: "#FEF3C7" },
+    { a: 5, b: 10, name: "Start", fill: "#FEF3C7" },
+    { a: 11, b: 24, name: "O'sish", fill: "#E6F4EA" },
+    { a: 25, b: 35, name: "Finish-1", fill: "#FFEDD5" },
+    { a: 36, b: 42, name: "Finish-2", fill: "#FFEDD5" },
+  ];
+  const svg = document.getElementById("chart");
+  const VW = Math.round(svg.getBoundingClientRect().width), VH = 112;
+  svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`);
+  const L = 34, R = 8, T = 16, B = 16;
+  const x = d => L + (d - 1) / 41 * (VW - L - R);
+  const y = g => T + (1 - g / 3500) * (VH - T - B);
+  let s = "";
+  // phase bands (context, not data)
+  PH.forEach((p, i) => {
+    const x0 = i === 0 ? L : (x(p.a - 1) + x(p.a)) / 2, x1 = i === PH.length - 1 ? VW - R : (x(p.b) + x(p.b + 1)) / 2;
+    s += `<rect x="${x0}" y="${T - 14}" width="${x1 - x0 - 1.5}" height="${VH - B - T + 14}" fill="${p.fill}" opacity=".7"/>`;
+    s += `<text x="${(x0 + x1) / 2}" y="${T - 4}" text-anchor="middle" font-size="8.5" font-weight="800" fill="#52665A">${p.name}</text>`;
+  });
+  // hairline grid + ticks
+  [0, 1000, 2000, 3000].forEach(g => {
+    s += `<line x1="${L}" x2="${VW - R}" y1="${y(g)}" y2="${y(g)}" stroke="#D5E0D8" stroke-width=".8"/>`;
+    s += `<text x="${L - 5}" y="${y(g) + 3}" text-anchor="end" font-size="8.5" font-weight="600" fill="#7A8E7E">${g ? (g / 1000) + "K" : "0"}</text>`;
+  });
+  [1, 7, 14, 21, 28, 35, 42].forEach(d => {
+    s += `<text x="${x(d)}" y="${VH - 4}" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7A8E7E">${d}-kun</text>`;
+  });
+  // area wash + 2px line
+  const pts = W.map((g, i) => `${x(i + 1)},${y(g)}`).join(" ");
+  s += `<polygon points="${x(1)},${y(0)} ${pts} ${x(42)},${y(0)}" fill="#15803D" opacity=".10"/>`;
+  s += `<polyline points="${pts}" fill="none" stroke="#15803D" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+  // end markers with surface ring + selective direct labels
+  [[1, "42 g", "start", -6], [21, "1 055 g", "end", -6], [42, "3 125 g", "end", 14]].forEach(([d, t, anchor, dy]) => {
+    s += `<circle cx="${x(d)}" cy="${y(W[d - 1])}" r="4" fill="#15803D" stroke="#fff" stroke-width="2"/>`;
+    const dx = anchor === "start" ? 7 : -7;
+    s += `<text x="${x(d) + dx}" y="${y(W[d - 1]) + dy}" text-anchor="${anchor}" font-size="9.5" font-weight="800" fill="#0F172A">${t}</text>`;
+  });
+  svg.innerHTML = s;
+</script>
+</body>
+</html>

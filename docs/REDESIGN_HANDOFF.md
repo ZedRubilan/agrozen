@@ -65,6 +65,8 @@ Status as of 2026-10-13 (broiler photos done). Read this first when picking the 
 
 ## Other open items
 
+- **Gemini key in the APK:** the app still calls Gemini directly with a key baked into the build. Move those calls behind the Supabase Edge Functions. The plan is in `docs/TODO_GEMINI_VIA_EDGE.md`.
+- **Poster:** the A3 poster is in `docs/poster/` (`agrozen_poster.html`). Re-render it with `python3 docs/poster/render_poster.py`. The QR link and contacts are in the `CONFIG` block. The QR points to the public releases page; the repo was made public on 2026-10-13.
 - **Merge:** merge `redesign/photo-led-ui` into `main` when you're happy (this triggers the release workflow).
 - **Backups:** pre-change copies of every redesigned file are under `.git/agrozen-redesign-backup/` (local only, not pushed). The commit history is the real backup now.
 - **Web screenshots:** to verify UI on web, run `flutter build web --release`, serve `build/web` on a **free** port (something else uses 8765), and drive headless Chromium (Playwright). Seed `localStorage` with `flutter.<key>` = JSON-encoded values, for example `is_onboarded`, `app_language`, `farmer_name`, `farmer_district`, `arrival_date`, `initial_count` and `current_count`. Deep links use `/#/route`.
