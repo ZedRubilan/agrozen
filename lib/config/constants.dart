@@ -1,6 +1,8 @@
 class AppConstants {
   static const int maxDailyQuestions = 30;
   static const int broilerCycleDays = 42;
+  static const int defaultFlockSize = 500;
+  static const String defaultDistrict = 'Toshkent';
   static const String timezone = 'Asia/Tashkent';
   static const int morningNotificationHour = 7;
   static const List<String> supportedLocales = ['uz', 'ru', 'en'];

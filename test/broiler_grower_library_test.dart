@@ -1,9 +1,6 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:agrozen/domain/broiler/broiler_grower_library.dart';
-import 'package:agrozen/presentation/widgets/broiler_grower_toolkit_card.dart';
-import 'package:agrozen/presentation/widgets/simple_chicken_tracker_card.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
 import 'package:agrozen/services/local_rag.dart';
 import 'package:agrozen/services/poultry_vision_analyzer.dart';
@@ -46,7 +43,8 @@ void main() {
         outsideTempC: 34.0,
       );
 
-      expect(reqNormal.totalDailyFeedKg, closeTo(37.0, 1.0));
+      // Day 14: 54 g/bird (knowledge/norms.json) × 500 birds = 27 kg.
+      expect(reqNormal.totalDailyFeedKg, closeTo(27.0, 0.01));
       expect(reqHot.totalDailyWaterLiters, greaterThan(reqNormal.totalDailyWaterLiters));
       expect(reqNormal.recommendedNipples, (500 / 11).ceil());
       expect(reqNormal.recommendedFeederPans, 10);
@@ -113,84 +111,6 @@ void main() {
       expect(fcrRes!.answer, contains('FCR'));
     });
 
-    testWidgets('BroilerGrowerToolkitCard renders tabs and triggers enhanced prompt', (tester) async {
-      String? capturedPrompt;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: BroilerGrowerToolkitCard(
-                batchDay: 14,
-                initialCount: 500,
-                currentCount: 490,
-                language: 'en',
-                onAskEnhancedPrompt: (p) => capturedPrompt = p,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.textContaining('Ross-308 Broiler Grower Hub'), findsOneWidget);
-      expect(find.textContaining('510 g'), findsOneWidget);
-
-      // Switch to FCR & Calc tab
-      await tester.tap(find.text('FCR & Calc'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('EPEF'), findsWidgets);
-
-      // Switch to Library tab and tap a guide
-      await tester.tap(find.text('Library'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.textContaining('Lighting & Stocking Density'));
-      await tester.pumpAndSettle();
-
-      expect(capturedPrompt, isNotNull);
-      expect(capturedPrompt, contains('Day 14'));
-    });
-
-    testWidgets('SimpleChickenTrackerCard categorizes Healthy, Watchlist, and Lost Today in 1 tap', (tester) async {
-      int isolated = 5;
-      int mortalityAdded = 0;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SimpleChickenTrackerCard(
-              batchDay: 14,
-              initialCount: 500,
-              currentCount: 495,
-              isolatedCount: isolated,
-              todayMortality: 2,
-              todayFeedKg: 32.0,
-              lastWeightG: 500.0,
-              language: 'en',
-              onUpdateIsolatedCount: (val) => isolated = val,
-              onQuickAddMortality: () => mortalityAdded++,
-              onOpenLogMortality: () {},
-              onOpenLogFeed: () {},
-              onOpenLogWeight: () {},
-            ),
-          ),
-        ),
-      );
-
-      // Healthy = 495 - 5 = 490
-      expect(find.text('490'), findsOneWidget);
-      expect(find.text('5'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-
-      // Tap '+' on Watchlist to isolate 1 more weak chick
-      await tester.tap(find.text('+'));
-      await tester.pump();
-      expect(isolated, 6);
-
-      // Tap '+1' on Lost Today
-      await tester.tap(find.text('+1'));
-      await tester.pump();
-      expect(mortalityAdded, 1);
-    });
-
     test('PoultryVisionAnalyzer detects PNG/JPEG MIME types and inspects image bytes', () async {
       final pngBytes = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
       expect(PoultryVisionAnalyzer.detectMimeType('photo.jpg', pngBytes), 'image/png');
@@ -206,6 +126,25 @@ void main() {
       );
       expect(res.analysisText, contains('STATUS VERDICT'));
       expect(res.analysisText, contains('Fine & Healthy Chick'));
+    });
+  });
+
+  group('FCR plausibility is relative to the day target', () {
+    test('an on-target early flock is graded, not rejected', () {
+      // Day 7 target FCR is 0.75 — below the old fixed 0.9 cutoff.
+      final day7 = BroilerGrowerLibrary.specForDay(7).targetFcr;
+      expect(day7, lessThan(0.9));
+      expect(BroilerGrowerLibrary.isPlausibleFcr(day: 7, fcr: day7), isTrue);
+      expect(BroilerGrowerLibrary.isPlausibleFcr(day: 7, fcr: 0.6), isTrue);
+    });
+
+    test('far better than target means incomplete inputs', () {
+      // Day 14 target 0.86 → floor 0.60.
+      expect(BroilerGrowerLibrary.isPlausibleFcr(day: 14, fcr: 0.25), isFalse);
+      expect(BroilerGrowerLibrary.isPlausibleFcr(day: 7, fcr: 0.4), isFalse);
+      // Day 42 target 1.43 → floor 1.0.
+      expect(BroilerGrowerLibrary.isPlausibleFcr(day: 42, fcr: 0.9), isFalse);
+      expect(BroilerGrowerLibrary.isPlausibleFcr(day: 42, fcr: 1.5), isTrue);
     });
   });
 }

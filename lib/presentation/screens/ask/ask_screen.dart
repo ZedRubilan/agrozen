@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,10 +9,8 @@ import 'package:agrozen/config/supabase_config.dart';
 import 'package:agrozen/core/localization/app_strings.dart';
 import 'package:agrozen/data/providers/ai_provider.dart';
 import 'package:agrozen/data/repositories/knowledge_repository.dart';
-import 'package:agrozen/presentation/widgets/voice_input_button.dart';
-import 'package:agrozen/presentation/widgets/organic_image_inspector.dart';
-import 'package:agrozen/presentation/widgets/tactile_button.dart';
-import 'package:agrozen/domain/broiler/broiler_grower_library.dart';
+import 'package:agrozen/presentation/ui/components.dart';
+import 'package:agrozen/presentation/widgets/agro_icons.dart';
 import 'package:agrozen/services/daily_counters.dart';
 import 'package:agrozen/services/local_rag.dart';
 import 'package:agrozen/services/poultry_vision_analyzer.dart';
@@ -68,15 +65,14 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   final _aiProvider = GeminiAiProvider();
 
   late AnimationController _pulseController;
-  late Animation<double> _pulseScale;
 
   final List<ChatMessage> _messages = [];
   String _lang = 'uz';
   int _remainingQuestions = 30;
   bool _isLoading = false;
   bool _isRecording = false;
-  bool _isFieldMode = false; // Hands-Free "Dala Rejimi"
-  bool _autoSpeakInFieldMode = true;
+  /// Read every answer aloud (hands-free use in the barn).
+  bool _readAloud = false;
   String _livePartialTranscript = '';
   String? _selectedImagePath;
   String? _analyzingImagePath;
@@ -94,13 +90,10 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _isFieldMode = widget.startInFieldMode;
+    _readAloud = widget.startInFieldMode;
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    );
-    _pulseScale = Tween<double>(begin: 1.0, end: 1.14).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     if (widget.initialPrompt != null && widget.initialPrompt!.trim().isNotEmpty) {
       _lastHandledInitialPrompt = widget.initialPrompt;
@@ -127,30 +120,6 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         }
       });
     }
-  }
-
-  void _enhanceCurrentInput() {
-    final enhanced = FarmerPromptEnhancer.enhanceFarmerPrompt(
-      rawInput: _controller.text,
-      lang: _lang,
-      batchDay: _liveContext?.batchDay ?? 1,
-      birdCount: _liveContext?.currentCount ?? 500,
-      outsideTempC: _liveContext?.outsideTemp,
-    );
-    setState(() {
-      _controller.text = enhanced;
-      _controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: _controller.text.length),
-      );
-    });
-    _showSnack(
-      AppStrings.tr(
-        lang: _lang,
-        uz: "✨ Savol Ross-308 partiya ko'rsatkichlari bilan boyitildi!",
-        ru: '✨ Вопрос обогащён параметрами вашей партии Ross-308!',
-        en: '✨ Prompt enhanced with your Ross-308 flock parameters!',
-      ),
-    );
   }
 
   @override
@@ -232,10 +201,6 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         setState(() {
           _selectedImagePath = picked.path;
         });
-        // If in Field Mode, auto-trigger analysis immediately on image capture
-        if (_isFieldMode) {
-          _sendMessage();
-        }
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
@@ -674,8 +639,8 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
 
     _scrollToBottom();
 
-    // In Hands-Free Field Mode: auto-speak the answer out loud when enabled
-    if (_isFieldMode && _autoSpeakInFieldMode) {
+    // Hands-free: read the answer aloud when enabled.
+    if (_readAloud) {
       _toggleSpeak(answer, effectiveLang);
     }
   }
@@ -712,17 +677,63 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     }
   }
 
+  String _t(String uz, String ru, String en) =>
+      AppStrings.tr(lang: _lang, uz: uz, ru: ru, en: en);
+
+  void _toggleReadAloud() {
+    setState(() => _readAloud = !_readAloud);
+    _showSnack(
+      _readAloud
+          ? _t("Javoblar ovoz bilan o'qiladi", 'Ответы будут озвучиваться',
+              'Answers will be read aloud')
+          : _t("Ovozli o'qish o'chirildi", 'Озвучивание выключено',
+              'Reading aloud is off'),
+    );
+  }
+
+  Future<void> _choosePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpace.screen, 0, AppSpace.screen, AppSpace.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                _t("Jo'jalar, axlat yoki to'shamani suratga oling",
+                    'Сфотографируйте птицу, помёт или подстилку',
+                    'Take a photo of birds, droppings or litter'),
+                style: AppText.section,
+              ),
+              const Gap(),
+              ListGroup(
+                children: [
+                  ListRow(
+                    icon: Icons.photo_camera_outlined,
+                    title: _t('Kamera', 'Камера', 'Camera'),
+                    onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                  ),
+                  ListRow(
+                    icon: Icons.photo_library_outlined,
+                    tone: Tone.info,
+                    title: _t('Galereya', 'Галерея', 'Gallery'),
+                    onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source != null) await _pickImage(source);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final titleText = AppStrings.tr(
-      lang: _lang,
-      uz: 'AgroZen AI Maslahatchi',
-      ru: 'ИИ Помощник AgroZen',
-      en: 'AgroZen AI Assistant',
-    );
-
     final quotaText = AppStrings.tr(
       lang: _lang,
       uz: 'Bugun qoldi: $_remainingQuestions/30',
@@ -731,2057 +742,407 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF7),
       appBar: AppBar(
         automaticallyImplyLeading: !widget.isEmbeddedInPageView,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        titleSpacing: 16,
-        title: Row(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2D7A4C), Color(0xFF1B5E20)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2D7A4C).withAlpha(50),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(Icons.psychology_rounded, color: Colors.white, size: 22),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    titleText,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A1F1D),
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: _remainingQuestions > 0 ? const Color(0xFF22C55E) : Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        quotaText,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            Text(_t('AgroZen yordamchisi', 'Помощник AgroZen', 'AgroZen assistant')),
+            Text(
+              quotaText,
+              style: AppText.caption.copyWith(
+                color: _remainingQuestions > 0 ? AppColors.inkMuted : AppColors.danger,
               ),
             ),
           ],
         ),
         actions: [
-          // Mode toggle: Chat vs Hands-Free Field Mode
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  setState(() => _isFieldMode = !_isFieldMode);
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: _isFieldMode
-                        ? const Color(0xFF2D7A4C)
-                        : const Color(0xFF2D7A4C).withAlpha(20),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _isFieldMode
-                          ? const Color(0xFF2D7A4C)
-                          : const Color(0xFF2D7A4C).withAlpha(60),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _isFieldMode
-                            ? Icons.agriculture_rounded
-                            : Icons.chat_bubble_outline_rounded,
-                        size: 15,
-                        color: _isFieldMode ? Colors.white : const Color(0xFF2D7A4C),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _isFieldMode
-                            ? AppStrings.tr(
-                                lang: _lang, uz: 'Dala rejimi', ru: 'Режим поля', en: 'Field Mode')
-                            : AppStrings.tr(lang: _lang, uz: 'Chat', ru: 'Чат', en: 'Chat'),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: _isFieldMode ? Colors.white : const Color(0xFF2D7A4C),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          IconButton(
+            tooltip: _t("Javoblarni ovoz bilan o'qish", 'Озвучивать ответы',
+                'Read answers aloud'),
+            onPressed: _toggleReadAloud,
+            isSelected: _readAloud,
+            icon: const Icon(Icons.volume_off_outlined),
+            selectedIcon: const Icon(Icons.volume_up_rounded, color: AppColors.primary),
           ),
+          const SizedBox(width: AppSpace.xs),
         ],
       ),
       body: SafeArea(
-        child: _isFieldMode ? _buildFieldModeBody(theme) : _buildChatModeBody(theme),
-      ),
-    );
-  }
-
-  /// Real-time live audio wave visualizer (equalizer effect)
-  Widget _buildAudioWaveVisualizer({
-    required bool isActive,
-    required Color color,
-  }) {
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, _) {
-        final animValue = _pulseController.value;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(5, (index) {
-            final double height = isActive
-                ? (6.0 + 16.0 * (0.3 + 0.7 * (sin(animValue * pi * 2 + index * 1.1).abs())))
-                : 4.0;
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 1.5),
-              width: 3.5,
-              height: height,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
-          }),
-        );
-      },
-    );
-  }
-
-  /// Hands-Free "Dala Rejimi": Built for dirty hands with massive touch targets,
-  /// atmospheric voice chamber, automatic read-aloud voice playback, and quick text input.
-  Widget _buildFieldModeBody(ThemeData theme) {
-    final ChatMessage lastAiMessage = _messages.isNotEmpty
-        ? _messages.lastWhere(
-            (m) => !m.isUser,
-            orElse: () => _messages.first,
-          )
-        : ChatMessage(
-            text: AppStrings.tr(
-              lang: _lang,
-              uz: "Assalomu alaykum! Savolingizni ovozli bering, yozing yoki rasm yuboring.",
-              ru: "Здравствуйте! Задайте вопрос голосом, текстом или отправьте фото.",
-              en: "Hello! Ask a question by voice, text, or share a photo.",
-            ),
-            isUser: false,
-            source: 'AgroZen',
-          );
-
-    ChatMessage? lastUserMessage;
-    for (int i = _messages.length - 1; i >= 0; i--) {
-      if (_messages[i].isUser) {
-        lastUserMessage = _messages[i];
-        break;
-      }
-    }
-
-    return Column(
-      children: [
-        // 1. Live Flock Dossier Card
-        if (_liveContext != null) _buildFlockDossierCard(),
-
-        // Live Organic Image Inspector if analyzing
-        if (_analyzingImagePath != null && _isLoading)
-          Expanded(
-            child: Center(
-              child: OrganicImageInspector(
-                imagePath: _analyzingImagePath!,
-                language: _lang,
-                isAnalyzing: true,
-              ),
-            ),
-          )
-        else
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(
-                left: 18,
-                right: 18,
-                top: 8,
-                bottom: 16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        top: false,
+        child: Column(
+          children: [
+            const Divider(),
+            Expanded(
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.screen, AppSpace.lg, AppSpace.screen, AppSpace.lg),
                 children: [
-                  // 2. Atmospheric Voice Sphere Hero Arena
-                  _buildAtmosphericVoiceArena(),
-                  const SizedBox(height: 16),
-
-                  // 3. Tactile Media & Action Pill Dock
-                  _buildTactileMediaDock(),
-                  const SizedBox(height: 18),
-
-                  // 4. Quick Agronomic Questions Carousel (1-Tap Voice Answers)
-                  _buildQuickPromptsCarousel(),
-                  const SizedBox(height: 18),
-
-                  // 5. User's Last Question / Spoken Transcript Pill
-                  if (lastUserMessage != null) ...[
-                    _buildFieldModeUserQuestionBanner(lastUserMessage),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // 6. Thinking / Processing Indicator in Field Mode
-                  if (_isLoading && _analyzingImagePath == null) ...[
-                    _buildThinkingBanner(),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // 7. Premier AI Voice Response Card (Full untruncated response)
-                  _buildAiAnswerCard(lastAiMessage),
-                  const SizedBox(height: 12),
+                  for (final msg in _messages) _buildMessage(msg),
+                  if (_messages.length <= 1 && !_isLoading) _buildSuggestions(),
+                  if (_isLoading) _buildThinking(),
                 ],
               ),
             ),
-          ),
-
-        // 8. Quick Text Input Bar in Field Mode so typing also works seamlessly
-        _buildFieldModeQuickInputBar(),
-      ],
-    );
-  }
-
-  Widget _buildFieldModeUserQuestionBanner(ChatMessage userMsg) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2D7A4C), Color(0xFF1E5B37)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2D7A4C).withAlpha(35),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (userMsg.imagePath != null) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: kIsWeb
-                  ? Image.network(
-                      userMsg.imagePath!,
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox(width: 48, height: 48),
-                    )
-                  : Image.file(
-                      File(userMsg.imagePath!),
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox(width: 48, height: 48),
-                    ),
-            ),
-            const SizedBox(width: 10),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(35),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.record_voice_over_rounded,
-                size: 15,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 10),
+            if (_selectedImagePath != null && !_isLoading) _buildAttachment(),
+            if (_isRecording) _buildRecordingBar(),
+            _buildInputBar(),
           ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userMsg.imagePath != null
-                      ? AppStrings.tr(
-                          lang: _lang,
-                          uz: 'Skanerlangan fotosurat:',
-                          ru: 'Просканированное фото:',
-                          en: 'Scanned photo:',
-                        )
-                      : AppStrings.tr(
-                          lang: _lang,
-                          uz: 'Sizning savolingiz:',
-                          ru: 'Ваш вопрос:',
-                          en: 'Your question:',
-                        ),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white.withAlpha(200),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  userMsg.text,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildThinkingBanner() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF86EFAC), width: 1.2),
-        boxShadow: AppTheme.cardShadow,
+  Widget _buildSuggestions() {
+    final items = <(IconData, String, String)>[
+      (
+        Icons.thermostat_rounded,
+        _t('Bugungi harorat', 'Температура сегодня', "Today's temperature"),
+        _t("Bugun binoda harorat qanday bo'lishi kerak?",
+            'Какая сегодня должна быть температура в птичнике?',
+            'What should the house temperature be today?'),
       ),
+      (
+        Icons.grain_rounded,
+        _t('Yem miqdori', 'Норма корма', 'How much feed'),
+        _t('Bugun qancha yem berishim kerak?', 'Сколько корма давать сегодня?',
+            'How much feed should I give today?'),
+      ),
+      (
+        Icons.air_rounded,
+        _t('Shamollatish', 'Вентиляция', 'Ventilation'),
+        _t('Parrandaxonani qanday shamollatish kerak?',
+            'Как правильно проветривать птичник?',
+            'How should I ventilate the poultry house?'),
+      ),
+      (
+        Icons.water_drop_outlined,
+        _t('Suv', 'Вода', 'Water'),
+        _t("Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
+            'Какой температуры должна быть вода для цыплят?',
+            'What should the drinking water temperature be?'),
+      ),
+    ];
+    final colors = [AppColors.sun, AppColors.gold, AppColors.info, AppColors.primary];
+    final tiles = <Widget>[
+      for (var i = 0; i < items.length; i++)
+        _QuickQuestionTile(
+          icon: items[i].$1,
+          color: colors[i % colors.length],
+          label: items[i].$2,
+          onTap: () => _sendMessage(items[i].$3),
+        ),
+    ];
+    return Reveal(
+      index: 1,
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppSpace.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _PhotoCheckCard(
+              title: _t('Rasmni tekshirish', 'Проверить по фото', 'Check a photo'),
+              subtitle: _t(
+                "Jo'jalar, axlat yoki to'shamani suratga oling",
+                'Сфотографируйте птицу, помёт или подстилку',
+                'Take a photo of birds, droppings or litter',
+              ),
+              onTap: _choosePhoto,
+            ),
+            const SizedBox(height: AppSpace.lg),
+            Text(_t('Tez savollar', 'Быстрые вопросы', 'Quick questions'),
+                style: AppText.section),
+            const SizedBox(height: AppSpace.sm),
+            MetricGrid(children: tiles),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThinking() {
+    final analyzingPhoto = _analyzingImagePath != null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpace.sm),
       child: Row(
         children: [
           const SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.3,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2D7A4C)),
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2.2),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              AppStrings.tr(
-                lang: _lang,
-                uz: 'AgroZen javob tayyorlamoqda...',
-                ru: 'AgroZen готовит ответ...',
-                en: 'AgroZen is preparing your answer...',
-              ),
-              style: const TextStyle(
-                color: Color(0xFF15803D),
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFieldModeQuickInputBar() {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 14,
-        right: 14,
-        top: 8,
-        bottom: widget.isEmbeddedInPageView ? 95 : 10,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 14,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // ✨ Smart Prompt Enhancer Button
-          Tooltip(
-            message: AppStrings.tr(
-              lang: _lang,
-              uz: 'Savolni boyitish (Prompt Enhancer)',
-              ru: 'Улучшить вопрос (Prompt Enhancer)',
-              en: 'Enhance Prompt',
-            ),
-            child: GestureDetector(
-              onTap: _enhanceCurrentInput,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Color(0xFFD97706),
-                    size: 19,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: TextField(
-                controller: _controller,
-                textInputAction: TextInputAction.send,
-                decoration: InputDecoration(
-                  hintText: AppStrings.tr(
-                    lang: _lang,
-                    uz: 'Savol yozing yoki ✨ bosing...',
-                    ru: 'Напишите вопрос или нажмите ✨...',
-                    en: 'Type a question or tap ✨ to enhance...',
-                  ),
-                  hintStyle: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
-                ),
-                onSubmitted: (_) => _sendMessage(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2D7A4C), Color(0xFF1E5B37)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2D7A4C).withAlpha(75),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(Icons.send_rounded, color: Colors.white, size: 19),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Live Flock Dossier Card with real chick photo and climate norm
-  Widget _buildFlockDossierCard() {
-    if (_liveContext == null) return const SizedBox.shrink();
-
-    final targetTemp = _liveContext!.targetTemperatureC.round();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppTheme.cardBorder, width: 1.2),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF22C55E), width: 1.8),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: Image.asset(
-                'assets/images/chick_starter.jpg',
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF22C55E),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _lang == 'en'
-                          ? 'Day ${_liveContext!.batchDay} dossier attached'
-                          : (_lang == 'ru'
-                              ? 'День ${_liveContext!.batchDay}: досье подключено'
-                              : '${_liveContext!.batchDay}-kun dossier biriktirildi'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12.5,
-                        color: Color(0xFF15803D),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  _lang == 'en'
-                      ? '${_liveContext!.district} • ${_liveContext!.currentCount} birds'
-                      : (_lang == 'ru'
-                          ? '${_liveContext!.district} • ${_liveContext!.currentCount} голов'
-                          : '${_liveContext!.district} • ${_liveContext!.currentCount} bosh'),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-              border: Border.all(color: const Color(0xFFFDE68A), width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.thermostat_rounded, size: 14, color: Color(0xFFD97706)),
-                const SizedBox(width: 3),
-                Text(
-                  '$targetTemp°C',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFFB45309),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The Atmospheric Voice Sphere Hero Chamber
-  Widget _buildAtmosphericVoiceArena() {
-    final bool isListening = _isRecording;
-    final bool isSpeaking = _speakingText != null;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0C2417),
-            Color(0xFF133E26),
-            Color(0xFF091C12),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(34),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF133E26).withAlpha(100),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Voice Orb with Multi-Ring Pulse
-          AnimatedBuilder(
-            animation: _pulseScale,
-            builder: (context, _) {
-              final scaleVal = _pulseController.isAnimating ? _pulseScale.value : 1.0;
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Outer ripple ring
-                  Transform.scale(
-                    scale: isListening ? scaleVal * 1.15 : (isSpeaking ? scaleVal * 1.08 : 1.0),
-                    child: Container(
-                      width: 180,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: (isListening
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF22C55E))
-                            .withAlpha(isListening ? 45 : (isSpeaking ? 30 : 18)),
-                      ),
-                    ),
-                  ),
-                  // Secondary softer ripple
-                  Transform.scale(
-                    scale: isListening ? 1.0 + (scaleVal - 1.0) * 0.6 : 1.0,
-                    child: Container(
-                      width: 154,
-                      height: 154,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: (isListening
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF22C55E))
-                            .withAlpha(isListening ? 70 : (isSpeaking ? 50 : 30)),
-                      ),
-                    ),
-                  ),
-                  // Center Tactile Glowing Mic Button (128x128)
-                  GestureDetector(
-                    onTap: () {
-                      if (_isRecording) {
-                        _stopVoiceRecording();
-                      } else {
-                        _startVoiceRecording();
-                      }
-                    },
-                    child: Container(
-                      width: 128,
-                      height: 128,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: isListening
-                              ? [const Color(0xFFEF4444), const Color(0xFFB91C1C)]
-                              : [const Color(0xFF22C55E), const Color(0xFF15803D)],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withAlpha(220),
-                          width: 3.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E))
-                                .withAlpha(140),
-                            blurRadius: 28,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Icon(
-                          isListening ? Icons.stop_rounded : Icons.mic_rounded,
-                          size: 56,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          // Glow Status Pill inside Arena
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(120),
-              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-              border: Border.all(
-                color: (isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E)).withAlpha(140),
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isListening ? const Color(0xFFEF4444) : const Color(0xFF22C55E))
-                            .withAlpha(180),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isListening
-                      ? AppStrings.tr(
-                          lang: _lang,
-                          uz: "ESHITILMOQDA...",
-                          ru: "СЛУШАЮ...",
-                          en: "LISTENING...",
-                        )
-                      : AppStrings.tr(
-                          lang: _lang,
-                          uz: "TUGMANI BOSING",
-                          ru: "НАЖМИТЕ ДЛЯ ЗАПИСИ",
-                          en: "TAP TO SPEAK",
-                        ),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                    color: isListening ? const Color(0xFFFCA5A5) : const Color(0xFF86EFAC),
-                  ),
-                ),
-                if (isListening || isSpeaking) ...[
-                  const SizedBox(width: 8),
-                  _buildAudioWaveVisualizer(
-                    isActive: true,
-                    color: isListening ? const Color(0xFFFCA5A5) : const Color(0xFF86EFAC),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          if (isListening && _livePartialTranscript.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(24),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withAlpha(50)),
-              ),
-              child: Text(
-                '"$_livePartialTranscript"',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 12),
-
-          // Subtle guidance prompt in ivory
+          const SizedBox(width: AppSpace.md),
           Text(
-            isListening
-                ? AppStrings.tr(
-                    lang: _lang,
-                    uz: "Gapiring, to'xtatish uchun yana bosing",
-                    ru: "Говорите, для завершения нажмите снова",
-                    en: "Speak now, tap again to finish",
-                  )
-                : AppStrings.tr(
-                    lang: _lang,
-                    uz: "Bosing va savolingizni ayting.\nJavob ovozli o'qib beriladi.",
-                    ru: "Нажмите и задайте вопрос голосом.\nОтвет будет озвучен.",
-                    en: "Tap and ask hands-free.\nAnswer will be read aloud.",
-                  ),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withAlpha(200),
-              height: 1.4,
-            ),
+            analyzingPhoto
+                ? _t('Rasm tekshirilmoqda…', 'Проверяю фото…', 'Checking the photo…')
+                : _t('Javob tayyorlanmoqda…', 'Готовлю ответ…', 'Preparing an answer…'),
+            style: AppText.bodyMuted,
           ),
         ],
       ),
     );
   }
 
-  /// Tactile Media & Action Pill Dock
-  Widget _buildTactileMediaDock() {
+  Widget _imagePreview(String path, {double size = 64}) {
+    final image = kIsWeb
+        ? Image.network(path, width: size, height: size, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => SizedBox(width: size, height: size))
+        : Image.file(File(path), width: size, height: size, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => SizedBox(width: size, height: size));
+    return ClipRRect(borderRadius: BorderRadius.circular(AppRadius.sm), child: image);
+  }
+
+  Widget _buildAttachment() {
+    final categories = <String, String>{
+      'chick': _t("Jo'ja holati", 'Состояние птицы', 'Bird health'),
+      'droppings': _t('Axlat', 'Помёт', 'Droppings'),
+      'litter': _t("To'shama", 'Подстилка', 'Litter'),
+      'clustering': _t('Joylashuvi', 'Распределение', 'Spread in house'),
+    };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-        border: Border.all(color: AppTheme.cardBorder, width: 1.2),
-        boxShadow: AppTheme.cardShadow,
-      ),
+      color: AppColors.surface,
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.screen, AppSpace.md, AppSpace.screen, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Camera action pill
-          InkWell(
-            onTap: () => _pickImage(ImageSource.camera),
-            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBEB),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFDE68A), width: 1),
-                    ),
-                    child: const Icon(Icons.camera_alt_rounded, size: 18, color: Color(0xFFD97706)),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    AppStrings.tr(lang: _lang, uz: 'Kamera', ru: 'Камера', en: 'Camera'),
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 24,
-            color: AppTheme.cardBorder,
-          ),
-          // Gallery action pill
-          InkWell(
-            onTap: () => _pickImage(ImageSource.gallery),
-            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFECFDF5),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
-                    ),
-                    child: const Icon(Icons.photo_library_rounded, size: 18, color: Color(0xFF059669)),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    AppStrings.tr(lang: _lang, uz: 'Galereya', ru: 'Галерея', en: 'Gallery'),
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 24,
-            color: AppTheme.cardBorder,
-          ),
-          // Auto-speak toggle pill
-          InkWell(
-            onTap: () async {
-              final next = !_autoSpeakInFieldMode;
-              setState(() => _autoSpeakInFieldMode = next);
-              if (!next && (_speakingText != null || _ttsService.isPlaying)) {
-                await _ttsService.stop();
-                if (mounted) setState(() => _speakingText = null);
-              }
-            },
-            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: _autoSpeakInFieldMode
-                          ? const Color(0xFFDCFCE7)
-                          : const Color(0xFFF1F5F9),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _autoSpeakInFieldMode
-                            ? const Color(0xFF86EFAC)
-                            : const Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      _autoSpeakInFieldMode
-                          ? Icons.record_voice_over_rounded
-                          : Icons.voice_over_off_rounded,
-                      size: 17,
-                      color: _autoSpeakInFieldMode
-                          ? const Color(0xFF15803D)
-                          : const Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    AppStrings.tr(
-                      lang: _lang,
-                      uz: 'Avto-ovoz',
-                      ru: 'Авто-речь',
-                      en: 'Auto-Voice',
-                    ),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: _autoSpeakInFieldMode
-                          ? const Color(0xFF15803D)
-                          : AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Quick Agronomic Questions Carousel (1-Tap Voice Answers)
-  Widget _buildQuickPromptsCarousel() {
-    final day = _liveContext?.batchDay ?? 1;
-    final prompts = [
-      {
-        'icon': Icons.thermostat_rounded,
-        'label': AppStrings.tr(
-          lang: _lang,
-          uz: '$day-kun harorat me\'yori',
-          ru: 'Норма тепла на $day-й день',
-          en: 'Day $day temp norm',
-        ),
-        'query': AppStrings.tr(
-          lang: _lang,
-          uz: "$day-kunda xona harorati qanday bo'lishi kerak?",
-          ru: 'Какая должна быть температура в птичнике на $day-й день?',
-          en: 'What should the barn temperature be on day $day?',
-        ),
-      },
-      {
-        'icon': Icons.trending_up_rounded,
-        'label': AppStrings.tr(
-          lang: _lang,
-          uz: 'Vazn va FCR me\'yori',
-          ru: 'Вес и конверсия FCR',
-          en: 'Weight & FCR norm',
-        ),
-        'query': AppStrings.tr(
-          lang: _lang,
-          uz: "$day-kunda broyler etalon vazni va FCR yem konversiyasi qanday bo'lishi kerak?",
-          ru: 'Какой эталонный вес бройлеров и конверсия корма FCR на $day-й день?',
-          en: 'What is the target broiler weight and FCR feed conversion on day $day?',
-        ),
-      },
-      {
-        'icon': Icons.wb_incandescent_rounded,
-        'label': AppStrings.tr(
-          lang: _lang,
-          uz: 'Yorug\'lik va zichlik',
-          ru: 'Свет и плотность',
-          en: 'Lighting & density',
-        ),
-        'query': AppStrings.tr(
-          lang: _lang,
-          uz: "$day-kunda yorug'lik rejimi va 1 kvadrat metrga joylashtirish zichligi qanday?",
-          ru: 'Какой режим освещения и плотность посадки на 1 квадратный метр на $day-й день?',
-          en: 'What is the lighting schedule and stocking density per square meter on day $day?',
-        ),
-      },
-      {
-        'icon': Icons.water_drop_rounded,
-        'label': AppStrings.tr(
-          lang: _lang,
-          uz: 'Suv harorati qanday?',
-          ru: 'Температура воды',
-          en: 'Water temperature',
-        ),
-        'query': AppStrings.tr(
-          lang: _lang,
-          uz: "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
-          ru: 'Какой температуры должна быть вода для цыплят?',
-          en: 'What should the drinking water temperature be for chicks?',
-        ),
-      },
-      {
-        'icon': Icons.grain_rounded,
-        'label': AppStrings.tr(
-          lang: _lang,
-          uz: 'Yem sarfi me\'yori',
-          ru: 'Норма расхода корма',
-          en: 'Daily feed norm',
-        ),
-        'query': AppStrings.tr(
-          lang: _lang,
-          uz: "$day-kunda jo'jalar uchun yem sarfi qancha?",
-          ru: 'Какова суточная норма корма для цыплят на $day-й день?',
-          en: 'What is the daily feed requirement for chicks on day $day?',
-        ),
-      },
-      {
-        'icon': Icons.air_rounded,
-        'label': AppStrings.tr(
-          lang: _lang,
-          uz: 'Shamollatish qoidalari',
-          ru: 'Правила вентиляции',
-          en: 'Ventilation rules',
-        ),
-        'query': AppStrings.tr(
-          lang: _lang,
-          uz: 'Parrandaxonani shamollatish qoidalari qanday?',
-          ru: 'Каковы правила вентиляции птичника?',
-          en: 'What are the ventilation rules for the poultry house?',
-        ),
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-          child: Row(
-            children: [
-              const Icon(Icons.auto_awesome_rounded, size: 15, color: Color(0xFFD97706)),
-              const SizedBox(width: 6),
-              Text(
-                AppStrings.tr(
-                  lang: _lang,
-                  uz: "Tezkor agronomic savollar",
-                  ru: "Быстрые вопросы агроному",
-                  en: "Quick Agronomic Questions",
-                ),
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textMuted,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 38,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: prompts.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, idx) {
-              final item = prompts[idx];
-              return InkWell(
-                onTap: () => _sendMessage(item['query'] as String),
-                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                    border: Border.all(color: AppTheme.cardBorder, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(6),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(item['icon'] as IconData, size: 14, color: const Color(0xFF15803D)),
-                      const SizedBox(width: 6),
-                      Text(
-                        item['label'] as String,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Premier AI Answer Card with TTS readout & emergency call (full untruncated text)
-  Widget _buildAiAnswerCard(ChatMessage lastAiMessage) {
-    final bool isSpeaking = _speakingText == lastAiMessage.text;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-        border: Border.all(color: AppTheme.cardBorder, width: 1.2),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
+          _imagePreview(_selectedImagePath!),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_t('Nimani tekshiramiz?', 'Что проверить?', 'What should I check?'),
+                    style: AppText.label),
+                const SizedBox(height: AppSpace.xs),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
                   children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEAF5ED),
-                        shape: BoxShape.circle,
+                    for (final entry in categories.entries)
+                      ChoiceChip(
+                        label: Text(entry.value),
+                        selected: _selectedPhotoCategory == entry.key,
+                        onSelected: (_) =>
+                            setState(() => _selectedPhotoCategory = entry.key),
                       ),
-                      child: const Center(
-                        child: Icon(Icons.psychology_rounded, size: 18, color: Color(0xFF15803D)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: 'AgroZen Maslahatchi',
-                              ru: 'AgroZen Консультант',
-                              en: 'AgroZen Advisor',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              color: AppTheme.textPrimary,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                          if (lastAiMessage.source != null)
-                            Text(
-                              lastAiMessage.source!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppTheme.textMuted,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              // TTS Play/Stop Button
-              InkWell(
-                onTap: () => _toggleSpeak(lastAiMessage.text),
-                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: isSpeaking ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                    border: Border.all(
-                      color: isSpeaking ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isSpeaking ? Icons.volume_up_rounded : Icons.volume_mute_rounded,
-                        size: 16,
-                        color: isSpeaking ? const Color(0xFF15803D) : const Color(0xFF475569),
-                      ),
-                      const SizedBox(width: 6),
-                      if (isSpeaking) ...[
-                        _buildAudioWaveVisualizer(
-                          isActive: true,
-                          color: const Color(0xFF15803D),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Text(
-                        isSpeaking
-                            ? AppStrings.tr(
-                                lang: _lang,
-                                uz: 'Ovozli...',
-                                ru: 'Озвучивается...',
-                                en: 'Speaking...',
-                              )
-                            : AppStrings.tr(
-                                lang: _lang,
-                                uz: 'Ovoz',
-                                ru: 'Озвучить',
-                                en: 'Listen',
-                              ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: isSpeaking ? const Color(0xFF15803D) : const Color(0xFF475569),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          if (lastAiMessage.riskLevel != RiskLevel.low) ...[
-            _buildRiskBadge(lastAiMessage.riskLevel),
-            const SizedBox(height: 12),
-          ],
-          Text(
-            _formatMarkdownForDisplay(lastAiMessage.text),
-            style: const TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.textPrimary,
-              height: 1.55,
+              ],
             ),
           ),
-          if (lastAiMessage.riskLevel == RiskLevel.high &&
-              _liveContext?.localVet != null) ...[
-            const SizedBox(height: 16),
-            TactileButton(
-              height: 52,
-              depth: 4,
-              borderRadius: 16,
-              backgroundColor: const Color(0xFFDC2626),
-              shadowColor: const Color(0xFF991B1B),
-              onPressed: _callLocalVet,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      "${AppStrings.tr(lang: _lang, uz: 'Veterinar:', ru: 'Ветеринар:', en: 'Vet:')} ${_liveContext!.localVet!['name']}",
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          IconButton(
+            tooltip: _t("Olib tashlash", 'Убрать', 'Remove'),
+            onPressed: () => setState(() => _selectedImagePath = null),
+            icon: const Icon(Icons.close_rounded),
+          ),
         ],
       ),
     );
   }
 
-  /// Standard Chat Mode Body
-  Widget _buildChatModeBody(ThemeData theme) {
-    return Column(
-      children: [
-        // Chat messages list
-        Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            itemCount: _messages.length,
-            itemBuilder: (context, index) {
-              final msg = _messages[index];
-              return _buildMessageBubble(msg, theme);
-            },
-          ),
-        ),
-
-        // Live Organic Image Inspector if analyzing
-        if (_analyzingImagePath != null && _isLoading)
-          OrganicImageInspector(
-            imagePath: _analyzingImagePath!,
-            language: _lang,
-            isAnalyzing: true,
-          ),
-
-        if (_isLoading && _analyzingImagePath == null)
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(6),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2D7A4C)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  AppStrings.tr(
-                    lang: _lang,
-                    uz: 'AgroZen tahlil qilmoqda...',
-                    ru: 'AgroZen думает...',
-                    en: 'AgroZen is thinking...',
-                  ),
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-        // Quick Suggestion Chips Carousel (shown before first query)
-        if (_messages.length <= 1 && !_isLoading)
-          Container(
-            height: 38,
-            margin: const EdgeInsets.only(bottom: 6),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildSuggestionChip(
-                  icon: Icons.thermostat_rounded,
-                  text: AppStrings.tr(
-                    lang: _lang,
-                    uz: "Issiqlik me'yori",
-                    ru: 'Норма тепла',
-                    en: 'Temperature norm',
-                  ),
-                  prompt: AppStrings.tr(
-                    lang: _lang,
-                    uz: "Broylerlar uchun xona harorati qanday bo'lishi kerak?",
-                    ru: 'Какая должна быть температура в птичнике для бройлеров?',
-                    en: 'What should the barn temperature be for broilers?',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _buildSuggestionChip(
-                  icon: Icons.grass_rounded,
-                  text: AppStrings.tr(
-                    lang: _lang,
-                    uz: 'Kunlik yem miqdori',
-                    ru: 'Суточная норма корма',
-                    en: 'Daily feed amount',
-                  ),
-                  prompt: AppStrings.tr(
-                    lang: _lang,
-                    uz: "Broylerlarga kunlik yem me'yori qancha?",
-                    ru: 'Какова суточная норма корма для бройлеров?',
-                    en: 'What is the daily feed requirement for broilers?',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _buildSuggestionChip(
-                  icon: Icons.air_rounded,
-                  text: AppStrings.tr(
-                    lang: _lang,
-                    uz: 'Shamollatish qoidalari',
-                    ru: 'Правила вентиляции',
-                    en: 'Ventilation rules',
-                  ),
-                  prompt: AppStrings.tr(
-                    lang: _lang,
-                    uz: 'Parrandaxonani shamollatish qoidalari qanday?',
-                    ru: 'Каковы правила вентиляции птичника?',
-                    en: 'What are the ventilation rules for the poultry house?',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _buildSuggestionChip(
-                  icon: Icons.water_drop_rounded,
-                  text: AppStrings.tr(
-                    lang: _lang,
-                    uz: 'Suv harorati',
-                    ru: 'Температура воды',
-                    en: 'Water temperature',
-                  ),
-                  prompt: AppStrings.tr(
-                    lang: _lang,
-                    uz: "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
-                    ru: 'Какой температуры должна быть вода для цыплят?',
-                    en: 'What should the drinking water temperature be for chicks?',
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-        // Image attachment preview + 1-tap Gemini Vision Scanner before sending
-        if (_selectedImagePath != null && !_isLoading)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFF86EFAC), width: 1.4),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF15803D).withAlpha(18),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: kIsWeb
-                          ? Image.network(
-                              _selectedImagePath!,
-                              width: 56,
-                              height: 56,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const SizedBox(width: 56, height: 56),
-                            )
-                          : Image.file(
-                              File(_selectedImagePath!),
-                              width: 56,
-                              height: 56,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const SizedBox(width: 56, height: 56),
-                            ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: 'Gemini Vision AI Skaneri tayyor',
-                              ru: 'Сканер Gemini Vision AI готов',
-                              en: 'Gemini Vision AI Scanner Ready',
-                            ),
-                            style: const TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: "Nimani tekshiramiz? Yo'nalishni tanlang:",
-                              ru: 'Что проверяем? Выберите категорию:',
-                              en: 'What are we checking? Pick a focus:',
-                            ),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        size: 20,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () =>
-                          setState(() => _selectedImagePath = null),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildPhotoFocusChip(
-                        id: 'chick',
-                        label: AppStrings.tr(
-                          lang: _lang,
-                          uz: "🐥 Jo'ja sog'lommi?",
-                          ru: '🐥 Здоровье цыплёнка',
-                          en: '🐥 Chick Health',
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      _buildPhotoFocusChip(
-                        id: 'droppings',
-                        label: AppStrings.tr(
-                          lang: _lang,
-                          uz: '💩 Axlat / Ich ketish',
-                          ru: '💩 Помёт / Диарея',
-                          en: '💩 Droppings',
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      _buildPhotoFocusChip(
-                        id: 'litter',
-                        label: AppStrings.tr(
-                          lang: _lang,
-                          uz: "🌾 To'shama namligi",
-                          ru: '🌾 Подстилка',
-                          en: '🌾 Bedding',
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      _buildPhotoFocusChip(
-                        id: 'clustering',
-                        label: AppStrings.tr(
-                          lang: _lang,
-                          uz: "🌡️ Issiq / Sovuq",
-                          ru: '🌡️ Тепло / Холод',
-                          en: '🌡️ Clustering',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  height: 42,
-                  child: ElevatedButton.icon(
-                    onPressed: _sendMessage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF15803D),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.document_scanner_rounded, size: 18),
-                    label: Text(
-                      AppStrings.tr(
-                        lang: _lang,
-                        uz: 'Gemini AI bilan suratni tekshirish',
-                        ru: 'Сканировать фото через Gemini AI',
-                        en: 'Scan Photo with Gemini AI',
-                      ),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-        // Modern Floating Input Dock
-        Container(
-          padding: EdgeInsets.only(
-            left: 12,
-            right: 12,
-            top: 10,
-            bottom: widget.isEmbeddedInPageView ? 95 : 10,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(12),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Media Action Buttons
-              _buildInputIconBtn(
-                icon: Icons.camera_alt_rounded,
-                tooltip: AppStrings.tr(lang: _lang, uz: 'Kamera', ru: 'Камера', en: 'Camera'),
-                onPressed: () => _pickImage(ImageSource.camera),
-              ),
-              const SizedBox(width: 4),
-              _buildInputIconBtn(
-                icon: Icons.photo_library_rounded,
-                tooltip: AppStrings.tr(lang: _lang, uz: 'Galereya', ru: 'Галерея', en: 'Gallery'),
-                onPressed: () => _pickImage(ImageSource.gallery),
-              ),
-              const SizedBox(width: 4),
-              VoiceInputButton(
-                isRecording: _isRecording,
-                language: _lang,
-                onStartRecording: _startVoiceRecording,
-                onStopRecording: _stopVoiceRecording,
-              ),
-              const SizedBox(width: 4),
-              _buildInputIconBtn(
-                icon: Icons.auto_awesome_rounded,
-                tooltip: AppStrings.tr(
-                  lang: _lang,
-                  uz: 'Savolni boyitish (Prompt Enhancer)',
-                  ru: 'Улучшить вопрос (Prompt Enhancer)',
-                  en: 'Enhance Prompt',
-                ),
-                onPressed: _enhanceCurrentInput,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: TextField(
-                    controller: _controller,
-                    textInputAction: TextInputAction.send,
-                    decoration: InputDecoration(
-                      hintText: AppStrings.tr(
-                        lang: _lang,
-                        uz: 'Savol yozing...',
-                        ru: 'Задайте вопрос...',
-                        en: 'Type a question...',
-                      ),
-                      hintStyle: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      filled: false,
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Tactile Emerald Send Button
-              GestureDetector(
-                onTap: _sendMessage,
-                child: Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2D7A4C), Color(0xFF1E5B37)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(23),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF2D7A4C).withAlpha(80),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPhotoFocusChip({
-    required String id,
-    required String label,
-  }) {
-    final isSelected = _selectedPhotoCategory == id;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPhotoCategory = id),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF15803D)
-              : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF15803D)
-                : const Color(0xFFE2E8F0),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w700,
-            color: isSelected ? Colors.white : const Color(0xFF334155),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuggestionChip({
-    required IconData icon,
-    required String text,
-    required String prompt,
-  }) {
-    return ActionChip(
-      avatar: Icon(icon, size: 16, color: const Color(0xFF2D7A4C)),
-      label: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF1B5E20),
-        ),
-      ),
-      backgroundColor: const Color(0xFFEAF5ED),
-      side: BorderSide(color: const Color(0xFF2D7A4C).withAlpha(40)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      onPressed: () => _sendMessage(prompt),
-    );
-  }
-
-  Widget _buildInputIconBtn({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildRecordingBar() {
     return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IconButton(
-        icon: Icon(icon, size: 20, color: const Color(0xFF475569)),
-        padding: EdgeInsets.zero,
-        tooltip: tooltip,
-        onPressed: onPressed,
+      width: double.infinity,
+      color: AppColors.dangerSoft,
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.screen, vertical: AppSpace.md),
+      child: Row(
+        children: [
+          FadeTransition(
+            opacity: Tween<double>(begin: 0.3, end: 1).animate(_pulseController),
+            child: const Icon(Icons.fiber_manual_record, color: AppColors.danger, size: 16),
+          ),
+          const SizedBox(width: AppSpace.sm),
+          Expanded(
+            child: Text(
+              _livePartialTranscript.isNotEmpty
+                  ? _livePartialTranscript
+                  : _t('Gapiring… tugatgach to\'xtatish tugmasini bosing',
+                      'Говорите… затем нажмите «стоп»', 'Speak… then tap stop'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.body,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage msg, ThemeData theme) {
-    final isSpeakerActive = _speakingText == msg.text;
-
-    return Align(
-      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.84),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: msg.isUser
-              ? const LinearGradient(
-                  colors: [Color(0xFF2D7A4C), Color(0xFF1E5B37)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: msg.isUser ? null : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(msg.isUser ? 20 : 4),
-            bottomRight: Radius.circular(msg.isUser ? 4 : 20),
+  Widget _buildInputBar() {
+    final hasText = _controller.text.trim().isNotEmpty;
+    final canSend = hasText || _selectedImagePath != null;
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.sm, AppSpace.sm, AppSpace.sm, AppSpace.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          IconButton(
+            tooltip: _t('Rasm yuborish', 'Отправить фото', 'Send a photo'),
+            onPressed: _isLoading || _isRecording ? null : _choosePhoto,
+            icon: const Icon(Icons.add_a_photo_outlined),
           ),
-          border: msg.isUser
-              ? null
-              : Border.all(
-                  color: msg.riskLevel == RiskLevel.high
-                      ? const Color(0xFFFCA5A5)
-                      : const Color(0xFFE2E8F0),
-                  width: msg.riskLevel == RiskLevel.high ? 1.5 : 1.0,
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              enabled: !_isRecording,
+              minLines: 1,
+              maxLines: 4,
+              textInputAction: TextInputAction.send,
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) => _sendMessage(),
+              decoration: InputDecoration(
+                hintText: _t('Savolingizni yozing…', 'Напишите вопрос…',
+                    'Type your question…'),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.lg, vertical: AppSpace.md),
+                filled: true,
+                fillColor: AppColors.surfaceMuted,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide.none,
                 ),
-          boxShadow: [
-            BoxShadow(
-              color: msg.isUser
-                  ? const Color(0xFF2D7A4C).withAlpha(40)
-                  : Colors.black.withAlpha(8),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: const BorderSide(color: AppColors.primary),
+                ),
+              ),
             ),
-          ],
+          ),
+          const SizedBox(width: AppSpace.sm),
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: canSend && !_isRecording
+                ? IconButton.filled(
+                    tooltip: _t('Yuborish', 'Отправить', 'Send'),
+                    onPressed: _isLoading ? null : () => _sendMessage(),
+                    icon: const Icon(Icons.send_rounded),
+                  )
+                : IconButton.filled(
+                    tooltip: _isRecording
+                        ? _t("To'xtatish", 'Стоп', 'Stop')
+                        : _t('Ovoz bilan so\'rash', 'Спросить голосом', 'Ask by voice'),
+                    style: IconButton.styleFrom(
+                      backgroundColor: _isRecording ? AppColors.danger : AppColors.primary,
+                    ),
+                    onPressed: _isLoading
+                        ? null
+                        : (_isRecording ? _stopVoiceRecording : _startVoiceRecording),
+                    icon: Icon(_isRecording ? Icons.stop_rounded : Icons.mic_rounded),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessage(ChatMessage msg) {
+    final maxWidth = MediaQuery.of(context).size.width * 0.86;
+    if (msg.isUser) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppSpace.md, left: AppSpace.xxl),
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          padding: const EdgeInsets.all(AppSpace.md),
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(AppRadius.lg),
+              topRight: Radius.circular(AppRadius.lg),
+              bottomLeft: Radius.circular(AppRadius.lg),
+              bottomRight: Radius.circular(6),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (msg.imagePath != null) ...[
+                _imagePreview(msg.imagePath!, size: 160),
+                const SizedBox(height: AppSpace.sm),
+              ],
+              Text(msg.text, style: AppText.body.copyWith(color: Colors.white)),
+            ],
+          ),
         ),
+      );
+    }
+
+    final speaking = _speakingText == msg.text;
+    final vetPhone = _liveContext?.localVet?['phone']?.toString();
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpace.md, right: AppSpace.lg),
+      child: AppCard(
+        borderColor: msg.riskLevel == RiskLevel.high ? AppColors.danger : null,
+        padding: const EdgeInsets.fromLTRB(
+            AppSpace.lg, AppSpace.md, AppSpace.sm, AppSpace.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Assistant Brand Header in Bubble
-            if (!msg.isUser) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2D7A4C).withAlpha(25),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 12,
-                            color: Color(0xFF2D7A4C),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'AgroZen AI',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E5B37),
-                        ),
-                      ),
-                    ],
+            Row(
+              children: [
+                const AgroChickIcon(size: 26),
+                const SizedBox(width: AppSpace.sm),
+                const Expanded(child: Text('AgroZen', style: AppText.label)),
+                TextButton.icon(
+                  onPressed: () => _toggleSpeak(msg.text),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, 32),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
                   ),
-                  // Audio TTS button
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _toggleSpeak(msg.text),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: isSpeakerActive
-                              ? const Color(0xFFEAF5ED)
-                              : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isSpeakerActive ? Icons.volume_up_rounded : Icons.volume_down_rounded,
-                              size: 15,
-                              color: isSpeakerActive
-                                  ? const Color(0xFF2D7A4C)
-                                  : Colors.grey.shade600,
-                            ),
-                            if (isSpeakerActive) ...[
-                              const SizedBox(width: 4),
-                              const Text(
-                                '...',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF2D7A4C),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
+                  icon: Icon(
+                    speaking ? Icons.stop_circle_outlined : Icons.volume_up_outlined,
+                    size: 18,
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Risk Level Badge for AI responses
-            if (!msg.isUser && msg.riskLevel != RiskLevel.low) ...[
-              _buildRiskBadge(msg.riskLevel),
-              const SizedBox(height: 10),
-            ],
-
-            // Attached image if present
-            if (msg.imagePath != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: kIsWeb
-                    ? Image.network(
-                        msg.imagePath!,
-                        width: 240,
-                        height: 160,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const SizedBox(),
-                      )
-                    : Image.file(
-                        File(msg.imagePath!),
-                        width: 240,
-                        height: 160,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const SizedBox(),
-                      ),
-              ),
-              const SizedBox(height: 10),
-            ],
-
-            Text(
-              msg.isUser ? msg.text : _formatMarkdownForDisplay(msg.text),
-              style: TextStyle(
-                color: msg.isUser ? Colors.white : const Color(0xFF1E293B),
-                fontSize: 14,
-                fontWeight: msg.isUser ? FontWeight.w600 : FontWeight.w500,
-                height: 1.5,
-              ),
+                  label: Text(speaking
+                      ? _t("To'xtatish", 'Стоп', 'Stop')
+                      : _t('Tinglash', 'Слушать', 'Listen')),
+                ),
+              ],
             ),
-
-            // Source indicator
-            if (!msg.isUser && msg.source != null) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAF7),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.verified_rounded,
-                      size: 13,
-                      color: Color(0xFF2D7A4C),
-                    ),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: Text(
-                        '${AppStrings.tr(lang: _lang, uz: 'Manba:', ru: 'Источник:', en: 'Source:')} ${msg.source}',
-                        softWrap: true,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF1E5B37),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            if (msg.riskLevel != RiskLevel.low) ...[
+              const SizedBox(height: AppSpace.xs),
+              StatusPill(
+                tone: msg.riskLevel == RiskLevel.high ? Tone.danger : Tone.warning,
+                icon: msg.riskLevel == RiskLevel.high
+                    ? Icons.local_hospital_outlined
+                    : Icons.warning_amber_rounded,
+                label: msg.riskLevel == RiskLevel.high
+                    ? _t('Veterinar kerak', 'Нужен ветеринар', 'See a vet')
+                    : _t("E'tibor bering", 'Обратите внимание', 'Needs attention'),
               ),
-            ] else if (msg.isUser && msg.source != null) ...[
-              const SizedBox(height: 6),
+            ],
+            const SizedBox(height: AppSpace.sm),
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpace.sm),
+              child: Text(_formatMarkdownForDisplay(msg.text), style: AppText.body),
+            ),
+            if (msg.source != null && msg.source!.isNotEmpty) ...[
+              const SizedBox(height: AppSpace.sm),
               Text(
-                '${AppStrings.tr(lang: _lang, uz: 'Manba:', ru: 'Источник:', en: 'Source:')} ${msg.source}',
-                style: const TextStyle(fontSize: 11, color: Colors.white70),
+                '${_t('Manba:', 'Источник:', 'Source:')} ${msg.source}',
+                style: AppText.caption,
+              ),
+            ],
+            if (msg.riskLevel == RiskLevel.high && vetPhone != null) ...[
+              const SizedBox(height: AppSpace.md),
+              FilledButton.icon(
+                onPressed: _callLocalVet,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  minimumSize: const Size(0, 44),
+                ),
+                icon: const Icon(Icons.phone_in_talk, size: 18),
+                label: Text(_t("Veterinarga qo'ng'iroq", 'Позвонить ветеринару',
+                    'Call the vet')),
               ),
             ],
           ],
@@ -2836,54 +1197,132 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     return text.trim();
   }
 
-  Widget _buildRiskBadge(RiskLevel level) {
-    final isCritical = level == RiskLevel.high;
-    final color = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
-    final bgColor = isCritical ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
+}
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withAlpha(120), width: 1.2),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+/// Square quick-question tile: solid coloured disc and a short label.
+class _QuickQuestionTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickQuestionTile({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            isCritical ? Icons.emergency_rounded : Icons.warning_amber_rounded,
-            color: color,
-            size: 16,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              isCritical
-                  ? AppStrings.tr(
-                      lang: _lang,
-                      uz: "YUQORI XAVF: VETERINAR TALAB ETILADI",
-                      ru: "ВЫСОКИЙ РИСК: ТРЕБУЕТСЯ ВЕТЕРИНАР",
-                      en: "CRITICAL: VETERINARY REFERRAL",
-                    )
-                  : AppStrings.tr(
-                      lang: _lang,
-                      uz: "DIQQAT TALAB HOLAT",
-                      ru: "ТРЕБУЕТСЯ ВНИМАНИЕ",
-                      en: "MODERATE ATTENTION",
-                    ),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: 0.2,
-              ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: AppShadow.glow(color),
             ),
+            child: Icon(icon, color: Colors.white, size: 22),
           ),
+          const SizedBox(height: AppSpace.md),
+          Text(label, style: AppText.cardTitle),
         ],
       ),
     );
   }
 }
 
+/// Wide photo card that opens the camera / gallery sheet.
+class _PhotoCheckCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
+  const _PhotoCheckCard({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: onTap,
+        child: PhotoCard(
+          image: 'assets/images/chick_starter.jpg',
+          padding: const EdgeInsets.all(AppSpace.lg),
+          child: SizedBox(
+            height: 120,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(56),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withAlpha(90)),
+                  ),
+                  child: const Icon(
+                    Icons.photo_camera_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: AppText.section.copyWith(color: Colors.white),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.caption.copyWith(
+                              color: Colors.white.withAlpha(220),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpace.sm),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

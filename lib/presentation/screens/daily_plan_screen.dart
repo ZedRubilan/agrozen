@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/theme.dart';
+import '../../core/localization/app_strings.dart';
 import '../../data/models/daily_plan.dart';
 import '../../data/repositories/knowledge_repository.dart';
-import '../../domain/alerts/alert_models.dart';
-import '../../domain/scheduler/day_calculator.dart';
-import '../../core/localization/app_strings.dart';
-import '../widgets/daily_task_card.dart';
+import '../../domain/broiler/broiler_grower_library.dart';
+import '../../services/external_actions.dart';
+import '../../services/farm_store.dart';
+import '../ui/components.dart';
+import '../ui/format.dart';
+import '../widgets/task_checklist_card.dart';
 
+/// The whole 42-day cycle, one day at a time: targets for the farmer's own
+/// flock size, the day's tasks and one practical tip.
 class DailyPlanScreen extends StatefulWidget {
   const DailyPlanScreen({super.key});
 
@@ -15,316 +20,120 @@ class DailyPlanScreen extends StatefulWidget {
 }
 
 class _DailyPlanScreenState extends State<DailyPlanScreen> {
-  final KnowledgeRepository _repo = KnowledgeRepository();
-  final ScrollController _dayScrollController = ScrollController();
-  List<DailyPlan> _allPlans = [];
-  int _currentBatchDay = 1;
+  static const double _chipWidth = 52;
+  static const double _chipGap = 8;
+
+  final ScrollController _dayScroll = ScrollController();
+  FarmSnapshot? _farm;
+  List<DailyPlan> _plans = const [];
   int _selectedDay = 1;
-  String _lang = 'uz';
-  NormsData? _norms;
-  bool _isLoading = true;
+
+  String get _lang => _farm?.lang ?? 'uz';
+  Fmt get _fmt => Fmt(_lang);
+  String _t(String uz, String ru, String en) =>
+      AppStrings.tr(lang: _lang, uz: uz, ru: ru, en: en);
 
   @override
   void initState() {
     super.initState();
-    _loadPlans();
+    _load();
   }
 
   @override
   void dispose() {
-    _dayScrollController.dispose();
+    _dayScroll.dispose();
     super.dispose();
   }
 
-  Future<void> _loadPlans() async {
-    setState(() => _isLoading = true);
-    final prefs = await SharedPreferences.getInstance();
-    _lang = prefs.getString('app_language') ?? 'uz';
-
-    final arrivalStr = prefs.getString('arrival_date');
-    if (arrivalStr != null) {
-      _currentBatchDay = DayCalculator.calculateBatchDay(DateTime.parse(arrivalStr)).clamp(1, 42);
-    }
-    _selectedDay = _currentBatchDay;
-
+  Future<void> _load() async {
+    final farm = await FarmStore.load();
+    List<DailyPlan> plans;
     try {
-      _allPlans = await _repo.getAllDailyPlans();
+      plans = await KnowledgeRepository().getAllDailyPlans();
     } catch (_) {
-      _allPlans = [];
+      plans = const [];
     }
-
-    try {
-      _norms = await _repo.getParsedNorms();
-    } catch (_) {
-      _norms = null;
-    }
-
     if (!mounted) return;
-    setState(() => _isLoading = false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_dayScrollController.hasClients) return;
-      final maxOffset = _dayScrollController.position.maxScrollExtent;
-      final targetOffset = ((_selectedDay - 1) * 66.0 - 120.0).clamp(0.0, maxOffset);
-      _dayScrollController.animateTo(
-        targetOffset,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-      );
+    setState(() {
+      _farm = farm;
+      _plans = plans;
+      _selectedDay = farm.batchDay;
     });
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollTo(_selectedDay),
+    );
   }
 
-  /// Target temperature from the vet-verified `knowledge/norms.json`.
-  int _getTemperatureForDay(int day) {
-    final target = _norms?.temperatureTargetForDay(day);
-    if (target != null) return target.round();
-    if (day <= 2) return 34;
-    if (day <= 4) return 33;
-    if (day <= 7) return 32;
-    if (day <= 14) return 29;
-    if (day <= 21) return 27;
-    if (day <= 28) return 24;
-    if (day <= 35) return 22;
-    return 20;
+  void _scrollTo(int day) {
+    if (!_dayScroll.hasClients) return;
+    final viewport = _dayScroll.position.viewportDimension;
+    final target =
+        (day - 1) * (_chipWidth + _chipGap) -
+        viewport / 2 +
+        _chipWidth / 2 +
+        AppSpace.screen;
+    _dayScroll.animateTo(
+      target.clamp(0.0, _dayScroll.position.maxScrollExtent),
+      duration: AppMotion.medium,
+      curve: AppMotion.curve,
+    );
+  }
+
+  void _select(int day) {
+    final d = day.clamp(1, 42);
+    if (d == _selectedDay) return;
+    setState(() => _selectedDay = d);
+    _scrollTo(d);
+  }
+
+  /// Colour of the growth phase a day belongs to.
+  static Color _phaseColor(int day) {
+    switch (BroilerGrowerLibrary.specForDay(day).phaseKey) {
+      case 'pre_starter':
+      case 'starter':
+        return AppColors.gold;
+      case 'grower':
+        return AppColors.primary;
+      default:
+        return AppColors.sunDeep;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedPlan = _allPlans.firstWhere(
-      (p) => p.day == _selectedDay,
-      orElse: () => DailyPlan(
-        day: _selectedDay,
-        tasksRu: 'Уход за бройлерами: поддержание чистоты, вентиляция, кормление.',
-        tasksUz: "Broylerlarni parvarishlash: tozalikni saqlash, shamollatish, oziqlantirish.",
-      ),
-    );
-
+    final farm = _farm;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppStrings.tr(
-            lang: _lang,
-            uz: 'Kunlik reja (1–42)',
-            ru: 'План по дням (1–42)',
-            en: 'Daily Plan (1–42)',
-          ),
-        ),
+        title: Text(_t('42 kunlik reja', 'План на 42 дня', '42-day plan')),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+      body: farm == null
+          ? const LoadingView()
           : Column(
               children: [
-                // Horizontal Day Picker Carousel
-                Container(
-                  height: 78,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 1.2)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(5),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ListView.builder(
-                    controller: _dayScrollController,
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 42,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    itemBuilder: (context, index) {
-                      final dayNum = index + 1;
-                      final isSelected = dayNum == _selectedDay;
-                      final isToday = dayNum == _currentBatchDay;
-
-                      final dayLabel = _lang == 'en'
-                          ? 'D.$dayNum'
-                          : (_lang == 'ru' ? 'Д.$dayNum' : '$dayNum-k');
-
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedDay = dayNum),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 58,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            gradient: isSelected
-                                ? const LinearGradient(
-                                    colors: [Color(0xFF2D7A4C), Color(0xFF1B5E20)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  )
-                                : null,
-                            color: isSelected
-                                ? null
-                                : (isToday ? const Color(0xFFE8F5ED) : const Color(0xFFF3F6F4)),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isToday
-                                  ? const Color(0xFF2D7A4C)
-                                  : (isSelected ? Colors.transparent : const Color(0xFFE0E8E2)),
-                              width: isToday ? 2 : 1,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: const Color(0xFF1B5E20).withAlpha(80),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    )
-                                  ]
-                                : null,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                dayLabel,
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : (isToday ? const Color(0xFF1B5E20) : const Color(0xFF2A3A2D)),
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13.5,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              if (isToday)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0xFFFFD54F) : const Color(0xFF1B5E20),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Selected Day Content
+                _buildDayStrip(farm),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (_selectedDay == _currentBatchDay)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 14),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFE8F5ED), Color(0xFFDCEDE1)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFF2D7A4C).withAlpha(50), width: 1.2),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.check_circle_rounded, color: Color(0xFF1B5E20), size: 20),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    AppStrings.tr(
-                                      lang: _lang,
-                                      uz: 'Bu sizning bugungi partiya kuningiz!',
-                                      ru: 'Это ваш текущий день партии!',
-                                      en: 'This is your current batch day!',
-                                    ),
-                                    style: const TextStyle(
-                                      color: Color(0xFF1B5E20),
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        DailyTaskCard(
-                          plan: selectedPlan,
-                          language: _lang,
-                          targetTemperature: _getTemperatureForDay(_selectedDay),
+                  // Swipe left / right for the next / previous day.
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragEnd: (d) {
+                      final v = d.primaryVelocity ?? 0;
+                      if (v < -250) _select(_selectedDay + 1);
+                      if (v > 250) _select(_selectedDay - 1);
+                    },
+                    child: AnimatedSwitcher(
+                      duration: AppMotion.medium,
+                      switchInCurve: AppMotion.curve,
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(
+                          position: Tween(
+                            begin: const Offset(0, 0.02),
+                            end: Offset.zero,
+                          ).animate(anim),
+                          child: child,
                         ),
-                        const SizedBox(height: 16),
-                        // Growth Stage Tips
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: const Color(0xFFE2EBE4), width: 1.2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(6),
-                                blurRadius: 14,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(18.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF2D7A4C).withAlpha(25),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFF1B5E20), size: 20),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      AppStrings.tr(
-                                        lang: _lang,
-                                        uz: "Bosqich bo'yicha tavsiyalar",
-                                        ru: 'Рекомендации по периоду',
-                                        en: 'Growth Stage Recommendations',
-                                      ),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 15.5,
-                                        color: Color(0xFF1B2A1E),
-                                        letterSpacing: -0.2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF9FAF7),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFFE8EDE9), width: 1),
-                                  ),
-                                  child: Text(
-                                    _getStageRecommendation(_selectedDay, _lang),
-                                    style: const TextStyle(
-                                      fontSize: 13.5,
-                                      height: 1.55,
-                                      color: Color(0xFF334436),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
+                      child: _buildDay(farm),
                     ),
                   ),
                 ),
@@ -333,28 +142,370 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
     );
   }
 
-  String _getStageRecommendation(int day, String lang) {
-    if (day <= 7) {
-      return AppStrings.tr(
-        lang: lang,
-        uz: "Boshlang'ich davr (1-7 kunlar): 32-34°C haroratni ushlab turish va barcha jo'jalar dastlabki 2 soatda suv ichganiga ishonch hosil qilish o'ta muhim.",
-        ru: 'Стартовый период (1-7 дни): критически важно поддерживать температуру 32-34°C и следить, чтобы все цыплята пили воду в первые 2 часа.',
-        en: 'Starter phase (Days 1-7): Maintaining brooding temperature at 32-34°C and ensuring 100% chick water intake within the first 2 hours is critical.',
-      );
-    } else if (day <= 21) {
-      return AppStrings.tr(
-        lang: lang,
-        uz: "O'sish davri (8-21 kunlar): O'sish yemiga asta-sekin o'tish, haroratni bosqichma-bosqich 27°C ga tushirish va shamollatishni kuchaytirish.",
-        ru: 'Период активного роста (8-21 дни): плавный переход на корм "Рост", постепенное снижение температуры до 27°C, усиление вентиляции.',
-        en: 'Grower phase (Days 8-21): Transition gradually to Grower feed, gradually reduce target temp to 27°C, and ramp up ventilation capacity.',
-      );
-    } else {
-      return AppStrings.tr(
-        lang: lang,
-        uz: "Finish davri (22-42 kunlar): Finish yemi, vazn o'sishini qattiq nazorat qilish, yozda qizib ketishdan asrash va so'yishga tayyorgarlik.",
-        ru: 'Финишный период (22-42 дни): корм "Финиш", максимальный контроль привеса, защита от перегрева летом, подготовка к забою.',
-        en: 'Finisher phase (Days 22-42): Finisher feed, strict monitoring of weight gain and FCR, heat stress mitigation, and harvest scheduling.',
-      );
-    }
+  Widget _buildDayStrip(FarmSnapshot farm) {
+    return SizedBox(
+      height: 84,
+      child: ListView.separated(
+        controller: _dayScroll,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.screen,
+          vertical: AppSpace.sm,
+        ),
+        itemCount: 42,
+        separatorBuilder: (_, __) => const SizedBox(width: _chipGap),
+        itemBuilder: (context, i) {
+          final day = i + 1;
+          final selected = day == _selectedDay;
+          final isToday = day == farm.batchDay;
+          final past = day < farm.batchDay;
+          final phase = _phaseColor(day);
+          return Semantics(
+            selected: selected,
+            button: true,
+            label: _fmt.day(day),
+            child: AnimatedContainer(
+              duration: AppMotion.medium,
+              curve: AppMotion.curve,
+              width: _chipWidth,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary
+                    : phase.withAlpha(past ? 22 : 40),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: isToday && !selected
+                    ? Border.all(color: AppColors.primary, width: 2)
+                    : null,
+                boxShadow: selected ? AppShadow.glow(AppColors.primary) : null,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onTap: () => _select(day),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _t('kun', 'день', 'day'),
+                        style: AppText.caption.copyWith(
+                          fontSize: 11,
+                          color: selected ? Colors.white70 : AppColors.inkMuted,
+                        ),
+                      ),
+                      Text(
+                        '$day',
+                        style: AppText.section.copyWith(
+                          color: selected
+                              ? Colors.white
+                              : (past ? AppColors.inkSecondary : AppColors.ink),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isToday
+                              ? (selected ? Colors.white : AppColors.primary)
+                              : (selected ? Colors.white54 : phase),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDay(FarmSnapshot farm) {
+    final day = _selectedDay;
+    final spec = BroilerGrowerLibrary.specForDay(day);
+    final req = BroilerGrowerLibrary.calculateFlockRequirements(
+      day: day,
+      birdCount: farm.currentCount,
+    );
+    final plan = _plans.where((p) => p.day == day).firstOrNull;
+    final tasks = plan?.taskList(_lang) ?? const <String>[];
+    final isToday = day == farm.batchDay;
+    final phase = _phaseColor(day);
+
+    return PageBody(
+      key: ValueKey(day),
+      children: [
+        // Phase-coloured day card with the cycle ring.
+        Container(
+          padding: const EdgeInsets.all(AppSpace.lg),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [phase, Color.lerp(phase, Colors.black, 0.22)!],
+            ),
+            boxShadow: AppShadow.glow(phase),
+          ),
+          child: Row(
+            children: [
+              ProgressRing(
+                value: day / 42,
+                size: 72,
+                stroke: 7,
+                color: Colors.white,
+                trackColor: Colors.white.withAlpha(60),
+                child: Text(
+                  '${(day / 42 * 100).round()}%',
+                  style: AppText.label.copyWith(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: AppSpace.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_fmt.day(day)} · ${FarmSnapshot.phaseNameFor(day, _lang)}',
+                      style: AppText.screenTitle.copyWith(
+                        color: Colors.white,
+                        fontSize: 22,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      _t(
+                        "${_fmt.birds(farm.currentCount)} uchun hisoblangan",
+                        'Рассчитано на ${_fmt.birds(farm.currentCount)}',
+                        'Calculated for ${_fmt.birds(farm.currentCount)}',
+                      ),
+                      style: AppText.caption.copyWith(
+                        color: Colors.white.withAlpha(225),
+                      ),
+                    ),
+                    if (isToday) ...[
+                      const SizedBox(height: AppSpace.sm),
+                      GlassPill(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.today_rounded, size: 14),
+                            const SizedBox(width: 4),
+                            Text(_t('Bugun', 'Сегодня', 'Today')),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Gap(AppSpace.lg),
+        MetricGrid(
+          children: [
+            TargetTile(
+              hero: true,
+              icon: Icons.thermostat_rounded,
+              tone: Tone.warning,
+              label: _t(
+                'Bino harorati',
+                'Темп. в птичнике',
+                'House temperature',
+              ),
+              value: spec.targetTempC,
+              format: _fmt.celsius,
+              caption: _t(
+                'Namlik ${spec.humidityMinPct}–${spec.humidityMaxPct}%',
+                'Влажность ${spec.humidityMinPct}–${spec.humidityMaxPct}%',
+                'Humidity ${spec.humidityMinPct}–${spec.humidityMaxPct}%',
+              ),
+            ),
+            TargetTile(
+              icon: Icons.scale_rounded,
+              tone: Tone.primary,
+              label: _t("Vazn me'yori", 'Норма веса', 'Target weight'),
+              value: spec.targetWeightG,
+              format: _fmt.grams,
+              caption: _t(
+                "+${_fmt.grams(spec.dailyGainG)} kuniga",
+                '+${_fmt.grams(spec.dailyGainG)} в день',
+                '+${_fmt.grams(spec.dailyGainG)} per day',
+              ),
+            ),
+            TargetTile(
+              icon: Icons.grain_rounded,
+              tone: Tone.warning,
+              label: _t('Yem', 'Корм', 'Feed'),
+              value: req.totalDailyFeedKg,
+              format: _fmt.kg,
+              caption: _fmt.perBird(_fmt.grams(spec.dailyFeedPerBirdG)),
+            ),
+            TargetTile(
+              icon: Icons.water_drop_rounded,
+              tone: Tone.info,
+              label: _t('Suv', 'Вода', 'Water'),
+              value: req.totalDailyWaterLiters,
+              format: _fmt.liters,
+              caption: _fmt.perBird(_fmt.ml(spec.dailyWaterPerBirdMl)),
+            ),
+            TargetTile(
+              icon: Icons.lightbulb_rounded,
+              tone: Tone.warning,
+              label: _t("Yorug'lik", 'Свет', 'Light'),
+              value: spec.lightHours.toDouble(),
+              format: (v) =>
+                  _t('${v.round()} soat', '${v.round()} ч', '${v.round()} h'),
+              caption: _t(
+                "${spec.darkHours} soat qorong'i · ${spec.lightIntensityLux} lyuks",
+                '${spec.darkHours} ч темноты · ${spec.lightIntensityLux} лк',
+                '${spec.darkHours} h dark · ${spec.lightIntensityLux} lux',
+              ),
+            ),
+            TargetTile(
+              icon: Icons.square_foot_rounded,
+              tone: Tone.neutral,
+              label: _t('Joy', 'Площадь', 'Space'),
+              value: req.requiredBarnAreaCurrentSqM,
+              format: (v) => '${Fmt.num(v, decimals: 0)} m²',
+              caption: _t(
+                "1 m² ga ${spec.maxBirdsPerSqMeter} boshgacha",
+                'до ${spec.maxBirdsPerSqMeter} гол. на 1 м²',
+                'up to ${spec.maxBirdsPerSqMeter} birds per m²',
+              ),
+            ),
+          ],
+        ),
+        const Gap(),
+        AppCard(
+          child: Row(
+            children: [
+              const IconBadge(
+                icon: Icons.inventory_2_rounded,
+                tone: Tone.warning,
+              ),
+              const SizedBox(width: AppSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _t('Yem turi', 'Вид корма', 'Feed type'),
+                      style: AppText.caption,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      spec.feedFormDescription(_lang),
+                      style: AppText.cardTitle,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (tasks.isNotEmpty) ...[
+          const Gap(AppSpace.xl),
+          SectionHeader(title: _t('Vazifalar', 'Задачи', 'Tasks')),
+          TaskChecklistCard(day: day, tasks: tasks),
+        ],
+        const Gap(AppSpace.xl),
+        _TipCard(
+          title: _t('Kun maslahati', 'Совет дня', 'Tip of the day'),
+          message: spec.dailyFocusTip(_lang),
+        ),
+        if (plan?.videoUrl != null && plan!.videoUrl!.isNotEmpty) ...[
+          const Gap(),
+          OutlinedButton.icon(
+            onPressed: () =>
+                const ExternalActions().openVideo(context, plan.videoUrl!),
+            icon: const Icon(Icons.play_circle_rounded),
+            label: Text(_t("Videoni ko'rish", 'Смотреть видео', 'Watch video')),
+          ),
+        ],
+        const Gap(),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: day > 1 ? () => _select(day - 1) : null,
+                icon: const Icon(Icons.chevron_left_rounded),
+                label: Text(_fmt.day(day - 1 < 1 ? 1 : day - 1)),
+              ),
+            ),
+            const SizedBox(width: AppSpace.sm),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: day < 42 ? () => _select(day + 1) : null,
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.chevron_right_rounded),
+                label: Text(_fmt.day(day + 1 > 42 ? 42 : day + 1)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Tip of the day on a soft green card with a lightbulb disc.
+class _TipCard extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const _TipCard({required this.title, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.lg),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primarySoft, Color(0xFFF4FBF6)],
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+              boxShadow: AppShadow.glow(AppColors.primary),
+            ),
+            child: const Icon(
+              Icons.tips_and_updates_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppText.cardTitle),
+                const SizedBox(height: AppSpace.xs),
+                Text(message, style: AppText.body),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

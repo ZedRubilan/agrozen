@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/constants.dart';
+import '../../../config/theme.dart';
+import '../../../core/localization/app_strings.dart';
 import '../../../services/location_service.dart';
-import '../../widgets/agro_icons.dart';
-import '../../widgets/tactile_button.dart';
+import '../../ui/components.dart';
+import 'onboarding_scaffold.dart';
 
+/// Onboarding step 2: where the farm is (for weather and the district vet).
 class RegionScreen extends StatefulWidget {
   const RegionScreen({super.key});
 
@@ -14,22 +17,25 @@ class RegionScreen extends StatefulWidget {
 }
 
 class _RegionScreenState extends State<RegionScreen> {
-  String _selectedDistrict = AppConstants.districts.first;
-  UzbekistanLocality? _selectedLocality;
+  String _selectedDistrict = AppConstants.defaultDistrict;
   String? _autoDetectedDistrict;
-  String? _gpsStatusText;
-  bool _isDetectingGps = false;
-  String _searchQuery = '';
+  UzbekistanLocality? _selectedLocality;
+  String? _gpsStatus;
+  bool _gpsFailed = false;
+  bool _detecting = false;
+  String _query = '';
   String _lang = 'uz';
-  final LocationService _locationService = LocationService();
+
+  String _t(String uz, String ru, String en) =>
+      AppStrings.tr(lang: _lang, uz: uz, ru: ru, en: en);
 
   @override
   void initState() {
     super.initState();
-    _loadLang();
+    _load();
   }
 
-  Future<void> _loadLang() async {
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
@@ -38,60 +44,43 @@ class _RegionScreenState extends State<RegionScreen> {
       if (saved != null && AppConstants.districts.contains(saved)) {
         _selectedDistrict = saved;
       }
-      final savedLocality = prefs.getString('farmer_locality');
-      if (savedLocality != null) {
-        for (final loc in LocationService.uzbekistanLocalities) {
-          if (loc.nameUz.toLowerCase() == savedLocality.toLowerCase()) {
-            _selectedLocality = loc;
-            break;
-          }
-        }
-      }
+      _selectedLocality = LocationService.findLocalityByName(
+        prefs.getString('farmer_locality'),
+      );
     });
   }
 
-  Future<void> _detectLocationWithGps() async {
-    if (_isDetectingGps) return;
+  Future<void> _detect() async {
+    if (_detecting) return;
     setState(() {
-      _isDetectingGps = true;
-      _gpsStatusText = null;
+      _detecting = true;
+      _gpsStatus = null;
     });
-
-    final result = await _locationService.detectAndSaveLocation();
+    final result = await LocationService().detectAndSaveLocation();
     if (!mounted) return;
-    final isRu = _lang == 'ru';
-    final isEn = _lang == 'en';
-
     setState(() {
-      _isDetectingGps = false;
+      _detecting = false;
+      _gpsFailed = !result.success;
       if (result.success) {
         _selectedDistrict = result.district;
         _autoDetectedDistrict = result.district;
-        _selectedLocality = null;
-        if (result.locality != null) {
-          for (final loc in LocationService.uzbekistanLocalities) {
-            if (loc.nameUz.toLowerCase() == result.locality!.toLowerCase()) {
-              _selectedLocality = loc;
-              break;
-            }
-          }
-        }
+        _selectedLocality = LocationService.findLocalityByName(result.locality);
         final label = LocationService.formatLocationLabel(
           district: result.district,
           locality: result.locality,
           lang: _lang,
         );
-        _gpsStatusText = isRu
-            ? 'Геолокация включена: $label'
-            : (isEn
-                ? 'Geolocation detected: $label'
-                : 'Geolokatsiya aniqlandi: $label');
+        _gpsStatus = _t(
+          'Aniqlandi: $label',
+          'Определено: $label',
+          'Detected: $label',
+        );
       } else {
-        _gpsStatusText = isRu
-            ? 'Не удалось определить GPS — выберите регион из списка'
-            : (isEn
-                ? 'GPS unavailable — please select your region below'
-                : "GPS aniqlanmadi — ro'yxatdan hududingizni tanlang");
+        _gpsStatus = _t(
+          "GPS aniqlanmadi — ro'yxatdan tanlang",
+          'GPS не определён — выберите из списка',
+          'GPS unavailable — pick from the list',
+        );
       }
     });
   }
@@ -112,369 +101,158 @@ class _RegionScreenState extends State<RegionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isRu = _lang == 'ru';
-    final isEn = _lang == 'en';
-
-    final filtered = AppConstants.districts.where((d) {
-      return d.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-    final matchedTowns = _searchQuery.trim().isEmpty
+    final q = _query.trim().toLowerCase();
+    final districts = AppConstants.districts
+        .where((d) => q.isEmpty || d.toLowerCase().contains(q))
+        .toList();
+    final towns = q.isEmpty
         ? const <UzbekistanLocality>[]
         : LocationService.uzbekistanLocalities
-            .where((loc) => loc.matchesQuery(_searchQuery))
-            .toList();
+              .where((l) => l.matchesQuery(_query))
+              .take(6)
+              .toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF7),
-      appBar: AppBar(
-        title: Text(
-          isRu ? 'Выбор региона' : (isEn ? 'Select Region' : 'Viloyatni tanlang'),
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-        ),
+    return OnboardingScaffold(
+      step: 2,
+      icon: Icons.location_on_rounded,
+      accent: AppColors.primary,
+      onBack: () => context.go('/onboarding/language'),
+      title: _t('Fermangiz qayerda?', 'Где ваша ферма?', 'Where is your farm?'),
+      subtitle: _t(
+        "Ob-havo maslahatlari va tuman veterinari shu hududga qarab tanlanadi.",
+        'По району подбираются советы по погоде и районный ветеринар.',
+        'Weather advice and your district vet are matched to this area.',
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      buttonLabel: AppStrings.next(_lang),
+      onNext: _proceed,
+      children: [
+        AppCard(
+          onTap: _detecting ? null : _detect,
+          padding: const EdgeInsets.all(AppSpace.md),
+          child: Row(
             children: [
-              // Onboarding Progress Header with Payme-style Progress Dots
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withAlpha(20),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      isRu ? 'ШАГ 2 ИЗ 4' : (isEn ? 'STEP 2 OF 4' : '2-BOSQICH (4 TADAN)'),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.primary,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                  const AgroProgressDots(
-                    currentStep: 1,
-                    totalSteps: 4,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                isRu
-                    ? 'Где расположена ваша ферма?'
-                    : (isEn ? 'Where is your poultry farm located?' : 'Parrandaxonangiz qaysi hududda joylashgan?'),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E293B),
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                isRu
-                    ? 'Включите геолокацию для точной погоды и связи с местными ветеринарами'
-                    : (isEn
-                        ? 'Turn on geolocation for accurate farm weather & regional veterinarian connection'
-                        : "Aniq ob-havo va mahalliy veterinar bilan bog'lanish uchun geolokatsiyani yoqing"),
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 12),
-
-              // Geolocation Auto-Detect Card
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _detectLocationWithGps,
-                  borderRadius: BorderRadius.circular(16),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0F291A), Color(0xFF1B432C)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF34D399).withAlpha(110),
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF34D399).withAlpha(35),
-                            shape: BoxShape.circle,
-                          ),
-                          child: _isDetectingGps
-                              ? const Padding(
-                                  padding: EdgeInsets.all(9.0),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.2,
-                                    color: Color(0xFF6EE7B7),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.my_location_rounded,
-                                  color: Color(0xFF6EE7B7),
-                                  size: 20,
-                                ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isRu
-                                    ? 'Определить по геолокации (GPS)'
-                                    : (isEn
-                                        ? 'Auto-Detect My Location (GPS)'
-                                        : 'Geolokatsiya orqali avtomatik aniqlash'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13.5,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _gpsStatusText ??
-                                    (isRu
-                                        ? 'Нажмите, чтобы автоматически выбрать ваш регион'
-                                        : (isEn
-                                            ? 'Tap to automatically pick your farm region'
-                                            : "Hududingizni avtomatik tanlash uchun bosing")),
-                                style: TextStyle(
-                                  color: const Color(0xFFA7F3D0).withAlpha(220),
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.gps_fixed_rounded,
-                          color: Color(0xFF6EE7B7),
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
               Container(
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(6),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: AppColors.info,
+                  shape: BoxShape.circle,
+                  boxShadow: AppShadow.glow(AppColors.info),
                 ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: isRu ? 'Поиск региона...' : (isEn ? 'Search region...' : 'Qidirish...'),
-                    hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-                    prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.primary),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                  ),
-                  onChanged: (val) => setState(() => _searchQuery = val),
-                ),
+                child: _detecting
+                    ? const Padding(
+                        padding: EdgeInsets.all(14),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.my_location_rounded,
+                        color: Colors.white,
+                      ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(width: AppSpace.md),
               Expanded(
-                child: ListView.separated(
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  itemCount: matchedTowns.length + filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    if (index < matchedTowns.length) {
-                      final town = matchedTowns[index];
-                      final isTownSelected = _selectedLocality?.nameUz == town.nameUz;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        decoration: BoxDecoration(
-                          color: isTownSelected ? const Color(0xFFEAF5ED) : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isTownSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
-                            width: isTownSelected ? 2 : 1.2,
-                          ),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () => setState(() {
-                              _selectedDistrict = town.district;
-                              _selectedLocality = town;
-                            }),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 38,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: isTownSelected
-                                          ? theme.colorScheme.primary.withAlpha(25)
-                                          : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.place_rounded,
-                                      color: isTownSelected ? theme.colorScheme.primary : Colors.grey.shade600,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Text(
-                                      town.fullLabel(_lang),
-                                      style: TextStyle(
-                                        fontWeight: isTownSelected ? FontWeight.w800 : FontWeight.w600,
-                                        color: isTownSelected ? const Color(0xFF1B5E20) : const Color(0xFF1E293B),
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isTownSelected)
-                                    Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary, size: 22),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-
-                    final district = filtered[index - matchedTowns.length];
-                    final isSelected = district == _selectedDistrict && _selectedLocality == null;
-
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFFEAF5ED) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
-                          width: isSelected ? 2 : 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isSelected
-                                ? theme.colorScheme.primary.withAlpha(15)
-                                : Colors.black.withAlpha(4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => setState(() {
-                            _selectedDistrict = district;
-                            _selectedLocality = null;
-                          }),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? theme.colorScheme.primary.withAlpha(25)
-                                        : const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    Icons.location_on_rounded,
-                                    color: isSelected ? theme.colorScheme.primary : Colors.grey.shade600,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Text(
-                                    district,
-                                    style: TextStyle(
-                                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                      color: isSelected ? const Color(0xFF1B5E20) : const Color(0xFF1E293B),
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                ),
-                                if (isSelected)
-                                  Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary, size: 22),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 14),
-              TactileButton(
-                height: 56,
-                depth: 4,
-                borderRadius: 18,
-                backgroundColor: theme.colorScheme.primary,
-                shadowColor: const Color(0xFF1B5E20),
-                onPressed: _proceed,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isRu ? 'Далее' : (isEn ? 'Next' : 'Keyingisi'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                      _t(
+                        'GPS orqali aniqlash',
+                        'Определить по GPS',
+                        'Detect with GPS',
+                      ),
+                      style: AppText.cardTitle,
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                    const SizedBox(height: 2),
+                    Text(
+                      _gpsStatus ??
+                          _t(
+                            "Eng aniq ob-havo uchun",
+                            'Для самой точной погоды',
+                            'For the most accurate weather',
+                          ),
+                      style: AppText.caption.copyWith(
+                        color: _gpsStatus == null
+                            ? AppColors.inkMuted
+                            : (_gpsFailed
+                                  ? AppColors.warning
+                                  : AppColors.primaryDark),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.inkMuted,
+              ),
             ],
           ),
         ),
-      ),
+        const Gap(AppSpace.lg),
+        TextField(
+          onChanged: (v) => setState(() => _query = v),
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.search_rounded),
+            hintText: _t(
+              'Viloyat yoki shahar…',
+              'Область или город…',
+              'Region or town…',
+            ),
+          ),
+        ),
+        if (towns.isNotEmpty) ...[
+          const Gap(),
+          Wrap(
+            spacing: AppSpace.sm,
+            runSpacing: AppSpace.sm,
+            children: [
+              for (final town in towns)
+                ChoiceChip(
+                  label: Text(town.fullLabel(_lang)),
+                  selected: _selectedLocality?.nameUz == town.nameUz,
+                  onSelected: (_) => setState(() {
+                    _selectedLocality = town;
+                    _selectedDistrict = town.district;
+                  }),
+                ),
+            ],
+          ),
+        ],
+        const Gap(),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              for (var i = 0; i < districts.length; i++) ...[
+                if (i > 0) const Divider(indent: AppSpace.lg),
+                ListTile(
+                  title: Text(districts[i], style: AppText.body),
+                  selectedTileColor: AppColors.primarySoft,
+                  leading: Icon(
+                    districts[i] == _selectedDistrict
+                        ? Icons.location_on_rounded
+                        : Icons.location_on_outlined,
+                  ),
+                  trailing: districts[i] == _selectedDistrict
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                        )
+                      : null,
+                  selected: districts[i] == _selectedDistrict,
+                  onTap: () => setState(() {
+                    _selectedDistrict = districts[i];
+                    _selectedLocality = null;
+                  }),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

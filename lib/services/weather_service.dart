@@ -93,7 +93,8 @@ class WeatherService {
       'https://api.open-meteo.com/v1/forecast?'
       'latitude=$lat&longitude=$lon'
       '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m'
-      '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max'
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,'
+      'relative_humidity_2m_mean,precipitation_probability_max,sunrise,sunset'
       '&past_days=2&forecast_days=4'
       '&timezone=Asia%2FTashkent',
     );
@@ -114,8 +115,9 @@ class WeatherService {
           final code = (current['weather_code'] as num?)?.toInt() ?? 0;
 
           final condition = mapWeatherCode(code, temp);
+          final daily = data['daily'] as Map<String, dynamic>?;
           final dailyForecast = _parseDailyForecast(
-            data['daily'] as Map<String, dynamic>?,
+            daily,
             baseTemp: temp,
             baseHumidity: hum,
             baseWind: wind,
@@ -135,6 +137,9 @@ class WeatherService {
             longitude: lon,
             isLive: true,
             dailyForecast: dailyForecast,
+            weatherCode: code,
+            sunrise: _todayTime(daily, 'sunrise'),
+            sunset: _todayTime(daily, 'sunset'),
           );
 
           await _cacheWeather(district, weather);
@@ -175,6 +180,10 @@ class WeatherService {
       final minTemps = daily['temperature_2m_min'] as List?;
       final codes = daily['weather_code'] as List?;
       final winds = daily['wind_speed_10m_max'] as List?;
+      final hums = daily['relative_humidity_2m_mean'] as List?;
+      final rainChances = daily['precipitation_probability_max'] as List?;
+      num? at(List? list, int i) =>
+          (list != null && i < list.length) ? list[i] as num? : null;
 
       if (maxTemps != null && minTemps != null && maxTemps.length >= 6) {
         final result = <WeatherForecastDay>[];
@@ -196,9 +205,14 @@ class WeatherService {
               tempMax: maxT,
               tempMin: minT,
               tempAvg: avgT,
-              humidity: (baseHumidity + (dayOffset * -2)).clamp(20, 92),
+              humidity: dayOffset == 0
+                  ? baseHumidity
+                  : (at(hums, i)?.round() ??
+                      (baseHumidity + (dayOffset * -2)).clamp(20, 92)),
               windSpeed: wSpeed,
               condition: mapWeatherCode(wCode, avgT),
+              weatherCode: wCode,
+              precipChance: at(rainChances, i)?.round(),
             ),
           );
         }
@@ -214,7 +228,18 @@ class WeatherService {
     );
   }
 
+  /// Today's (index 2: past_days=2) sunrise or sunset from the daily block.
+  static DateTime? _todayTime(Map<String, dynamic>? daily, String key) {
+    final list = daily?[key] as List?;
+    if (list == null || list.length < 3) return null;
+    return DateTime.tryParse(list[2]?.toString() ?? '');
+  }
+
+  /// WMO weather code → condition string used in advice and AI prompts.
+  /// Only a clear sky (code 0) is labelled 'hot' / 'cold' by temperature;
+  /// the weather scene reads the code itself via [WeatherData.sky].
   static String mapWeatherCode(int code, double temp) {
+    if (code == 45 || code == 48) return 'fog';
     if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
       return 'rain';
     }

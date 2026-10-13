@@ -1,10 +1,19 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../widgets/agro_icons.dart';
-import '../../widgets/tactile_button.dart';
+import '../../../config/theme.dart';
+import '../../../core/localization/app_strings.dart';
+import '../../../domain/broiler/broiler_grower_library.dart';
+import '../../../services/farm_store.dart';
+import '../../ui/components.dart';
+import '../../ui/format.dart';
+import 'onboarding_scaffold.dart';
 
+/// Onboarding step 3 (also used from Settings to edit the batch): name,
+/// chick arrival date and flock size.
 class BatchSetupScreen extends StatefulWidget {
   const BatchSetupScreen({super.key});
 
@@ -13,366 +22,302 @@ class BatchSetupScreen extends StatefulWidget {
 }
 
 class _BatchSetupScreenState extends State<BatchSetupScreen> {
-  DateTime _arrivalDate = DateTime.now();
-  final _countController = TextEditingController(text: '500');
-  final _nameController = TextEditingController(text: 'Fermer');
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _countController = TextEditingController(text: '500');
+  DateTime _arrivalDate = DateTime.now();
   String _lang = 'uz';
   bool _isOnboarded = false;
+
+  /// True when an existing batch is being edited (not a new one).
+  bool _editingBatch = false;
+
+  String _t(String uz, String ru, String en) =>
+      AppStrings.tr(lang: _lang, uz: uz, ru: ru, en: en);
 
   @override
   void initState() {
     super.initState();
-    _loadLang();
+    _load();
   }
 
-  Future<void> _loadLang() async {
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _countController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
       _lang = prefs.getString('app_language') ?? 'uz';
       _isOnboarded = prefs.getBool('is_onboarded') ?? false;
-      final existingName = prefs.getString('farmer_name');
-      if (existingName != null && existingName.isNotEmpty && _nameController.text == 'Fermer') {
-        _nameController.text = existingName;
+      _nameController.text = prefs.getString('farmer_name') ?? '';
+      final arrival = DateTime.tryParse(prefs.getString('arrival_date') ?? '');
+      _editingBatch = arrival != null;
+      if (arrival != null) {
+        _arrivalDate = arrival;
+        _countController.text = '${prefs.getInt('initial_count') ?? 500}';
       }
     });
   }
 
-  @override
-  void dispose() {
-    _countController.dispose();
-    _nameController.dispose();
-    super.dispose();
-  }
-
   Future<void> _pickDate() async {
+    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _arrivalDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 42)),
-      lastDate: DateTime.now(),
+      initialDate: _arrivalDate.isAfter(now) ? now : _arrivalDate,
+      firstDate: now.subtract(const Duration(days: 60)),
+      lastDate: now,
     );
-    if (picked != null) {
-      setState(() => _arrivalDate = picked);
-    }
+    if (picked != null) setState(() => _arrivalDate = picked);
   }
 
   Future<void> _proceed() async {
     if (!_formKey.currentState!.validate()) return;
-
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('farmer_name', _nameController.text.trim());
-    await prefs.setInt('initial_count', int.parse(_countController.text.trim()));
-    await prefs.setInt('current_count', int.parse(_countController.text.trim()));
-    await prefs.setString('arrival_date', _arrivalDate.toIso8601String());
+    final count = int.parse(_countController.text.trim());
 
-    final alreadyOnboarded = prefs.getBool('is_onboarded') ?? false;
+    // Editing an existing batch keeps the deaths already recorded.
+    var current = count;
+    if (_editingBatch) {
+      final oldInitial = prefs.getInt('initial_count') ?? count;
+      final oldCurrent = prefs.getInt('current_count') ?? oldInitial;
+      current = math.max(0, count - math.max(0, oldInitial - oldCurrent));
+    }
+
+    await prefs.setString('farmer_name', _nameController.text.trim());
+    await prefs.setInt('initial_count', count);
+    await prefs.setInt('current_count', current);
+    await prefs.setString('arrival_date', _arrivalDate.toIso8601String());
+    FarmStore.notifyChanged();
+
     if (!mounted) return;
-    if (alreadyOnboarded) {
-      context.go('/home');
-    } else {
+    if (!_isOnboarded) {
       context.go('/onboarding/disclaimer');
+    } else if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/home');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isRu = _lang == 'ru';
-    final isEn = _lang == 'en';
-    final dateFormat = DateFormat('dd.MM.yyyy');
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF7),
-      appBar: AppBar(
-        leading: _isOnboarded
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => context.go('/home'),
-              )
-            : null,
-        title: Text(
-          isRu ? 'Параметры партии' : (isEn ? 'Flock Setup' : 'Partiya ma\'lumotlari'),
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+    final date = DateFormat('dd.MM.yyyy').format(_arrivalDate);
+    return Form(
+      key: _formKey,
+      child: OnboardingScaffold(
+        step: _isOnboarded ? null : 3,
+        icon: Icons.egg_alt_rounded,
+        accent: AppColors.gold,
+        onBack: _isOnboarded
+            ? () => context.canPop() ? context.pop() : context.go('/home')
+            : () => context.go('/onboarding/region'),
+        title: _editingBatch
+            ? _t("Partiya ma'lumotlari", 'Данные партии', 'Batch details')
+            : _t(
+                'Yangi broyler partiyasi',
+                'Новая партия бройлеров',
+                'New broiler batch',
+              ),
+        subtitle: _t(
+          "Shu ma'lumotlar asosida har kunlik me'yorlar hisoblanadi.",
+          'По этим данным рассчитываются нормы на каждый день.',
+          'Daily targets are calculated from these details.',
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        buttonLabel: _isOnboarded
+            ? AppStrings.save(_lang)
+            : AppStrings.next(_lang),
+        onNext: _proceed,
+        children: [
+          TextFormField(
+            controller: _nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: _t('Ismingiz', 'Ваше имя', 'Your name'),
+              prefixIcon: const Icon(Icons.person_outline_rounded),
+            ),
+            validator: (v) => v == null || v.trim().isEmpty
+                ? _t('Ismni kiriting', 'Введите имя', 'Please enter your name')
+                : null,
+          ),
+          const Gap(AppSpace.lg),
+          AppCard(
+            onTap: _pickDate,
+            child: Row(
               children: [
-                // Step Progress Indicator with Payme-style Progress Dots
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withAlpha(20),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        isRu ? 'ШАГ 3 ИЗ 4' : (isEn ? 'STEP 3 OF 4' : '3-BOSQICH (4 TADAN)'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: theme.colorScheme.primary,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                    const AgroProgressDots(
-                      currentStep: 2,
-                      totalSteps: 4,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  isRu
-                      ? 'Новая партия бройлеров'
-                      : (isEn ? 'New Broiler Batch' : 'Yangi broyler partiyasi'),
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E293B),
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  isRu
-                      ? 'Укажите дату завоза и количество цыплят для расчета ежедневного плана'
-                      : (isEn
-                          ? 'Enter chick arrival date and flock count to calculate the daily care plan'
-                          : "Kunlik reja va me'yorlarni hisoblash uchun jo'jalar kelgan sana va sonini kiriting"),
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 20),
-
-                // Farmer Name
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(5),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TextFormField(
-                    controller: _nameController,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                    decoration: InputDecoration(
-                      labelText: isRu
-                          ? 'Ваше имя / Название фермы'
-                          : (isEn ? 'Your Name / Farm Name' : 'Ismingiz / Ferma nomi'),
-                      labelStyle: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                      prefixIcon: Icon(Icons.person_outline_rounded, color: theme.colorScheme.primary),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    ),
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? (isRu
-                            ? 'Введите имя'
-                            : (isEn ? 'Please enter name' : 'Ismni kiriting'))
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Arrival Date Picker Card
-                InkWell(
-                  onTap: _pickDate,
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(5),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withAlpha(20),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(Icons.calendar_month_rounded, color: theme.colorScheme.primary, size: 24),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isRu
-                                    ? 'Дата завоза цыплят'
-                                    : (isEn ? 'Chick Arrival Date' : 'Jo\'jalar kelgan sana'),
-                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                dateFormat.format(_arrivalDate),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1E293B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            isRu ? 'Изменить' : (isEn ? 'Change' : 'Tanlash'),
-                            style: TextStyle(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Chick Count Form Field
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(5),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TextFormField(
-                    controller: _countController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                    decoration: InputDecoration(
-                      labelText: isRu
-                          ? 'Количество цыплят (голов)'
-                          : (isEn ? 'Number of chicks (heads)' : 'Jo\'jalar soni (bosh)'),
-                      labelStyle: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                      hintText: '500',
-                      prefixIcon: Icon(Icons.tag_rounded, color: theme.colorScheme.primary),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return isRu
-                            ? 'Введите количество'
-                            : (isEn ? 'Please enter count' : 'Sonini kiriting');
-                      }
-                      final n = int.tryParse(v.trim());
-                      if (n == null || n <= 0) {
-                        return isRu
-                            ? 'Введите число больше 0'
-                            : (isEn ? 'Must be greater than 0' : '0 dan katta son kiriting');
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Quick preset chips
-                Wrap(
-                  spacing: 8,
-                  children: [500, 1000, 2500, 5000].map((count) {
-                    return ActionChip(
-                      label: Text(
-                        isRu ? '$count гол.' : (isEn ? '$count birds' : '$count bosh'),
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      onPressed: () {
-                        setState(() {
-                          _countController.text = '$count';
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-
-                const SizedBox(height: 24),
-                TactileButton(
-                  height: 56,
-                  depth: 4,
-                  borderRadius: 18,
-                  backgroundColor: theme.colorScheme.primary,
-                  shadowColor: const Color(0xFF1B5E20),
-                  onPressed: _proceed,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                const IconBadge(icon: Icons.calendar_month_rounded),
+                const SizedBox(width: AppSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isRu ? 'Далее' : (isEn ? 'Next' : 'Keyingisi'),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                        _t(
+                          "Jo'jalar kelgan sana",
+                          'Дата завоза цыплят',
+                          'Chick arrival date',
+                        ),
+                        style: AppText.caption,
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                      const SizedBox(height: 2),
+                      Text(date, style: AppText.cardTitle),
                     ],
+                  ),
+                ),
+                Text(
+                  _t("O'zgartirish", 'Изменить', 'Change'),
+                  style: AppText.label.copyWith(color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+          const Gap(AppSpace.lg),
+          TextFormField(
+            controller: _countController,
+            onChanged: (_) => setState(() {}),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              labelText: _t(
+                "Jo'jalar soni",
+                'Количество цыплят',
+                'Number of chicks',
+              ),
+              prefixIcon: const Icon(Icons.pets_outlined),
+              suffixText: _t('bosh', 'гол.', 'birds'),
+            ),
+            validator: (v) {
+              final n = int.tryParse((v ?? '').trim());
+              if (n == null || n <= 0) {
+                return _t(
+                  '0 dan katta son kiriting',
+                  'Введите число больше 0',
+                  'Must be greater than 0',
+                );
+              }
+              if (n > 200000) {
+                return _t(
+                  'Juda katta son',
+                  'Слишком большое число',
+                  'Too large',
+                );
+              }
+              return null;
+            },
+          ),
+          const Gap(),
+          Row(
+            children: [
+              for (final n in const [500, 1000, 2000, 5000]) ...[
+                if (n != 500) const SizedBox(width: AppSpace.sm),
+                Expanded(child: _countPill(n)),
+              ],
+            ],
+          ),
+          const Gap(AppSpace.lg),
+          _buildPreview(),
+        ],
+      ),
+    );
+  }
+
+  Widget _countPill(int n) {
+    final selected = _countController.text.trim() == '$n';
+    return AnimatedContainer(
+      duration: AppMotion.medium,
+      curve: AppMotion.curve,
+      decoration: BoxDecoration(
+        color: selected ? AppColors.primary : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        boxShadow: selected
+            ? AppShadow.glow(AppColors.primary)
+            : AppShadow.card,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          onTap: () => setState(() => _countController.text = '$n'),
+          child: SizedBox(
+            height: 44,
+            child: Center(
+              child: Text(
+                Fmt.grouped(n.toDouble()),
+                style: AppText.label.copyWith(
+                  color: selected ? Colors.white : AppColors.ink,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// What the chosen arrival date means today: batch day, phase and the
+  /// house temperature to hold — so the farmer sees the app "get" their flock.
+  Widget _buildPreview() {
+    final today = DateTime.now();
+    final days = DateTime(today.year, today.month, today.day)
+        .difference(
+          DateTime(_arrivalDate.year, _arrivalDate.month, _arrivalDate.day),
+        )
+        .inDays;
+    final day = (days + 1).clamp(1, 42);
+    final finished = days + 1 > 42;
+    final spec = BroilerGrowerLibrary.specForDay(day);
+    final fmt = Fmt(_lang);
+    return PhotoCard(
+      image: 'assets/images/chick_starter.jpg',
+      padding: const EdgeInsets.all(AppSpace.lg),
+      child: Row(
+        children: [
+          ProgressRing(
+            value: day / 42,
+            size: 72,
+            stroke: 7,
+            color: Colors.white,
+            trackColor: Colors.white.withAlpha(60),
+            child: Text(
+              '$day',
+              style: AppText.metric.copyWith(color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: AppSpace.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  finished
+                      ? _t(
+                          '42 kunlik sikl tugagan',
+                          '42-дневный цикл завершён',
+                          'The 42-day cycle is over',
+                        )
+                      : _t(
+                          "Jo'jalaringiz bugun: ${fmt.day(day)}",
+                          'Ваши цыплята сегодня: ${fmt.day(day).toLowerCase()}',
+                          'Your chicks today: ${fmt.day(day)}',
+                        ),
+                  style: AppText.cardTitle.copyWith(color: Colors.white),
+                ),
+                const SizedBox(height: AppSpace.xs),
+                Text(
+                  '${FarmSnapshot.phaseNameFor(day, _lang)} · '
+                  '${_t('bino', 'птичник', 'house')} ${fmt.celsius(spec.targetTempC)}',
+                  style: AppText.caption.copyWith(
+                    color: Colors.white.withAlpha(225),
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

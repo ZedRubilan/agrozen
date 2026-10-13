@@ -379,7 +379,7 @@ class CourseGuideData {
             keyPoints: [
               CourseRulePoint(
                 icon: Icons.trending_down_rounded,
-                badge: '33°C → 22°C',
+                badge: '33–22°C',
                 title: 'Lower temp by 2–3°C weekly',
                 description:
                     'Days 1–3: 33–34°C • Day 7: 30°C • Day 14: 27°C • Day 28+: 20–22°C.',
@@ -433,7 +433,7 @@ class CourseGuideData {
             keyPoints: [
               CourseRulePoint(
                 icon: Icons.trending_down_rounded,
-                badge: '33°C → 22°C',
+                badge: '33–22°C',
                 title: 'Снижайте на 2–3°C каждую неделю',
                 description:
                     '1–3 дни: 33–34°C • 7 день: 30°C • 14 день: 27°C • с 28 дня: 20–22°C.',
@@ -487,7 +487,7 @@ class CourseGuideData {
             keyPoints: [
               CourseRulePoint(
                 icon: Icons.trending_down_rounded,
-                badge: '33°C → 22°C',
+                badge: '33–22°C',
                 title: 'Har hafta 2–3°C ga pasaytiring',
                 description:
                     "1–3 kun: 33–34°C • 7-kun: 30°C • 14-kun: 27°C • 28-kundan: 20–22°C.",

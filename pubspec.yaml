@@ -65,6 +65,24 @@ flutter:
   generate: true
   uses-material-design: true
 
+  # Cyrillic fallback (Noto Sans, Cyrillic letters only, SIL OFL 1.1 — see
+  # assets/fonts/NotoSans-OFL.txt). Plus Jakarta Sans has no basic Cyrillic,
+  # so without this Russian text waits for a font download on web and uses
+  # whatever the phone has offline.
+  fonts:
+    - family: NotoSansCyrillic
+      fonts:
+        - asset: assets/fonts/NotoSansCyrillic-400.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansCyrillic-500.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansCyrillic-600.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSansCyrillic-700.ttf
+          weight: 700
+        - asset: assets/fonts/NotoSansCyrillic-800.ttf
+          weight: 800
+
   assets:
     - assets/images/
     - knowledge/

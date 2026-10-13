@@ -1,6 +1,4 @@
-import 'package:agrozen/presentation/widgets/voice_input_button.dart';
 import 'package:agrozen/services/voice_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Documents the honesty contract of voice input: no transcript is ever
@@ -19,29 +17,6 @@ void main() {
     test('all failure reasons are enumerable for exhaustive UI handling',
         () {
       expect(VoiceUnavailableReason.values.length, 4);
-    });
-  });
-
-  group('VoiceInputButton still renders the mic affordance', () {
-    testWidgets('renders idle mic and toggles to stop when recording',
-        (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: VoiceInputButton(isRecording: false),
-          ),
-        ),
-      );
-      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: VoiceInputButton(isRecording: true),
-          ),
-        ),
-      );
-      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
     });
   });
 }

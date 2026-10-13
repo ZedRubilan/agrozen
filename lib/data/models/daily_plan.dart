@@ -38,6 +38,25 @@ class DailyPlan extends Equatable {
     return tasksRu;
   }
 
+  /// The day's tasks as separate checklist items.
+  List<String> taskList(String language) {
+    final text = getTasks(language).trim();
+    if (text.isEmpty) return const [];
+    final lines = text
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.length > 1) return lines;
+    // Uzbek / Russian plans are stored as one paragraph — split into sentences
+    // (a sentence ends with '.' followed by a capitalised word or digit).
+    return text
+        .split(RegExp(r"(?<=[.!])\s+(?=[A-ZА-ЯЁOʻ0-9])"))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
   static String _fallbackTasksEn(int day) {
     if (day == 1) {
       return 'Prepare the brooder. Verify litter-level temperature (32–33°C). Keep 24-hour lighting on. Offer warm water (20–22°C) with glucose/vitamins first, then spread starter crumble feed on trays/paper after 2 hours.';

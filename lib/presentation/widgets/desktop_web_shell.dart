@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 
 /// Clean Phone-First Web Shell:
 /// - On mobile screens (width <= 500): Renders 100% full-screen native mobile UI.
@@ -20,7 +21,7 @@ class DesktopWebShell extends StatelessWidget {
 
         // Wide & tall screens: pure phone interface centered, zero external clutter
         return Scaffold(
-          backgroundColor: const Color(0xFFEDF3EE),
+          backgroundColor: AppColors.surfaceMuted,
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -29,23 +30,14 @@ class DesktopWebShell extends StatelessWidget {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.background,
                   borderRadius: BorderRadius.circular(36),
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 3.5,
-                  ),
+                  border: Border.all(color: AppColors.border),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0F2618).withAlpha(35),
+                      color: AppColors.ink.withAlpha(25),
                       blurRadius: 40,
-                      spreadRadius: 2,
                       offset: const Offset(0, 16),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withAlpha(15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),

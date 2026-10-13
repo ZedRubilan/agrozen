@@ -11,7 +11,7 @@ DailyPlan _$DailyPlanFromJson(Map<String, dynamic> json) => DailyPlan(
   tasksRu: json['tasks_ru'] as String? ?? '',
   tasksUz: json['tasks_uz'] as String? ?? '',
   tasksEn: json['tasks_en'] is List
-      ? (json['tasks_en'] as List).map((e) => e.toString()).join(' ')
+      ? (json['tasks_en'] as List).map((e) => e.toString()).join('\n')
       : (json['tasks_en'] as String? ?? ''),
   videoUrl: json['video_url'] as String?,
 );

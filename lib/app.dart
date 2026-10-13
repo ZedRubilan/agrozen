@@ -21,6 +21,7 @@ import 'presentation/screens/course/lesson_screen.dart';
 import 'presentation/screens/course/quiz_screen.dart';
 import 'presentation/screens/course/certificate_screen.dart';
 import 'presentation/screens/settings_screen.dart';
+import 'presentation/screens/tools_screen.dart';
 import 'presentation/widgets/desktop_web_shell.dart';
 
 final GoRouter _router = GoRouter(
@@ -31,7 +32,14 @@ final GoRouter _router = GoRouter(
     GoRoute(path: '/onboarding/region', builder: (context, state) => const RegionScreen()),
     GoRoute(path: '/onboarding/batch', builder: (context, state) => const BatchSetupScreen()),
     GoRoute(path: '/onboarding/disclaimer', builder: (context, state) => const DisclaimerScreen()),
-    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) {
+        final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 0;
+        return HomeScreen(initialTab: tab);
+      },
+    ),
+    GoRoute(path: '/tools', builder: (context, state) => const ToolsScreen()),
     GoRoute(path: '/daily-plan', builder: (context, state) => const DailyPlanScreen()),
     GoRoute(path: '/diary', builder: (context, state) => const DiaryScreen()),
     GoRoute(path: '/diary/mortality', builder: (context, state) => const LogMortalityScreen()),
@@ -102,8 +110,6 @@ class _AgroZenAppState extends State<AgroZenApp> {
       title: 'AgroZen',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
       routerConfig: _router,
       locale: _locale,
       localizationsDelegates: const [

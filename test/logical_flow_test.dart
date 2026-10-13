@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:agrozen/config/theme.dart';
 import 'package:agrozen/presentation/screens/splash_screen.dart';
 import 'package:agrozen/presentation/screens/onboarding/language_screen.dart';
 import 'package:agrozen/presentation/screens/onboarding/region_screen.dart';
@@ -19,34 +20,57 @@ import 'package:agrozen/presentation/screens/course/lesson_screen.dart';
 import 'package:agrozen/presentation/screens/course/quiz_screen.dart';
 import 'package:agrozen/presentation/screens/course/certificate_screen.dart';
 import 'package:agrozen/presentation/screens/settings_screen.dart';
+import 'package:agrozen/presentation/screens/tools_screen.dart';
 import 'package:agrozen/services/daily_counters.dart';
+import 'package:agrozen/services/farm_store.dart';
 import 'package:agrozen/presentation/widgets/alert_card.dart';
 
 Widget createTestApp(Widget child) {
+  Widget mock(String label) => Scaffold(body: Text(label));
   final router = GoRouter(
     initialLocation: '/',
     routes: [
       GoRoute(path: '/', builder: (context, state) => child),
-      GoRoute(path: '/onboarding/language', builder: (context, state) => const Scaffold(body: Text('LanguageMock'))),
-      GoRoute(path: '/onboarding/region', builder: (context, state) => const Scaffold(body: Text('RegionMock'))),
-      GoRoute(path: '/onboarding/batch', builder: (context, state) => const Scaffold(body: Text('BatchMock'))),
-      GoRoute(path: '/onboarding/disclaimer', builder: (context, state) => const Scaffold(body: Text('DisclaimerMock'))),
-      GoRoute(path: '/home', builder: (context, state) => const Scaffold(body: Text('HomeMock'))),
-      GoRoute(path: '/daily-plan', builder: (context, state) => const Scaffold(body: Text('DailyPlanMock'))),
-      GoRoute(path: '/diary', builder: (context, state) => const Scaffold(body: Text('DiaryMock'))),
-      GoRoute(path: '/diary/mortality', builder: (context, state) => const Scaffold(body: Text('MortalityMock'))),
-      GoRoute(path: '/diary/feed', builder: (context, state) => const Scaffold(body: Text('FeedMock'))),
-      GoRoute(path: '/diary/weight', builder: (context, state) => const Scaffold(body: Text('WeightMock'))),
-      GoRoute(path: '/ask', builder: (context, state) => const Scaffold(body: Text('AskMock'))),
-      GoRoute(path: '/course', builder: (context, state) => const Scaffold(body: Text('CourseMock'))),
-      GoRoute(path: '/certificate', builder: (context, state) => const Scaffold(body: Text('CertMock'))),
-      GoRoute(path: '/settings', builder: (context, state) => const Scaffold(body: Text('SettingsMock'))),
+      GoRoute(path: '/onboarding/language', builder: (_, __) => mock('LanguageMock')),
+      GoRoute(path: '/onboarding/region', builder: (_, __) => mock('RegionMock')),
+      GoRoute(path: '/onboarding/batch', builder: (_, __) => mock('BatchMock')),
+      GoRoute(path: '/onboarding/disclaimer', builder: (_, __) => mock('DisclaimerMock')),
+      GoRoute(path: '/home', builder: (_, __) => mock('HomeMock')),
+      GoRoute(path: '/daily-plan', builder: (_, __) => mock('DailyPlanMock')),
+      GoRoute(path: '/tools', builder: (_, __) => mock('ToolsMock')),
+      GoRoute(path: '/diary/mortality', builder: (_, __) => mock('MortalityMock')),
+      GoRoute(path: '/diary/feed', builder: (_, __) => mock('FeedMock')),
+      GoRoute(path: '/diary/weight', builder: (_, __) => mock('WeightMock')),
+      GoRoute(path: '/course/:id', builder: (_, s) => mock('LessonMock ${s.pathParameters['id']}')),
+      GoRoute(path: '/course/:id/quiz', builder: (_, __) => mock('QuizMock')),
+      GoRoute(path: '/certificate', builder: (_, __) => mock('CertMock')),
+      GoRoute(path: '/settings', builder: (_, __) => mock('SettingsMock')),
     ],
   );
   return MaterialApp.router(
+    theme: AppTheme.lightTheme,
     routerConfig: router,
+    // Tests run with "reduce motion": the weather scene loops forever and
+    // would never let pumpAndSettle settle; this also covers the still path.
+    builder: _reduceMotion,
   );
 }
+
+Widget _reduceMotion(BuildContext context, Widget? child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: true),
+      child: child!,
+    );
+
+/// Scrolls [finder] into view before tapping (the test screen is 800×600).
+Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+String _daysAgo(int days) =>
+    DateTime.now().subtract(Duration(days: days)).toIso8601String();
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -56,35 +80,32 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    testWidgets('1. Fresh Launch: Splash Screen routes instantaneously to Onboarding without loading spinner', (tester) async {
+    testWidgets('1. Fresh launch: splash routes straight to onboarding without a spinner', (tester) async {
       SharedPreferences.setMockInitialValues({'is_onboarded': false});
-
       await tester.pumpWidget(createTestApp(const SplashScreen()));
+      await tester.pump();
 
       expect(find.text('AgroZen'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      await tester.pump(const Duration(milliseconds: 50));
+
       await tester.pumpAndSettle();
       expect(find.text('LanguageMock'), findsOneWidget);
     });
 
-    testWidgets('2. Language Selection Screen renders Payme-style hero slides, progress dots, uncropped flags, and stores choice in SharedPreferences', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-
+    testWidgets('2. Language step shows flags and step counter and saves the choice', (tester) async {
       await tester.pumpWidget(createTestApp(const LanguageScreen()));
+      await tester.pumpAndSettle();
 
       expect(find.text("Tilni tanlang\nВыберите язык\nSelect Language"), findsOneWidget);
       expect(find.text('1 / 4'), findsOneWidget);
       expect(find.text("O'zbekcha"), findsOneWidget);
-      expect(find.text("Русский"), findsOneWidget);
-      expect(find.text("English"), findsOneWidget);
+      expect(find.text('Русский'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
 
-      // Select Russian
-      await tester.tap(find.text("Русский"));
+      await tester.tap(find.text('Русский'));
       await tester.pumpAndSettle();
-
-      // Tap Proceed
-      await tester.tap(find.text("Davom etish / Далее / Continue"));
+      // The button follows the selected language immediately.
+      await tester.tap(find.text('Далее'));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
@@ -92,19 +113,17 @@ void main() {
       expect(find.text('RegionMock'), findsOneWidget);
     });
 
-    testWidgets('3. Region Selection Screen filters and selects district', (tester) async {
+    testWidgets('3. Region step selects a district', (tester) async {
       SharedPreferences.setMockInitialValues({'app_language': 'uz'});
-
       await tester.pumpWidget(createTestApp(const RegionScreen()));
-
-      expect(find.text('Viloyatni tanlang'), findsOneWidget);
-      expect(find.text('Samarqand'), findsOneWidget);
-
-      // Select Samarqand
-      await tester.tap(find.text('Samarqand'));
       await tester.pumpAndSettle();
 
-      // Submit
+      expect(find.text('Fermangiz qayerda?'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'Samar');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Samarqand').last);
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('Keyingisi'));
       await tester.pumpAndSettle();
 
@@ -113,21 +132,20 @@ void main() {
       expect(find.text('BatchMock'), findsOneWidget);
     });
 
-    testWidgets('4. Batch Setup Screen validates input and stores flock parameters', (tester) async {
+    testWidgets('4. Batch step validates input and stores the flock', (tester) async {
       SharedPreferences.setMockInitialValues({'app_language': 'uz'});
-
       await tester.pumpWidget(createTestApp(const BatchSetupScreen()));
+      await tester.pumpAndSettle();
 
       expect(find.text('Yangi broyler partiyasi'), findsOneWidget);
 
-      final nameField = find.widgetWithText(TextFormField, 'Ismingiz / Ferma nomi');
-      final countField = find.widgetWithText(TextFormField, "Jo'jalar soni (bosh)");
-
-      await tester.enterText(nameField, 'Alisher Fermer');
-      await tester.enterText(countField, '1000');
+      // Empty name is rejected.
+      await tester.tap(find.text('Keyingisi'));
       await tester.pumpAndSettle();
+      expect(find.text('Ismni kiriting'), findsOneWidget);
 
-      // Submit
+      await tester.enterText(find.widgetWithText(TextFormField, 'Ismingiz'), 'Alisher Fermer');
+      await tester.enterText(find.widgetWithText(TextFormField, "Jo'jalar soni"), '1000');
       await tester.tap(find.text('Keyingisi'));
       await tester.pumpAndSettle();
 
@@ -139,15 +157,12 @@ void main() {
       expect(find.text('DisclaimerMock'), findsOneWidget);
     });
 
-    testWidgets('5. Legal Disclaimer Screen completes onboarding', (tester) async {
+    testWidgets('5. Disclaimer step completes onboarding', (tester) async {
       SharedPreferences.setMockInitialValues({'app_language': 'uz'});
-
       await tester.pumpWidget(createTestApp(const DisclaimerScreen()));
+      await tester.pumpAndSettle();
 
       expect(find.text('Muhim ogohlantirish'), findsOneWidget);
-      expect(find.text('Tushundim va roziman'), findsOneWidget);
-
-      // Accept
       await tester.tap(find.text('Tushundim va roziman'));
       await tester.pumpAndSettle();
 
@@ -157,43 +172,69 @@ void main() {
       expect(find.text('HomeMock'), findsOneWidget);
     });
 
-    testWidgets('6. Dashboard Screen renders current day progress and metrics', (tester) async {
-      final now = DateTime.now();
+    testWidgets('6. Today tab shows day, flock and norms.json targets', (tester) async {
       SharedPreferences.setMockInitialValues({
         'is_onboarded': true,
         'app_language': 'uz',
         'farmer_name': 'Zafar aka',
         'farmer_district': 'Buxoro',
+        'location_prompt_resolved': true,
         'initial_count': 500,
         'current_count': 498,
-        'arrival_date': now.subtract(const Duration(days: 6)).toIso8601String(), // Day 7
+        'arrival_date': _daysAgo(6), // Day 7
       });
 
       await tester.pumpWidget(createTestApp(const HomeScreen()));
       await tester.pumpAndSettle();
 
-      // Check greetings and day progress
       expect(find.text('Assalomu alaykum, Zafar aka!'), findsOneWidget);
       expect(find.text('7-kun (42 kundan)'), findsOneWidget);
       expect(find.text('498'), findsOneWidget);
-      expect(find.text('30°C'), findsWidgets); // Day 7 temp norm is 29.5 -> 30°C from norms.json
+      // Day 7 in knowledge/norms.json: 29.5°C, 27 g feed/bird -> 498 birds ≈ 13.4 kg.
+      expect(find.text('29.5°C'), findsOneWidget);
+      expect(find.text('13.4 kg'), findsOneWidget);
+      // Four labelled tabs.
+      expect(find.byType(NavigationDestination), findsNWidgets(4));
     });
 
-    testWidgets('7. Daily Plan Screen navigates timeline and displays growth stage guidance', (tester) async {
+    testWidgets('6b. Today tab task checklist ticks are saved per batch day', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'is_onboarded': true,
+        'app_language': 'en',
+        'location_prompt_resolved': true,
+        'arrival_date': _daysAgo(0), // Day 1
+      });
+
+      await tester.pumpWidget(createTestApp(const HomeScreen()));
+      await tester.pumpAndSettle();
+
+      await tapVisible(tester, find.textContaining('Provide 23-24 hours of bright lighting'));
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getStringList('plan_tasks_done_1'), ['1']);
+    });
+
+    testWidgets('7. 42-day plan shows today and lets the farmer browse days', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
-        'arrival_date': DateTime.now().toIso8601String(), // Day 1
+        'arrival_date': _daysAgo(0), // Day 1
       });
 
       await tester.pumpWidget(createTestApp(const DailyPlanScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Kunlik reja (1–42)'), findsOneWidget);
-      expect(find.text('Bu sizning bugungi partiya kuningiz!'), findsOneWidget);
-      expect(find.text("Bosqich bo'yicha tavsiyalar"), findsOneWidget);
+      expect(find.text('42 kunlik reja'), findsOneWidget);
+      expect(find.text('1-kun · Start'), findsOneWidget);
+      expect(find.text('Bugun'), findsOneWidget);
+      expect(find.text('32.5°C'), findsOneWidget);
+
+      await tester.tap(find.text('2'));
+      await tester.pumpAndSettle();
+      expect(find.text('2-kun · Start'), findsOneWidget);
+      expect(find.text('32°C'), findsOneWidget);
     });
 
-    testWidgets('8. Flock Diary Screen displays flock metrics and action entries', (tester) async {
+    testWidgets('8. Diary shows today, batch totals and the log actions', (tester) async {
       SharedPreferences.setMockInitialValues({
         'counters_date': DailyCounters.todayStamp(),
         'app_language': 'uz',
@@ -208,19 +249,42 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Partiya kundaligi'), findsOneWidget);
+      expect(find.text('Nobodlik yozish'), findsOneWidget);
+      expect(find.text('Yem sarfini yozish'), findsOneWidget);
+      expect(find.text('Nazorat vaznini yozish'), findsOneWidget);
+      expect(find.text('Bugun: 2 bosh'), findsOneWidget);
       expect(find.text('590'), findsOneWidget);
-      expect(find.text('2'), findsOneWidget);
-      expect(find.text('480 г'), findsNWidgets(2));
-      expect(find.text("Nobodlik yozish"), findsOneWidget);
-      expect(find.text("Yem sarfini yozish"), findsOneWidget);
-      expect(find.text("Nazorat vaznini yozish"), findsOneWidget);
+      expect(find.text('10'), findsOneWidget); // total lost
     });
 
-    testWidgets('9. Log Mortality Screen triggers veterinary alert when exceeding 1% threshold', (tester) async {
+    testWidgets('8b. Diary keeps a day-by-day history of what was logged', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'app_language': 'uz',
+        'initial_count': 500,
+        'current_count': 500,
+        'arrival_date': _daysAgo(4), // Day 5
+      });
+      await FarmStore.logFeed(12.5);
+      await FarmStore.logDeaths(3);
+
+      await tester.pumpWidget(createTestApp(const DiaryScreen()));
+      await tester.pumpAndSettle();
+
+      final day = find.text('5-kun');
+      await tester.ensureVisible(day);
+      expect(day, findsOneWidget);
+      expect(find.text('12.5 kg'), findsWidgets);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('current_count'), 497);
+      expect(FarmStore.readHistory(prefs).single.deaths, 3);
+    });
+
+    testWidgets('9. Recording deaths above 1% raises the vet alert', (tester) async {
       SharedPreferences.setMockInitialValues({
         'counters_date': DailyCounters.todayStamp(),
         'app_language': 'uz',
         'farmer_district': 'Namangan',
+        'initial_count': 500,
         'current_count': 500,
         'today_mortality': 0,
       });
@@ -228,17 +292,11 @@ void main() {
       await tester.pumpWidget(createTestApp(const LogMortalityScreen()));
       await tester.pumpAndSettle();
 
-      // Enter 15 deaths (3.0% of 500 > 1.0% limit)
-      final input = find.byType(TextFormField);
-      await tester.enterText(input, '15');
-      await tester.pumpAndSettle();
-
-      // Save
+      await tester.enterText(find.byType(TextFormField), '15'); // 3.0% of 500
       await tester.tap(find.text('Qaydni saqlash'));
       await tester.pumpAndSettle();
 
-      // Alert dialog should appear with vet alert
-      expect(find.text("Diqqat: Yuqori nobodlik!"), findsOneWidget);
+      expect(find.text('Diqqat: Yuqori nobodlik!'), findsOneWidget);
       expect(find.textContaining('3.0% > 1.0%'), findsOneWidget);
 
       final prefs = await SharedPreferences.getInstance();
@@ -246,7 +304,26 @@ void main() {
       expect(prefs.getInt('current_count'), 485);
     });
 
-    testWidgets('10. Log Feed Screen saves feed consumption', (tester) async {
+    testWidgets('9b. Deaths cannot exceed the live flock', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'counters_date': DailyCounters.todayStamp(),
+        'app_language': 'uz',
+        'current_count': 10,
+      });
+
+      await tester.pumpWidget(createTestApp(const LogMortalityScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField), '11');
+      await tester.tap(find.text('Qaydni saqlash'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Tirik jo'jalar sonidan ko'p bo'la olmaydi"), findsOneWidget);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('current_count'), 10);
+    });
+
+    testWidgets('10. Recording feed adds to today and quick-add buttons work', (tester) async {
       SharedPreferences.setMockInitialValues({
         'counters_date': DailyCounters.todayStamp(),
         'app_language': 'uz',
@@ -256,10 +333,12 @@ void main() {
       await tester.pumpWidget(createTestApp(const LogFeedScreen()));
       await tester.pumpAndSettle();
 
-      final input = find.byType(TextFormField);
-      await tester.enterText(input, '25.5');
-      await tester.pumpAndSettle();
+      await tester.tap(find.text('+25'));
+      await tester.tap(find.text('+5'));
+      await tester.pump();
+      expect(find.widgetWithText(TextFormField, '30'), findsOneWidget);
 
+      await tester.enterText(find.byType(TextFormField), '25.5');
       await tester.tap(find.text('Qaydni saqlash'));
       await tester.pumpAndSettle();
 
@@ -267,33 +346,27 @@ void main() {
       expect(prefs.getDouble('today_feed'), 35.5);
     });
 
-    testWidgets('11. Log Weight Screen triggers underweight warning on severe deficit', (tester) async {
-      final arrivalDate = DateTime.now().subtract(const Duration(days: 13)); // Day 14 (target ~500g)
+    testWidgets('11. Recording a low sample weight raises the warning', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
         'farmer_district': 'Toshkent',
-        'arrival_date': arrivalDate.toIso8601String(),
+        'arrival_date': _daysAgo(13), // Day 14, target 510 g
       });
 
       await tester.pumpWidget(createTestApp(const LogWeightScreen()));
       await tester.pumpAndSettle();
 
-      // Enter 380g (norm is 500g, 380g is 24% below norm > 15% threshold)
-      final input = find.byType(TextFormField);
-      await tester.enterText(input, '380');
-      await tester.pumpAndSettle();
-
+      await tester.enterText(find.byType(TextFormField), '380');
       await tester.tap(find.text('Qaydni saqlash'));
       await tester.pumpAndSettle();
 
-      // Alert dialog should pop up
-      expect(find.text("Diqqat: Vazn ortda qolmoqda!"), findsOneWidget);
-
+      expect(find.text('Diqqat: Vazn ortda qolmoqda!'), findsOneWidget);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getDouble('last_weight'), 380.0);
+      expect(prefs.getInt('last_weight_day'), 14);
     });
 
-    testWidgets('12. Ask AI Chat Screen enforces safety rules and decrements daily quota', (tester) async {
+    testWidgets('12. Assistant enforces the medicine rule and decrements the quota', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
         'remaining_questions': 30,
@@ -304,41 +377,39 @@ void main() {
 
       expect(find.textContaining('Bugun qoldi: 30/30'), findsOneWidget);
 
-      // Ask question about temperature
       final input = find.byType(TextField);
       await tester.enterText(input, "Jo'jalarga qanday harorat kerak?");
+      await tester.pump();
       await tester.tap(find.byIcon(Icons.send_rounded));
       await tester.pump(const Duration(milliseconds: 700));
       await tester.pumpAndSettle();
 
-      // Quota should decrement
       expect(find.textContaining('Bugun qoldi: 29/30'), findsOneWidget);
-      // Answer should cite temperature topic
       expect(find.textContaining('Harorat va namlik'), findsOneWidget);
 
-      // Ask dangerous medical query (drugs/antibiotics)
-      await tester.enterText(input, "Qanday dori va antibiotik berish kerak?");
+      await tester.enterText(input, 'Qanday dori va antibiotik berish kerak?');
+      await tester.pump();
       await tester.tap(find.byIcon(Icons.send_rounded));
       await tester.pump(const Duration(milliseconds: 700));
       await tester.pumpAndSettle();
 
-      // Verifying non-prescriptive safety rule
       expect(find.textContaining('AgroZen mustaqil ravishda dori yoki antibiotik belgilamaydi'), findsOneWidget);
       expect(find.textContaining('darhol tumaningiz veterinariga murojaat qiling'), findsOneWidget);
     });
 
-    testWidgets('12b. AskScreen startInFieldMode builds safely without empty list exceptions', (tester) async {
+    testWidgets('12b. Assistant shows the mic when the input is empty', (tester) async {
       SharedPreferences.setMockInitialValues({'app_language': 'uz'});
 
       await tester.pumpWidget(createTestApp(const AskScreen(startInFieldMode: true)));
-      await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('AgroZen AI Maslahatchi'), findsOneWidget);
+      expect(find.text('AgroZen yordamchisi'), findsOneWidget);
       expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.send_rounded), findsNothing);
+      expect(find.text('Tez savollar'), findsOneWidget);
     });
 
-    testWidgets('12c. AskScreen in Field/Voice Mode responds warmly to "hello" and displays user question & full AI answer', (tester) async {
+    testWidgets('12c. Assistant answers "hello" warmly with the flock status', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
         'farmer_name': 'Rustam aka',
@@ -347,89 +418,89 @@ void main() {
       });
 
       await tester.pumpWidget(createTestApp(const AskScreen(startInFieldMode: true)));
-      await tester.pump();
       await tester.pumpAndSettle();
 
-      // Type "hello" in Field Mode quick input bar
-      final input = find.byType(TextField);
-      expect(input, findsOneWidget);
-      await tester.enterText(input, 'hello');
+      await tester.enterText(find.byType(TextField), 'hello');
+      await tester.pump();
       await tester.tap(find.byIcon(Icons.send_rounded));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      // Should display user's question banner and a warm English greeting with flock status
       expect(find.text('hello'), findsOneWidget);
       expect(find.textContaining('Hello, Rustam aka!'), findsOneWidget);
       expect(find.textContaining('480 birds'), findsOneWidget);
-      // Should NOT say "no info" or return unrelated broiler manual snippets
       expect(find.textContaining('I could not find a specific answer'), findsNothing);
-      expect(find.textContaining("Bu savol bo'yicha tekshirilgan bazada"), findsNothing);
     });
 
-    testWidgets('13. Pre-Credit Course & Quiz Flow awards completion', (tester) async {
+    testWidgets('13. Course: list, lesson and quiz award completion', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
         'completed_lessons': <String>[],
       });
 
-      // 1. Course list
       await tester.pumpWidget(createTestApp(const CourseListScreen()));
       await tester.pumpAndSettle();
-      expect(find.text('Kreditdan oldingi kurs'), findsOneWidget);
-      expect(find.text('Tugallandi: 0 / 5'), findsOneWidget);
+      expect(find.text("O'rganish"), findsOneWidget);
+      expect(find.text('0 / 5 dars tugatildi'), findsOneWidget);
+      expect(find.text("1. Jo'jalar kelishidan oldin xonani tayyorlash"), findsOneWidget);
+      await tester.tap(find.text('Kursni boshlash'));
+      await tester.pumpAndSettle();
+      expect(find.text('LessonMock 1'), findsOneWidget);
 
-      // 2. Lesson screen
       await tester.pumpWidget(createTestApp(const LessonScreen(lessonId: 1)));
       await tester.pumpAndSettle();
       expect(find.text("Jo'jalar kelishidan oldin xonani tayyorlash"), findsOneWidget);
-      expect(find.text('Dars testini topshirish'), findsOneWidget);
+      expect(find.text('Testni boshlash'), findsOneWidget);
 
-      // 3. Quiz screen (correct answer for Lesson 1 is 33-34°C, index 2)
       await tester.pumpWidget(createTestApp(const QuizScreen(lessonId: 1)));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('20-22°C'));
+      await tester.pumpAndSettle();
+      await tapVisible(tester, find.text('Tekshirish'));
+      expect(find.text("Noto'g'ri. Yana urinib ko'ring."), findsOneWidget);
 
-      // Tap 33-34°C option
+      await tapVisible(tester, find.text('Qayta urinish'));
       await tester.tap(find.text('33-34°C'));
       await tester.pumpAndSettle();
-
-      // Submit
-      await tester.tap(find.text('Javobni tekshirish'));
-      await tester.pumpAndSettle();
-
-      expect(find.text("To'g'ri! Dars muvaffaqiyatli topshirildi."), findsOneWidget);
+      await tapVisible(tester, find.text('Tekshirish'));
+      expect(find.text("To'g'ri! Dars tugatildi."), findsOneWidget);
+      expect(find.text('Keyingi dars'), findsOneWidget);
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getStringList('completed_lessons'), contains('1'));
     });
 
-    testWidgets('14. Certificate Screen renders verified farmer credentials', (tester) async {
+    testWidgets('14. Certificate is locked until all 5 lessons are passed', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
         'farmer_name': 'Rustamjon Qodirov',
         'farmer_district': 'Andijon',
+        'completed_lessons': <String>['1', '2'],
       });
-
       await tester.pumpWidget(createTestApp(const CertificateScreen()));
       await tester.pumpAndSettle();
+      expect(find.text('Avval 5 ta darsni tugating'), findsOneWidget);
+      expect(find.text('Rustamjon Qodirov'), findsNothing);
 
+      SharedPreferences.setMockInitialValues({
+        'app_language': 'uz',
+        'farmer_name': 'Rustamjon Qodirov',
+        'farmer_district': 'Andijon',
+        'completed_lessons': <String>['1', '2', '3', '4', '5'],
+      });
+      await tester.pumpWidget(createTestApp(const CertificateScreen(key: ValueKey('done'))));
+      await tester.pumpAndSettle();
       expect(find.text('Rustamjon Qodirov'), findsOneWidget);
-      expect(find.text('Andijon viloyati'), findsOneWidget);
-      expect(find.text('TASDIQLANGAN'), findsOneWidget);
-      expect(find.text("Sertifikat bank yoki hamkorlar uchun eksportga tayyor"), findsNothing);
-
-      // Tap Share - opens the native sharing sheet (Android/iOS/Web share UI).
-      final shareBtn = find.byIcon(Icons.share_rounded);
-      expect(shareBtn, findsOneWidget);
-      await tester.tap(shareBtn);
-      await tester.pump();
+      expect(find.text('SERTIFIKAT'), findsOneWidget);
+      expect(find.byIcon(Icons.share_rounded), findsOneWidget);
     });
 
-    testWidgets('15. Settings Screen enables language toggle and batch reset', (tester) async {
+    testWidgets('15. Settings shows the farm and switches language', (tester) async {
       SharedPreferences.setMockInitialValues({
         'app_language': 'uz',
         'farmer_name': 'Botir aka',
-        'farmer_district': 'Farg\'ona',
+        'farmer_district': "Farg'ona",
+        'initial_count': 800,
         'current_count': 800,
       });
 
@@ -437,17 +508,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Botir aka'), findsOneWidget);
-      expect(find.text("Farg'ona | 800 bosh"), findsOneWidget);
+      expect(find.textContaining("Farg'ona"), findsWidgets);
+      expect(find.text("800 ta jo'ja"), findsOneWidget);
 
-      // Toggle to Russian
       await tester.tap(find.text('Русский'));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('app_language'), 'ru');
+      expect(find.text('Настройки'), findsOneWidget);
     });
 
-    testWidgets('16. Batch Setup when already onboarded routes directly to /home (Batch Reset Flow)', (tester) async {
+    testWidgets('16. New batch after reset (already onboarded) returns home', (tester) async {
       SharedPreferences.setMockInitialValues({
         'is_onboarded': true,
         'app_language': 'uz',
@@ -456,14 +528,9 @@ void main() {
       await tester.pumpWidget(createTestApp(const BatchSetupScreen()));
       await tester.pumpAndSettle();
 
-      final nameField = find.widgetWithText(TextFormField, 'Ismingiz / Ferma nomi');
-      final countField = find.widgetWithText(TextFormField, "Jo'jalar soni (bosh)");
-
-      await tester.enterText(nameField, 'Otabek Fermer');
-      await tester.enterText(countField, '750');
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Keyingisi'));
+      await tester.enterText(find.widgetWithText(TextFormField, 'Ismingiz'), 'Otabek Fermer');
+      await tester.enterText(find.widgetWithText(TextFormField, "Jo'jalar soni"), '750');
+      await tester.tap(find.text('Saqlash'));
       await tester.pumpAndSettle();
 
       final prefs = await SharedPreferences.getInstance();
@@ -471,70 +538,91 @@ void main() {
       expect(prefs.getInt('initial_count'), 750);
       expect(prefs.getInt('current_count'), 750);
       expect(find.text('HomeMock'), findsOneWidget);
-      expect(find.text('DisclaimerMock'), findsNothing);
     });
 
-    testWidgets('17. Diary Screen evaluates underweight alert and accurate start-of-day mortality rate', (tester) async {
-      final day14Arrival = DateTime.now().subtract(const Duration(days: 13));
-
-      // Part A: 1 death out of 100 start-of-day birds (current_count: 99, today_mortality: 1 -> 1.0% <= 1.0% threshold)
+    testWidgets('16b. Editing the batch size keeps the deaths already recorded', (tester) async {
       SharedPreferences.setMockInitialValues({
+        'is_onboarded': true,
+        'app_language': 'uz',
+        'farmer_name': 'Otabek',
+        'initial_count': 500,
+        'current_count': 490,
+        'arrival_date': _daysAgo(9),
+      });
+
+      await tester.pumpWidget(createTestApp(const BatchSetupScreen()));
+      await tester.pumpAndSettle();
+      expect(find.text("Partiya ma'lumotlari"), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextFormField, "Jo'jalar soni"), '600');
+      await tester.tap(find.text('Saqlash'));
+      await tester.pumpAndSettle();
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('initial_count'), 600);
+      expect(prefs.getInt('current_count'), 590);
+    });
+
+    testWidgets('17. Diary alerts use start-of-day mortality and low weight', (tester) async {
+      final base = {
         'counters_date': DailyCounters.todayStamp(),
         'app_language': 'uz',
         'initial_count': 100,
         'current_count': 99,
         'today_mortality': 1,
-        'last_weight': 0.0,
-        'arrival_date': day14Arrival.toIso8601String(),
-      });
+        'arrival_date': _daysAgo(13), // Day 14
+      };
 
+      // 1 of 100 start-of-day birds = 1.0% — not above the 1% threshold.
+      SharedPreferences.setMockInitialValues({...base, 'last_weight': 0.0});
       await tester.pumpWidget(createTestApp(const DiaryScreen()));
       await tester.pumpAndSettle();
-
-      // Should NOT trigger a false-positive high-mortality alert
       expect(find.byType(AlertCard), findsNothing);
 
-      // Part B: Severely underweight on Day 14 (350.0g vs 510g norm -> >15% deficit)
-      SharedPreferences.setMockInitialValues({
-        'counters_date': DailyCounters.todayStamp(),
-        'app_language': 'uz',
-        'initial_count': 100,
-        'current_count': 99,
-        'today_mortality': 1,
-        'last_weight': 350.0,
-        'arrival_date': day14Arrival.toIso8601String(),
-      });
-
-      await tester.pumpWidget(createTestApp(const DiaryScreen(key: ValueKey('diary_underweight'))));
+      // 350 g on day 14 (target 510 g) is more than 15% under.
+      SharedPreferences.setMockInitialValues({...base, 'last_weight': 350.0});
+      await tester.pumpWidget(createTestApp(const DiaryScreen(key: ValueKey('low'))));
       await tester.pumpAndSettle();
-
       expect(find.byType(AlertCard), findsOneWidget);
       expect(find.textContaining('350g'), findsOneWidget);
     });
 
-    testWidgets('18. English (en) Localization Flow on Dashboard & Quiz Explanation', (tester) async {
-      final now = DateTime.now();
+    testWidgets('17b. An old weighing is judged against the target of the day it was weighed', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'app_language': 'uz',
+        'initial_count': 100,
+        'current_count': 100,
+        'arrival_date': _daysAgo(13), // Day 14 (target 510 g)
+        'last_weight': 150.0, // weighed on day 6 (target 145 g)
+        'last_weight_day': 6,
+      });
+
+      await tester.pumpWidget(createTestApp(const DiaryScreen()));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertCard), findsNothing);
+    });
+
+    testWidgets('18. English: Today tab and quiz have no Uzbek leakage', (tester) async {
       SharedPreferences.setMockInitialValues({
         'is_onboarded': true,
         'app_language': 'en',
         'farmer_name': 'John Farmer',
         'farmer_district': 'Samarqand',
+        'location_prompt_resolved': true,
         'initial_count': 500,
         'current_count': 498,
-        'arrival_date': now.subtract(const Duration(days: 6)).toIso8601String(), // Day 7
+        'arrival_date': _daysAgo(6),
       });
 
       await tester.pumpWidget(createTestApp(const HomeScreen()));
       await tester.pumpAndSettle();
 
-      // Verify English greeting and telemetry labels without Uzbek leakage
       expect(find.text('Hello, John Farmer!'), findsOneWidget);
-      expect(find.text('Barn Temp'), findsOneWidget);
-      expect(find.text('Flock Survival'), findsOneWidget);
-      expect(find.text('Daily Care'), findsOneWidget);
+      expect(find.text("Today's targets"), findsOneWidget);
+      expect(find.text('House temperature'), findsOneWidget);
+      expect(find.text('Day 7 of 42'), findsOneWidget);
       expect(find.text('Assalomu alaykum, John Farmer!'), findsNothing);
 
-      // Pump QuizScreen(lessonId: 1) in English
       await tester.pumpWidget(createTestApp(const QuizScreen(lessonId: 1)));
       await tester.pumpAndSettle();
 
@@ -542,58 +630,56 @@ void main() {
         find.text('To what temperature should the barn be preheated 24 hours before chick arrival?'),
         findsOneWidget,
       );
-
       await tester.tap(find.text('33-34°C'));
       await tester.pumpAndSettle();
+      await tapVisible(tester, find.text('Check answer'));
 
-      await tester.tap(find.text('Check Answer'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Correct! Lesson completed successfully.'), findsOneWidget);
-      expect(
-        find.textContaining('Day-old chicks cannot regulate their own body temperature'),
-        findsOneWidget,
-      );
+      expect(find.text('Correct! Lesson complete.'), findsOneWidget);
+      expect(find.textContaining('Day-old chicks cannot regulate their own body temperature'), findsOneWidget);
     });
 
-    testWidgets('19. Single-Focus CourseListScreen allows inline 1-question check and direct step-by-step progression', (tester) async {
+    testWidgets('19. Calculators compute FCR from the diary and a profit estimate', (tester) async {
       SharedPreferences.setMockInitialValues({
-        'app_language': 'uz',
-        'completed_lessons': <String>[],
+        'app_language': 'en',
+        'initial_count': 1000,
+        'current_count': 1000,
+        'arrival_date': _daysAgo(34), // Day 35
+        'last_weight': 2480.0,
       });
 
-      await tester.pumpWidget(createTestApp(const CourseListScreen()));
+      await tester.pumpWidget(createTestApp(const ToolsScreen()));
       await tester.pumpAndSettle();
 
-      // Initially focuses on Step 1 with 3 simple rules
-      expect(find.text('Tugallandi: 0 / 5'), findsOneWidget);
-      expect(find.text("Jo'jalar kelishidan oldin xonani tayyorlash"), findsOneWidget);
-      expect(find.text('33–34°C'), findsOneWidget);
-
-      // Tap the primary button to open the inline 1-question check
-      final inlineQuizBtn = find.byKey(const ValueKey('start_inline_quiz_btn_1'));
-      await tester.ensureVisible(inlineQuizBtn);
-      await tester.tap(inlineQuizBtn);
+      expect(find.text('Enter weight and feed to see the result.'), findsOneWidget);
+      await tester.enterText(find.widgetWithText(TextField, 'Total feed given'), '3720');
       await tester.pumpAndSettle();
 
-      // Answer the Step 1 question inline
-      await tester.tap(find.text('33-34°C'));
+      // 3720 kg / (1000 × 2.48 kg) = 1.50
+      expect(find.text('1.50'), findsOneWidget);
+      expect(find.text('Net profit'), findsOneWidget);
+    });
+
+    testWidgets('19b. Calculators refuse to grade an impossible FCR from partial feed data', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'app_language': 'en',
+        'initial_count': 1000,
+        'current_count': 986,
+        'arrival_date': _daysAgo(13), // Day 14
+        'last_weight': 470.0,
+      });
+      await FarmStore.logFeed(30); // only one day of feed in the diary
+
+      await tester.pumpWidget(createTestApp(const ToolsScreen()));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Javobni tekshirish'));
+      // A partial diary total is not pre-filled as the batch total.
+      expect(find.widgetWithText(TextField, '30'), findsNothing);
+      expect(find.textContaining('13 days are missing'), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextField, 'Total feed given'), '116.5');
       await tester.pumpAndSettle();
-
-      expect(find.text("To'g'ri! 1-qadam bajarildi."), findsOneWidget);
-      expect(find.text('Tugallandi: 1 / 5'), findsOneWidget);
-
-      // Tap "Keyingi qadamga o'tish" to advance directly to Step 2 in place
-      final nextStepBtn = find.text("Keyingi qadamga o'tish");
-      await tester.ensureVisible(nextStepBtn);
-      await tester.tap(nextStepBtn);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Dastlabki 3 kun: hal qiluvchi davr'), findsOneWidget);
-      expect(find.text('8 soat / 80%'), findsOneWidget);
+      expect(find.textContaining("too low to be real"), findsOneWidget);
+      expect(find.text('EPEF'), findsNothing);
     });
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 
 /// Custom-crafted friendly vector icons and cartoonish badges for AgroZen.
 /// Eliminates raw emojis in favor of crisp, harmonious vector graphics that match
@@ -116,39 +117,6 @@ class _ChickPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ChickPainter oldDelegate) => oldDelegate.color != color;
-}
-
-/// A friendly plant / sprout vector icon.
-class AgroSproutIcon extends StatelessWidget {
-  final double size;
-  final Color? color;
-  final Color? backgroundColor;
-
-  const AgroSproutIcon({
-    super.key,
-    this.size = 28,
-    this.color,
-    this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = color ?? const Color(0xFF2D7A4C);
-    final bg = backgroundColor ?? const Color(0xFFEAF5ED);
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: bg,
-        shape: BoxShape.circle,
-        border: Border.all(color: fg.withAlpha(70), width: 1.5),
-      ),
-      child: Center(
-        child: Icon(Icons.eco_rounded, size: size * 0.58, color: fg),
-      ),
-    );
-  }
 }
 
 /// A crisp, uncropped 4:3 rounded-rectangle vector flag badge for UZ, RU, and EN.
@@ -313,8 +281,8 @@ class AgroProgressDots extends StatelessWidget {
     super.key,
     required this.currentStep,
     this.totalSteps = 4,
-    this.activeColor = const Color(0xFF16A34A),
-    this.inactiveColor = const Color(0xFFCBD5E1),
+    this.activeColor = AppColors.primary,
+    this.inactiveColor = AppColors.border,
     this.onDotTapped,
   });
 
@@ -340,63 +308,11 @@ class AgroProgressDots extends StatelessWidget {
                     ? activeColor
                     : (isPassed ? activeColor.withAlpha(110) : inactiveColor),
                 borderRadius: BorderRadius.circular(99),
-                boxShadow: isActive
-                    ? [
-                        BoxShadow(
-                          color: activeColor.withAlpha(80),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
               ),
             ),
           ),
         );
       }),
-    );
-  }
-}
-
-/// A friendly vector badge for status indicators.
-class AgroStatusBadge extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final Color color;
-  final Color backgroundColor;
-
-  const AgroStatusBadge({
-    super.key,
-    required this.icon,
-    required this.text,
-    required this.color,
-    required this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withAlpha(80), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 5),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

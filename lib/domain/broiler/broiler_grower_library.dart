@@ -258,17 +258,55 @@ class BroilerEfficiencyReport {
 class BroilerGrowerLibrary {
   BroilerGrowerLibrary._();
 
-  // Key Ross-308 benchmark anchor points (Day -> [WeightG, DailyFeedG, TempC])
-  static const Map<int, List<double>> _anchors = {
-    1: [42.0, 12.0, 33.5],
-    3: [72.0, 18.0, 32.0],
-    7: [185.0, 36.0, 30.0],
-    10: [305.0, 50.0, 28.5],
-    14: [510.0, 74.0, 26.5],
-    21: [1050.0, 118.0, 23.5],
-    28: [1720.0, 156.0, 21.0],
-    35: [2420.0, 188.0, 19.0],
-    42: [3080.0, 210.0, 18.0],
+  /// Per-day Ross-308 / Cobb-500 targets: [weightG, feedG/bird, waterMl/bird, houseTempC].
+  ///
+  /// This is a verbatim copy of `daily_norms` in `knowledge/norms.json` — the
+  /// same table the alert engine and the AI context read. Keeping one set of
+  /// numbers means every screen shows the farmer the same target.
+  /// `test/domain/norms_consistency_test.dart` fails if the two drift apart.
+  static const Map<int, List<double>> dailyNormsTable = {
+    1: [42.0, 12.0, 24.0, 32.5],
+    2: [55.0, 15.0, 30.0, 32.0],
+    3: [70.0, 17.0, 34.0, 31.5],
+    4: [90.0, 20.0, 40.0, 31.0],
+    5: [115.0, 22.0, 44.0, 30.5],
+    6: [145.0, 25.0, 50.0, 30.0],
+    7: [185.0, 27.0, 54.0, 29.5],
+    8: [215.0, 31.0, 62.0, 29.0],
+    9: [250.0, 35.0, 70.0, 28.5],
+    10: [295.0, 39.0, 78.0, 28.0],
+    11: [340.0, 43.0, 86.0, 27.6],
+    12: [395.0, 47.0, 94.0, 27.2],
+    13: [450.0, 51.0, 102.0, 26.8],
+    14: [510.0, 54.0, 108.0, 26.5],
+    15: [575.0, 60.0, 120.0, 26.0],
+    16: [645.0, 66.0, 132.0, 25.5],
+    17: [720.0, 72.0, 144.0, 25.0],
+    18: [800.0, 78.0, 156.0, 24.5],
+    19: [880.0, 85.0, 170.0, 24.0],
+    20: [965.0, 92.0, 184.0, 23.5],
+    21: [1055.0, 98.0, 196.0, 23.0],
+    22: [1145.0, 105.0, 210.0, 22.6],
+    23: [1240.0, 112.0, 224.0, 22.2],
+    24: [1335.0, 118.0, 236.0, 21.8],
+    25: [1435.0, 125.0, 250.0, 21.5],
+    26: [1535.0, 132.0, 264.0, 21.2],
+    27: [1640.0, 138.0, 276.0, 20.8],
+    28: [1745.0, 145.0, 290.0, 20.5],
+    29: [1850.0, 151.0, 302.0, 20.2],
+    30: [1955.0, 157.0, 314.0, 20.0],
+    31: [2060.0, 163.0, 326.0, 19.8],
+    32: [2165.0, 169.0, 338.0, 19.6],
+    33: [2270.0, 175.0, 350.0, 19.4],
+    34: [2375.0, 180.0, 360.0, 19.2],
+    35: [2480.0, 185.0, 370.0, 19.0],
+    36: [2580.0, 190.0, 380.0, 18.8],
+    37: [2680.0, 195.0, 390.0, 18.6],
+    38: [2775.0, 199.0, 398.0, 18.5],
+    39: [2870.0, 203.0, 406.0, 18.4],
+    40: [2960.0, 207.0, 414.0, 18.2],
+    41: [3045.0, 211.0, 422.0, 18.1],
+    42: [3125.0, 215.0, 430.0, 18.0],
   };
 
   static final List<BroilerDaySpec> _allDays = _build42DayMatrix();
@@ -288,16 +326,17 @@ class BroilerGrowerLibrary {
     double prevWeight = 42.0;
 
     for (int d = 1; d <= 42; d++) {
-      final weight = _interpolate(d, 0);
-      final feed = _interpolate(d, 1);
-      final temp = _interpolate(d, 2);
+      final row = dailyNormsTable[d]!;
+      final weight = row[0];
+      final feed = row[1];
+      final waterMl = row[2];
+      final temp = row[3];
 
       cumulativeFeed += feed;
       final gain = d == 1 ? 14.0 : math.max(14.0, weight - prevWeight);
       prevWeight = weight;
 
       final fcr = (cumulativeFeed / weight).clamp(0.28, 1.85);
-      final waterMl = feed * (d <= 7 ? 2.0 : 1.85);
 
       final String phaseKey;
       final double cp;
@@ -365,26 +404,6 @@ class BroilerGrowerLibrary {
     return specs;
   }
 
-  static double _interpolate(int day, int valueIdx) {
-    final keys = _anchors.keys.toList()..sort();
-    if (_anchors.containsKey(day)) {
-      return _anchors[day]![valueIdx];
-    }
-    int lowerDay = keys.first;
-    int upperDay = keys.last;
-    for (int i = 0; i < keys.length - 1; i++) {
-      if (day > keys[i] && day < keys[i + 1]) {
-        lowerDay = keys[i];
-        upperDay = keys[i + 1];
-        break;
-      }
-    }
-    final t = (day - lowerDay) / (upperDay - lowerDay);
-    final v0 = _anchors[lowerDay]![valueIdx];
-    final v1 = _anchors[upperDay]![valueIdx];
-    return v0 + (v1 - v0) * t;
-  }
-
   /// Calculates exact daily feed, water, drinker, feeder, and barn space requirements for [birdCount].
   static FlockDailyRequirements calculateFlockRequirements({
     required int day,
@@ -428,6 +447,17 @@ class BroilerGrowerLibrary {
   }
 
   /// Evaluates flock FCR and European Production Efficiency Factor (EPEF).
+
+  /// An FCR more than 30 % better than the day's own target is not
+  /// biologically achievable — it means the feed total is incomplete or the
+  /// weight is wrong, so it must not be graded. Relative to the target
+  /// (not a fixed number) because early in the cycle the target itself is
+  /// low: 0.29 on day 1, 0.75 on day 7, 0.86 on day 14, 1.43 on day 42.
+  static const double implausibleFcrRatio = 0.7;
+
+  static bool isPlausibleFcr({required int day, required double fcr}) =>
+      fcr >= specForDay(day).targetFcr * implausibleFcrRatio;
+
   static BroilerEfficiencyReport evaluateEfficiency({
     required int batchDay,
     required int initialCount,

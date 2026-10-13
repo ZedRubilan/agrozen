@@ -1,5 +1,42 @@
 import 'package:equatable/equatable.dart';
 
+/// What the sky actually looks like — drives the weather scene. Unlike
+/// `condition`, it never mixes in temperature ('hot' / 'cold' are clear skies).
+enum WeatherSky { clear, partlyCloudy, overcast, fog, rain, snow, storm }
+
+/// WMO weather code (Open-Meteo) → sky, or the legacy `condition` string
+/// when no code is stored (offline estimate, old cache).
+WeatherSky weatherSkyFor(int? code, String condition) {
+  if (code != null) {
+    if (code == 0) return WeatherSky.clear;
+    if (code == 1 || code == 2) return WeatherSky.partlyCloudy;
+    if (code == 3) return WeatherSky.overcast;
+    if (code == 45 || code == 48) return WeatherSky.fog;
+    if (code >= 95) return WeatherSky.storm;
+    if ((code >= 71 && code <= 77) || code == 85 || code == 86) {
+      return WeatherSky.snow;
+    }
+    if (code >= 51 && code <= 82) return WeatherSky.rain;
+    return WeatherSky.overcast;
+  }
+  switch (condition) {
+    case 'partly_cloudy':
+      return WeatherSky.partlyCloudy;
+    case 'cloudy':
+      return WeatherSky.overcast;
+    case 'fog':
+      return WeatherSky.fog;
+    case 'rain':
+      return WeatherSky.rain;
+    case 'snow':
+      return WeatherSky.snow;
+    case 'thunderstorm':
+      return WeatherSky.storm;
+    default: // clear, hot, cold
+      return WeatherSky.clear;
+  }
+}
+
 /// Represents a single day's outdoor weather summary (for D-2 through D+3).
 class WeatherForecastDay extends Equatable {
   final int dayOffset; // -2, -1, 0 (Today), +1, +2, +3
@@ -10,6 +47,12 @@ class WeatherForecastDay extends Equatable {
   final double windSpeed;
   final String condition;
 
+  /// WMO code from the API; null for synthesized days.
+  final int? weatherCode;
+
+  /// Highest chance of rain/snow that day, %; null when unknown.
+  final int? precipChance;
+
   const WeatherForecastDay({
     required this.dayOffset,
     required this.tempMax,
@@ -18,7 +61,11 @@ class WeatherForecastDay extends Equatable {
     required this.humidity,
     required this.windSpeed,
     required this.condition,
+    this.weatherCode,
+    this.precipChance,
   });
+
+  WeatherSky get sky => weatherSkyFor(weatherCode, condition);
 
   factory WeatherForecastDay.fromJson(Map<String, dynamic> json) {
     final maxT = (json['temp_max'] as num?)?.toDouble() ?? 25.0;
@@ -31,6 +78,8 @@ class WeatherForecastDay extends Equatable {
       humidity: (json['humidity'] as num?)?.toInt() ?? 45,
       windSpeed: (json['wind_speed'] as num?)?.toDouble() ?? 10.0,
       condition: json['condition'] as String? ?? 'clear',
+      weatherCode: (json['weather_code'] as num?)?.toInt(),
+      precipChance: (json['precip_chance'] as num?)?.toInt(),
     );
   }
 
@@ -42,6 +91,8 @@ class WeatherForecastDay extends Equatable {
         'humidity': humidity,
         'wind_speed': windSpeed,
         'condition': condition,
+        if (weatherCode != null) 'weather_code': weatherCode,
+        if (precipChance != null) 'precip_chance': precipChance,
       };
 
   @override
@@ -53,6 +104,8 @@ class WeatherForecastDay extends Equatable {
         humidity,
         windSpeed,
         condition,
+        weatherCode,
+        precipChance,
       ];
 }
 
@@ -70,6 +123,13 @@ class WeatherData extends Equatable {
   final bool isLive;
   final List<WeatherForecastDay> dailyForecast;
 
+  /// WMO code of the current weather; null for offline estimates.
+  final int? weatherCode;
+
+  /// Today's sunrise and sunset (local time) when the API supplied them.
+  final DateTime? sunrise;
+  final DateTime? sunset;
+
   const WeatherData({
     required this.district,
     this.locality,
@@ -83,7 +143,25 @@ class WeatherData extends Equatable {
     this.longitude,
     this.isLive = false,
     this.dailyForecast = const [],
+    this.weatherCode,
+    this.sunrise,
+    this.sunset,
   });
+
+  WeatherSky get sky => weatherSkyFor(weatherCode, condition);
+
+  /// Daylight right now — from today's sunrise/sunset when known (so a cached
+  /// reading still flips to night on time), else 06:00–19:00.
+  bool isDayAt(DateTime now) {
+    final rise = sunrise;
+    final set = sunset;
+    if (rise != null && set != null) {
+      final r = DateTime(now.year, now.month, now.day, rise.hour, rise.minute);
+      final s = DateTime(now.year, now.month, now.day, set.hour, set.minute);
+      return !now.isBefore(r) && now.isBefore(s);
+    }
+    return now.hour >= 6 && now.hour < 19;
+  }
 
   /// Regional climate modifiers across Uzbekistan's 13 provinces and key foothill districts
   /// so each area reflects its true geographic microclimate (temp offset °C, humidity offset %, wind km/h).
@@ -245,6 +323,10 @@ class WeatherData extends Equatable {
         if (isEn) return 'Thunderstorm';
         if (isRu) return 'Гроза';
         return 'Momaqaldiroq';
+      case 'fog':
+        if (isEn) return 'Fog';
+        if (isRu) return 'Туман';
+        return 'Tuman';
       case 'partly_cloudy':
         if (isEn) return 'Partly Cloudy';
         if (isRu) return 'Переменная облачность';
@@ -274,6 +356,9 @@ class WeatherData extends Equatable {
     double? longitude,
     bool? isLive,
     List<WeatherForecastDay>? dailyForecast,
+    int? weatherCode,
+    DateTime? sunrise,
+    DateTime? sunset,
   }) {
     return WeatherData(
       district: district ?? this.district,
@@ -288,6 +373,9 @@ class WeatherData extends Equatable {
       longitude: longitude ?? this.longitude,
       isLive: isLive ?? this.isLive,
       dailyForecast: dailyForecast ?? this.dailyForecast,
+      weatherCode: weatherCode ?? this.weatherCode,
+      sunrise: sunrise ?? this.sunrise,
+      sunset: sunset ?? this.sunset,
     );
   }
 
@@ -321,6 +409,9 @@ class WeatherData extends Equatable {
       longitude: (json['longitude'] as num?)?.toDouble(),
       isLive: json['is_live'] as bool? ?? false,
       dailyForecast: parsedForecast,
+      weatherCode: (json['weather_code'] as num?)?.toInt(),
+      sunrise: DateTime.tryParse(json['sunrise'] as String? ?? ''),
+      sunset: DateTime.tryParse(json['sunset'] as String? ?? ''),
     );
   }
 
@@ -338,6 +429,9 @@ class WeatherData extends Equatable {
         'is_live': isLive,
         if (dailyForecast.isNotEmpty)
           'daily_forecast': dailyForecast.map((f) => f.toJson()).toList(),
+        if (weatherCode != null) 'weather_code': weatherCode,
+        if (sunrise != null) 'sunrise': sunrise!.toIso8601String(),
+        if (sunset != null) 'sunset': sunset!.toIso8601String(),
       };
 
   @override
@@ -349,5 +443,6 @@ class WeatherData extends Equatable {
         windSpeed,
         condition,
         timestamp,
+        weatherCode,
       ];
 }

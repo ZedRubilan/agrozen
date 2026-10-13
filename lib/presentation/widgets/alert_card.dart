@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
 import '../../domain/alerts/alert_models.dart';
 import '../../services/external_actions.dart';
+import '../ui/components.dart';
 
+/// A flock alert (high mortality, low weight…) with a one-tap call to the
+/// district veterinarian. Treatment advice is always left to the vet.
 class AlertCard extends StatelessWidget {
   final String message;
   final AlertSeverity severity;
@@ -31,10 +33,10 @@ class AlertCard extends StatelessWidget {
   }) {
     final lower = locale.toLowerCase();
     final message = lower == 'en'
-        ? (alert.messageEn ?? alert.messageRu ?? 'Warning: Parameters deviated from target norms!')
+        ? (alert.messageEn ?? 'Parameters deviated from target norms.')
         : (lower == 'ru'
-            ? (alert.messageRu ?? 'Внимание: показатели отклонились от нормы!')
-            : (alert.messageUz ?? "Diqqat: ko'rsatkichlar me'yordan chetga chiqdi!"));
+            ? (alert.messageRu ?? 'Показатели отклонились от нормы.')
+            : (alert.messageUz ?? "Ko'rsatkichlar me'yordan chetga chiqdi."));
     return AlertCard(
       key: key,
       message: message,
@@ -49,140 +51,48 @@ class AlertCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCritical = severity == AlertSeverity.critical;
-    final effectiveLocale = (locale ?? 'uz').toLowerCase();
-    final isEn = effectiveLocale == 'en';
-    final isRu = effectiveLocale == 'ru';
-    final bgColor = isCritical ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
-    final borderColor = isCritical ? const Color(0xFFFCA5A5) : const Color(0xFFFCD34D);
-    final iconColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
-    final buttonColor = isCritical ? const Color(0xFFDC2626) : const Color(0xFFD97706);
+    final lang = (locale ?? 'uz').toLowerCase();
+    final isEn = lang == 'en';
+    final isRu = lang == 'ru';
 
-    final String headerTitle;
+    final String title;
     if (locale == null) {
-      headerTitle = isCritical ? 'XAVF! / ОПАСНОСТЬ!' : 'OGOHLANTIRISH / ПРЕДУПРЕЖДЕНИЕ';
+      title = isCritical ? 'XAVF! / ОПАСНОСТЬ!' : 'OGOHLANTIRISH / ПРЕДУПРЕЖДЕНИЕ';
     } else if (isEn) {
-      headerTitle = isCritical ? 'CRITICAL ALERT' : 'WARNING';
+      title = isCritical ? 'CRITICAL ALERT' : 'WARNING';
     } else if (isRu) {
-      headerTitle = isCritical ? 'ОПАСНОСТЬ!' : 'ПРЕДУПРЕЖДЕНИЕ';
+      title = isCritical ? 'ОПАСНОСТЬ!' : 'ПРЕДУПРЕЖДЕНИЕ';
     } else {
-      headerTitle = isCritical ? 'XAVF!' : 'OGOHLANTIRISH';
+      title = isCritical ? 'XAVF!' : 'OGOHLANTIRISH';
     }
 
     final callLabel = isEn
-        ? (vetPhone != null ? "Call: $vetPhone" : "Call District Veterinarian")
+        ? 'Call vet${vetName != null ? ' · $vetName' : ''}'
         : (isRu
-            ? (vetPhone != null ? "Звонок: $vetPhone" : "Позвонить ветеринару")
-            : (vetPhone != null ? "Qo'ng'iroq: $vetPhone" : "Veterinarga qo'ng'iroq"));
+            ? 'Позвонить ветеринару${vetName != null ? ' · $vetName' : ''}'
+            : "Veterinarga qo'ng'iroq${vetName != null ? ' · $vetName' : ''}");
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: borderColor, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: iconColor.withAlpha(25),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+    final canCall = onCallVet != null || (vetPhone != null && vetPhone!.isNotEmpty);
+    final tone = isCritical ? Tone.danger : Tone.warning;
+
+    return NoticeBanner(
+      tone: tone,
+      icon: Icons.warning_amber_rounded,
+      title: title,
+      message: message,
+      actions: [
+        if (canCall)
+          FilledButton.icon(
+            onPressed: onCallVet ??
+                () => const ExternalActions().callPhone(context, vetPhone!),
+            style: FilledButton.styleFrom(
+              backgroundColor: tone.foreground,
+              minimumSize: const Size(0, 44),
+            ),
+            icon: const Icon(Icons.phone_in_talk, size: 18),
+            label: Text(callLabel),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: iconColor.withAlpha(20),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isCritical ? Icons.error_rounded : Icons.warning_amber_rounded,
-                    color: iconColor,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    headerTitle,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
-                      color: iconColor,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.textPrimary,
-                height: 1.45,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (vetPhone != null || onCallVet != null) ...[
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: onCallVet ??
-                      () async {
-                        final phone = vetPhone;
-                        if (phone != null && phone.isNotEmpty) {
-                          await const ExternalActions()
-                              .callPhone(context, phone);
-                          return;
-                        }
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: Text(isEn
-                                ? "Contact Veterinarian"
-                                : (isRu ? "Связаться с ветеринаром" : "Veterinar bilan bog'lanish")),
-                            content: Text(
-                              "${vetName ?? (isEn ? 'District Veterinarian' : (isRu ? 'Районный ветеринар' : 'Hududiy veterinar'))}\n"
-                              "${isEn ? 'Phone' : (isRu ? 'Телефон' : 'Telefon')}: ${vetPhone ?? '+998 90 123 45 67'}",
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx),
-                                child: Text(isEn ? "Close" : (isRu ? "Закрыть" : "Yopish")),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: buttonColor,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    ),
-                  ),
-                  icon: const Icon(Icons.phone_in_talk, size: 18),
-                  label: Text(
-                    callLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+      ],
     );
   }
 }

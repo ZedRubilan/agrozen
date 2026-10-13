@@ -1,13 +1,15 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../config/theme.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../services/external_actions.dart';
-import '../../widgets/tactile_button.dart';
+import '../../../services/lesson_progress.dart';
+import '../../ui/components.dart';
 import 'course_guide_data.dart';
+import 'lesson_look.dart';
 
+/// One lesson: the key rules, the takeaway, a short note and the quiz.
 class LessonScreen extends StatefulWidget {
   final int lessonId;
 
@@ -19,400 +21,379 @@ class LessonScreen extends StatefulWidget {
 
 class _LessonScreenState extends State<LessonScreen> {
   String _lang = 'uz';
-  bool _isLoading = true;
-  String? _jsonDetailContent;
-  String? _videoUrl;
-  bool _showDetailedNotes = false;
+  bool _passed = false;
+  bool _loaded = false;
+
+  String _t(String uz, String ru, String en) =>
+      AppStrings.tr(lang: _lang, uz: uz, ru: ru, en: en);
 
   @override
   void initState() {
     super.initState();
-    _loadLang();
+    _load();
   }
 
-  Future<void> _loadLang() async {
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final lang = CourseGuideData.normalizeLang(
-      prefs.getString('app_language') ?? 'uz',
-    );
+    final done = await LessonProgress.completed();
     if (!mounted) return;
     setState(() {
-      _lang = lang;
-      _isLoading = false;
-    });
-    _loadRichJsonLesson(lang);
-  }
-
-  Future<void> _loadRichJsonLesson(String lang) async {
-    final folder = lang == 'en' ? 'en' : (lang == 'ru' ? 'ru' : 'uz');
-    try {
-      final raw = await rootBundle.loadString(
-        'knowledge/course/$folder/lesson_${widget.lessonId}.json',
+      _lang = CourseGuideData.normalizeLang(
+        prefs.getString('app_language') ?? 'uz',
       );
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      if (!mounted) return;
-      setState(() {
-        _jsonDetailContent = map['content'] as String?;
-        _videoUrl = map['video_url'] as String?;
-      });
-    } catch (_) {
-      // Fallback gracefully if asset cannot be loaded in isolated test environments.
-    }
+      _passed = done.contains(widget.lessonId);
+      _loaded = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final module = CourseGuideData.getModule(widget.lessonId, _lang);
-    final videoUrl = _videoUrl ?? module.videoUrl;
-
-    final lessonBadge = AppStrings.tr(
-      lang: _lang,
-      uz: '${widget.lessonId}-dars (5 tadan)',
-      ru: 'Урок ${widget.lessonId} из 5',
-      en: 'Lesson ${widget.lessonId} of 5',
-    );
+    final id = widget.lessonId.clamp(1, LessonProgress.totalLessons);
+    final module = CourseGuideData.getModule(id, _lang);
+    final (icon, color) = lessonLook(id);
+    var i = 0;
+    Widget reveal(Widget child) => Reveal(index: i++, child: child);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F4),
       appBar: AppBar(
         title: Text(
-          lessonBadge,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+          _t('$id-dars (5 tadan)', 'Урок $id из 5', 'Lesson $id of 5'),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+      body: !_loaded
+          ? const LoadingView()
+          : PageBody(
+              children: [
+                reveal(_buildHero(module, icon, color)),
+                const Gap(AppSpace.xl),
+                reveal(
+                  SectionHeader(
+                    title: _t(
+                      'Asosiy qoidalar',
+                      'Главные правила',
+                      'Key rules',
+                    ),
+                  ),
+                ),
+                for (var p = 0; p < module.keyPoints.length; p++) ...[
+                  if (p > 0) const Gap(),
+                  reveal(_buildPoint(p + 1, module.keyPoints[p], color)),
+                ],
+                const Gap(AppSpace.lg),
+                reveal(
+                  _WhyCard(
+                    title: _t(
+                      'Nega bu muhim',
+                      'Почему это важно',
+                      'Why it matters',
+                    ),
+                    message: module.farmerTakeaway,
+                  ),
+                ),
+                const Gap(AppSpace.xl),
+                reveal(
+                  SectionHeader(
+                    title: _t('Batafsil', 'Подробнее', 'More detail'),
+                  ),
+                ),
+                reveal(
+                  AppCard(
+                    child: Text(module.detailedNote, style: AppText.body),
+                  ),
+                ),
+                const Gap(),
+                reveal(
+                  _VideoCard(
+                    label: _t(
+                      "Videoni ko'rish",
+                      'Смотреть видео',
+                      'Watch video',
+                    ),
+                    onTap: () => const ExternalActions().openVideo(
+                      context,
+                      module.videoUrl,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+      bottomNavigationBar: !_loaded
+          ? null
           : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+              minimum: const EdgeInsets.fromLTRB(
+                AppSpace.screen,
+                AppSpace.sm,
+                AppSpace.screen,
+                AppSpace.lg,
+              ),
+              child: PrimaryButton(
+                icon: Icons.quiz_rounded,
+                label: _passed
+                    ? _t(
+                        'Testni qayta topshirish',
+                        'Пройти тест ещё раз',
+                        'Retake the quiz',
+                      )
+                    : _t('Testni boshlash', 'Начать тест', 'Take the quiz'),
+                onPressed: () async {
+                  await context.push('/course/$id/quiz');
+                  if (mounted) _load();
+                },
+              ),
+            ),
+    );
+  }
+
+  /// Lesson-coloured card: big icon tile, title, subtitle, duration, passed.
+  Widget _buildHero(CourseModuleGuide module, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.lg),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color, Color.lerp(color, Colors.black, 0.25)!],
+        ),
+        boxShadow: AppShadow.glow(color),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(56),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(icon, color: Colors.white, size: 32),
+              ),
+              const Spacer(),
+              GlassPill(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withAlpha(25),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: theme.colorScheme.primary.withAlpha(50),
-                            ),
-                          ),
-                          child: Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: '3 ASOSIY QOIDA',
-                              ru: '3 ГЛАВНЫХ ПРАВИЛА',
-                              en: '3 GOLDEN RULES',
-                            ),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: theme.colorScheme.primary,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () =>
-                              const ExternalActions().openVideo(context, videoUrl),
-                          icon: const Icon(
-                            Icons.play_circle_fill_rounded,
-                            size: 18,
-                            color: Color(0xFFDC2626),
-                          ),
-                          label: Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: "Videodarsni ko'rish",
-                              ru: 'Смотреть видеоурок',
-                              en: 'Watch Video Guide',
-                            ),
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+                    const Icon(Icons.schedule_rounded, size: 14),
+                    const SizedBox(width: 4),
                     Text(
-                      module.title,
-                      style: const TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                        height: 1.25,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      module.subtitle,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF52665A),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // 3 Scannable Rule Cards
-                            ...module.keyPoints.map((point) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 10.0),
-                                child: Container(
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(
-                                      color: const Color(0xFFE2EBE4),
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEAF5ED),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          point.icon,
-                                          size: 20,
-                                          color: const Color(0xFF15803D),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        const Color(0xFF15803D),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            7),
-                                                  ),
-                                                  child: Text(
-                                                    point.badge,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w900,
-                                                      fontSize: 11,
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    point.title,
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                      fontSize: 14,
-                                                      color: Color(0xFF0F172A),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Text(
-                                              point.description,
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                height: 1.4,
-                                                color: Color(0xFF334155),
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }),
-
-                            // Farmer Takeaway Box
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFFBEB),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(0xFFFDE68A),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.lightbulb_rounded,
-                                    color: Color(0xFFD97706),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      module.farmerTakeaway,
-                                      style: const TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF92400E),
-                                        height: 1.35,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Optional Expandable Full Manual Text
-                            InkWell(
-                              onTap: () => setState(
-                                () => _showDetailedNotes = !_showDetailedNotes,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 11,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: const Color(0xFFE2EBE4),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          AppStrings.tr(
-                                            lang: _lang,
-                                            uz: "Batafsil Ross-308 qo'llanmasi",
-                                            ru: 'Подробная памятка Ross-308',
-                                            en: 'Detailed Ross-308 Manual Note',
-                                          ),
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w800,
-                                            color: Color(0xFF15803D),
-                                          ),
-                                        ),
-                                        Icon(
-                                          _showDetailedNotes
-                                              ? Icons.keyboard_arrow_up_rounded
-                                              : Icons
-                                                  .keyboard_arrow_down_rounded,
-                                          size: 20,
-                                          color: const Color(0xFF15803D),
-                                        ),
-                                      ],
-                                    ),
-                                    if (_showDetailedNotes) ...[
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        _jsonDetailContent?.isNotEmpty == true
-                                            ? _jsonDetailContent!
-                                            : module.detailedNote,
-                                        style: const TextStyle(
-                                          fontSize: 13.5,
-                                          height: 1.55,
-                                          color: Color(0xFF334155),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    TactileButton(
-                      height: 56,
-                      depth: 4,
-                      borderRadius: 18,
-                      backgroundColor: theme.colorScheme.primary,
-                      shadowColor: const Color(0xFF1B4E31),
-                      onPressed: () =>
-                          context.push('/course/${widget.lessonId}/quiz'),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.quiz_rounded,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            AppStrings.tr(
-                              lang: _lang,
-                              uz: 'Dars testini topshirish',
-                              ru: 'Пройти тест урока',
-                              en: 'Take Lesson Quiz',
-                            ),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Colors.white70,
-                            size: 18,
-                          ),
-                        ],
-                      ),
+                      module.durationLabel,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ],
                 ),
               ),
+              if (_passed) ...[
+                const SizedBox(width: AppSpace.xs),
+                GlassPill(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_rounded, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        _t("O'tildi", 'Пройден', 'Passed'),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpace.lg),
+          Text(
+            module.title,
+            style: AppText.screenTitle.copyWith(
+              color: Colors.white,
+              fontSize: 22,
             ),
+          ),
+          const SizedBox(height: AppSpace.xs),
+          Text(
+            module.subtitle,
+            style: AppText.bodyMuted.copyWith(
+              color: Colors.white.withAlpha(225),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPoint(int n, CourseRulePoint point, Color color) {
+    return AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(36),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(point.icon, color: color, size: 24),
+              ),
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.surface, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$n',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(point.title, style: AppText.cardTitle),
+                const SizedBox(height: AppSpace.xs),
+                StatusPill(label: point.badge, tone: Tone.warning),
+                const SizedBox(height: AppSpace.sm),
+                Text(
+                  point.description,
+                  style: AppText.bodyMuted.copyWith(color: AppColors.ink),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Soft green "why it matters" card with a lightbulb disc.
+class _WhyCard extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const _WhyCard({required this.title, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.lg),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primarySoft, Color(0xFFF4FBF6)],
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+              boxShadow: AppShadow.glow(AppColors.primary),
+            ),
+            child: const Icon(
+              Icons.lightbulb_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppText.cardTitle),
+                const SizedBox(height: AppSpace.xs),
+                Text(message, style: AppText.body),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Photo card with a big white play button.
+class _VideoCard extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _VideoCard({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: onTap,
+        child: PhotoCard(
+          image: 'assets/images/chick_starter.jpg',
+          child: SizedBox(
+            height: 110,
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: AppShadow.raised,
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: AppColors.primaryDark,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(width: AppSpace.lg),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppText.section.copyWith(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

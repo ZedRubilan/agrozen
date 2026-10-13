@@ -1,12 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/theme.dart';
 import '../widgets/agro_icons.dart';
 
-/// Instantaneous entry handoff screen:
-/// Zero loading spinners or artificial delays — immediately routes to `/home`
-/// (if onboarded) or `/onboarding/language` (the full-screen Welcome & Language experience).
+/// Hands off instantly: to `/home` when onboarded, otherwise to onboarding.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -18,83 +16,49 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _routeImmediately();
+    _route();
   }
 
-  Future<void> _routeImmediately() async {
-    // Allow initial frame mount, then transition instantaneously without any loading delay
+  Future<void> _route() async {
+    // Let the first frame mount, then move on without any artificial delay.
     await Future<void>.delayed(const Duration(milliseconds: 16));
     if (!mounted) return;
-
+    var onboarded = false;
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (!mounted) return;
-      final isOnboarded = prefs.getBool('is_onboarded') ?? false;
-      if (isOnboarded) {
-        context.go('/home');
-      } else {
-        context.go('/onboarding/language');
-      }
-    } catch (_) {
-      if (!mounted) return;
-      context.go('/onboarding/language');
-    }
+      onboarded = prefs.getBool('is_onboarded') ?? false;
+    } catch (_) {}
+    if (!mounted) return;
+    context.go(onboarded ? '/home' : '/onboarding/language');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B2214),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/images/sunset_farm.jpg',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const ColoredBox(
-              color: Color(0xFF0B2214),
-            ),
+      backgroundColor: AppColors.primaryDark,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            radius: 0.9,
+            colors: [AppColors.primary, AppColors.heroShade],
           ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF0B2214).withAlpha(190),
-                  const Color(0xFF0B2214).withAlpha(235),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AgroChickIcon(size: 88),
+              const SizedBox(height: AppSpace.lg),
+              Text(
+                'AgroZen',
+                style: AppText.screenTitle.copyWith(
+                  color: Colors.white,
+                  fontSize: 32,
+                ),
               ),
-            ),
+            ],
           ),
-          SafeArea(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const AgroChickIcon(size: 88),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'AgroZen',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const AgroProgressDots(
-                    currentStep: 0,
-                    totalSteps: 4,
-                    activeColor: Color(0xFF34D399),
-                    inactiveColor: Color(0x55FFFFFF),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

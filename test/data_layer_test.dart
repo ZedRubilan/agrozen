@@ -48,10 +48,11 @@ void main() {
       expect(AppConstants.districts, contains('Toshkent'));
     });
 
-    testWidgets('AppTheme defines primary and secondary farming palette', (tester) async {
+    testWidgets('AppTheme is built from the AgroZen design tokens', (tester) async {
       final theme = AppTheme.lightTheme;
-      expect(theme.colorScheme.primary, AppTheme.primaryGreen);
-      expect(theme.colorScheme.secondary, AppTheme.secondaryBrown);
+      expect(theme.colorScheme.primary, AppColors.primary);
+      expect(theme.colorScheme.secondary, AppColors.primaryDark);
+      expect(theme.scaffoldBackgroundColor, AppColors.background);
       expect(theme.useMaterial3, true);
     });
   });

@@ -1,4 +1,6 @@
+import '../config/constants.dart';
 import '../data/models/weather_data.dart';
+import '../domain/broiler/broiler_grower_library.dart';
 import '../data/repositories/knowledge_repository.dart';
 import '../domain/alerts/alert_models.dart';
 import '../domain/scheduler/day_calculator.dart';
@@ -206,7 +208,8 @@ class FlockContextService {
     final prefs = await DailyCounters.rolled();
 
     final farmerName = prefs.getString('farmer_name') ?? 'Fermer';
-    final district = prefs.getString('farmer_district') ?? 'Toshkent';
+    final district =
+        prefs.getString('farmer_district') ?? AppConstants.defaultDistrict;
     final language = prefs.getString('app_language') ?? 'uz';
     final initialCount = prefs.getInt('initial_count') ?? 500;
     final currentCount = prefs.getInt('current_count') ?? initialCount;
@@ -230,17 +233,17 @@ class FlockContextService {
     }
 
     // Target Temperature
-    final targetTemp = norms?.temperatureTargetForDay(batchDay) ??
-        _fallbackTempForDay(batchDay);
+    // Fallbacks come from the same norms table (BroilerGrowerLibrary mirrors
+    // knowledge/norms.json), so the AI never sees different numbers.
+    final spec = BroilerGrowerLibrary.specForDay(batchDay);
+    final targetTemp =
+        norms?.temperatureTargetForDay(batchDay) ?? spec.targetTempC;
+    final targetWeightG =
+        norms?.weightTargetForDay(batchDay) ?? spec.targetWeightG;
+    final targetDailyFeedPerBirdG =
+        norms?.feedTargetForDay(batchDay) ?? spec.dailyFeedPerBirdG;
 
-    final targetWeightG = norms?.weightTargetForDay(batchDay) ??
-        _fallbackTargetWeight(batchDay);
-
-    final targetDailyFeedPerBirdG = norms?.feedTargetForDay(batchDay) ??
-        _fallbackDailyFeedPerBird(batchDay);
-
-    // Growth Phase
-    final growthPhase = _resolveGrowthPhase(batchDay, language);
+    final growthPhase = spec.phaseTitle(language);
 
     // Local Vet
     Map<String, dynamic>? localVet;
@@ -284,44 +287,5 @@ class FlockContextService {
       weatherCondition: weather.condition,
       windSpeed: weather.windSpeed,
     );
-  }
-
-  static String _resolveGrowthPhase(int day, String lang) {
-    if (day <= 7) {
-      return lang == 'en' ? 'Starter' : (lang == 'ru' ? 'Старт (1-7 дни)' : "Start (1-7 kunlar)");
-    } else if (day <= 21) {
-      return lang == 'en' ? 'Grower' : (lang == 'ru' ? 'Рост (8-21 дни)' : "O'sish (8-21 kunlar)");
-    } else {
-      return lang == 'en' ? 'Finisher' : (lang == 'ru' ? 'Финиш (22-42 дни)' : "Finish (22-42 kunlar)");
-    }
-  }
-
-  static double _fallbackTempForDay(int day) {
-    if (day <= 2) return 34.0;
-    if (day <= 4) return 33.0;
-    if (day <= 7) return 30.0;
-    if (day <= 14) return 27.0;
-    if (day <= 21) return 24.0;
-    if (day <= 28) return 21.0;
-    if (day <= 35) return 19.0;
-    return 18.0;
-  }
-
-  static double _fallbackDailyFeedPerBird(int day) {
-    if (day <= 7) return 24.0;
-    if (day <= 14) return 54.0;
-    if (day <= 21) return 95.0;
-    if (day <= 28) return 140.0;
-    if (day <= 35) return 175.0;
-    return 195.0;
-  }
-
-  static double _fallbackTargetWeight(int day) {
-    if (day <= 7) return 185.0;
-    if (day <= 14) return 465.0;
-    if (day <= 21) return 975.0;
-    if (day <= 28) return 1600.0;
-    if (day <= 35) return 2280.0;
-    return 2900.0;
   }
 }
