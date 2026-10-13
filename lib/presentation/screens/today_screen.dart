@@ -9,6 +9,7 @@ import '../../domain/alerts/alert_models.dart';
 import '../../services/external_actions.dart';
 import '../../services/farm_store.dart';
 import '../../services/location_service.dart';
+import '../ui/broiler_photos.dart';
 import '../ui/components.dart';
 import '../ui/format.dart';
 import '../widgets/agro_icons.dart';
@@ -304,7 +305,7 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
             child: Stack(
               children: [
-                const Positioned.fill(child: _HeroPhoto()),
+                Positioned.fill(child: _HeroPhoto(day: farm.batchDay)),
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     AppSpace.screen,
@@ -642,10 +643,13 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 }
 
-/// Barn photo behind the Today header, with a gentle one-time zoom-out and a
+/// Photo of a broiler house at the flock's age (chicks, growers or finished
+/// birds) behind the Today header, with a gentle one-time zoom-out and a
 /// deep green shade so white text stays readable in bright sunlight.
 class _HeroPhoto extends StatelessWidget {
-  const _HeroPhoto();
+  final int day;
+
+  const _HeroPhoto({required this.day});
 
   @override
   Widget build(BuildContext context) {
@@ -661,7 +665,7 @@ class _HeroPhoto extends StatelessWidget {
           builder: (context, scale, child) =>
               Transform.scale(scale: scale, child: child),
           child: Image.asset(
-            'assets/images/chick_starter.jpg',
+            BroilerPhotos.forDay(day),
             fit: BoxFit.cover,
             alignment: const Alignment(0, 0.2),
             errorBuilder: (_, __, ___) => const SizedBox.shrink(),

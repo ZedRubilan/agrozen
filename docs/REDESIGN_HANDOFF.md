@@ -1,13 +1,13 @@
 # AgroZen redesign — handoff
 
-Status as of 2026-10-13. Read this first when picking the work up in a new session.
+Status as of 2026-10-13 (broiler photos done). Read this first when picking the work up in a new session.
 
 ## Where the work is
 
 - **Branch:** `redesign/photo-led-ui` (pushed to `origin`, https://github.com/ZedRubilan/agrozen). **Not merged to `main` yet.**
 - **Commits:** `0540fe3` holds the whole redesign; this handoff file is the next commit.
 - **Release APK:** pushing or merging to `main` triggers `.github/workflows/android-release.yml`, which builds the APK and publishes a GitHub Release. To build locally instead, run `flutter build apk --release`. Output: `build/app/outputs/flutter-apk/app-release.apk` (about 64 MB).
-- **State at handoff:** `flutter analyze` is clean and `flutter test` passes all 236 tests.
+- **State at handoff:** `flutter analyze` is clean and `flutter test` passes all 242 tests.
 - **Not committed on purpose:** `zenustoz-main.zip` belongs to a different project ("ZenUstoz").
 
 ## Project rules (from `AGENTS.md`)
@@ -47,46 +47,20 @@ Status as of 2026-10-13. Read this first when picking the work up in a new sessi
   - Widget test harnesses run with `disableAnimations: true`. The weather scene loops forever, so `pumpAndSettle` would otherwise hang.
   - New tests: `test/services/weather_sky_test.dart` and the FCR group in `test/broiler_grower_library_test.dart`.
 
-## Next task: real broiler photos (not started in code)
+## Done: real broiler photos
 
-Goal: replace the unsuitable photo and make the Today hero follow the flock's age.
-
-- `assets/images/broiler_flock.jpg` is a brown **laying hen**, not a broiler. It is currently unused; drop it or replace it.
-- Today hero (`_HeroPhoto` in `lib/presentation/screens/today_screen.dart`) always uses `chick_starter.jpg`. Plan: choose the photo by `farm.spec.phaseKey`:
-  - starter: chicks;
-  - grower: 2–3-week-old broilers;
-  - finisher: grown white broilers.
-- Other places that could use better photos:
-  - `PhotoCard`s in Learn (`sunset_farm.jpg`), Settings, the Assistant "check a photo" card, and the lesson video card;
-  - the onboarding batch preview.
-
-Candidates from Wikimedia Commons. **Look at each one before use** (I only shortlisted them by title and licence).
-
-| File | Licence | Author | Page |
-|---|---|---|---|
-| Baby chickens in a grower broiler house. (24481449624).jpg | Public domain | USDA NRCS Texas | https://commons.wikimedia.org/wiki/File:Baby_chickens_in_a_grower_broiler_house._(24481449624).jpg |
-| Baby chickens in a grower broiler house. (24485263333).jpg | Public domain | USDA NRCS Texas | https://commons.wikimedia.org/wiki/File:Baby_chickens_in_a_grower_broiler_house._(24485263333).jpg |
-| Baby chickens in a grower broiler house. (24744460509).jpg | Public domain | USDA NRCS Texas | https://commons.wikimedia.org/wiki/File:Baby_chickens_in_a_grower_broiler_house._(24744460509).jpg |
-| Baby chickens in a grower broiler house. (24993924222).jpg | Public domain | USDA NRCS Texas | https://commons.wikimedia.org/wiki/File:Baby_chickens_in_a_grower_broiler_house._(24993924222).jpg |
-| Baby chickens in a grower broiler house. (25018838441).jpg | Public domain | USDA NRCS Texas | https://commons.wikimedia.org/wiki/File:Baby_chickens_in_a_grower_broiler_house._(25018838441).jpg |
-| Baby chickens in a grower broiler house. (25112103855).jpg | Public domain | USDA NRCS Texas | https://commons.wikimedia.org/wiki/File:Baby_chickens_in_a_grower_broiler_house._(25112103855).jpg |
-| Broiler Chicken at a farm.jpg | CC BY-SA 4.0 | Umar2z | https://commons.wikimedia.org/wiki/File:Broiler_Chicken_at_a_farm.jpg |
-| Broiler Chickens 001.jpg | CC BY-SA 4.0 | Icem4k | https://commons.wikimedia.org/wiki/File:Broiler_Chickens_001.jpg |
-| Broiler Chickens 002.jpg | CC BY-SA 4.0 | Icem4k | https://commons.wikimedia.org/wiki/File:Broiler_Chickens_002.jpg |
-| Broiler Chicks.jpg | CC BY-SA 4.0 | Ibgroup2018 | https://commons.wikimedia.org/wiki/File:Broiler_Chicks.jpg |
-| Broiler chicks Armenia 01.jpg | CC BY-SA 4.0 | Narek Avetisyan | https://commons.wikimedia.org/wiki/File:Broiler_chicks_Armenia_01.jpg |
-| Broiler chicks Armenia 02.jpg | CC BY-SA 4.0 | Narek Avetisyan | https://commons.wikimedia.org/wiki/File:Broiler_chicks_Armenia_02.jpg |
-| Broiler chicks around a week old.jpg | CC BY-SA 4.0 | Shadow Ayush | https://commons.wikimedia.org/wiki/File:Broiler_chicks_around_a_week_old.jpg |
-| Image of 8 weeks old broiler chicken.jpg | CC BY-SA 4.0 | AJ.Adekunle | https://commons.wikimedia.org/wiki/File:Image_of_8_weeks_old_broiler_chicken.jpg |
-
-Steps:
-
-1. **Find the files.** Search with the Commons API: `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrsearch=broiler%20chickens&prop=imageinfo&iiprop=url|size|extmetadata|mime&iiurlwidth=640`. Each result's `imageinfo.thumburl` gives a resized copy.
-2. **Download and check.** Download into a fresh folder, look at every image, and pick the ones that clearly show broilers in a clean house.
-3. **Optimise.** Resize to about 1200 px on the long side with JPEG quality about 80 (each file under about 250 KB), then save to `assets/images/`.
-4. **Credit CC BY-SA photos.** For each one, add a credit (title, author, licence, link) to a new `assets/images/CREDITS.md`, and show credits in Settings → About. Public-domain photos need no credit.
-5. **Wire them in.** Make the phase-based hero, update `DESIGN.md` (section 4, Photos), then run `flutter analyze` and `flutter test`.
-6. **Ship.** Commit to `redesign/photo-led-ui`, push, then rebuild the APK.
+- **Photos** (all from Wikimedia Commons, about 1200 px wide, under 250 KB each):
+  - `broiler_starter.jpg`: chicks along a feeder line (USDA NRCS Texas, public domain);
+  - `broiler_grower.jpg`: white 2–3-week birds (Icem4k, CC BY-SA 4.0);
+  - `broiler_finisher.jpg`: grown broilers in a modern house (USDA, Bob Nichols, public domain).
+- **Deleted:** `broiler_flock.jpg` (it showed a laying hen and nothing used it).
+- **Code:** `BroilerPhotos.forDay(day)` in `lib/presentation/ui/broiler_photos.dart` maps the Ross-308 phase to a photo (days 1–10, 11–24, 25–42).
+  - Used by the Today hero, the Settings profile card and the onboarding batch preview.
+  - The Learn course card uses the finisher photo.
+- **Credits:** listed in `assets/images/CREDITS.md` and in `PhotoCredit.all`. Settings → About → *Photo credits* shows them in a dialog; tapping a row opens its Commons page (`ExternalActions.openLink`).
+- **Tests:** `test/presentation/broiler_photos_test.dart` checks the phase mapping, that each file exists and is under 250 KB, and that every photo is credited. The suite now has 242 tests.
+- **Still on older photos:** `chick_starter.jpg` (Assistant "check a photo", lesson video card) and `sunset_farm.jpg` (onboarding language hero). Their source and licence are not recorded anywhere. Replace them with credited Commons photos if that matters.
+- **Unused candidates:** the original search list is in git history (commit `99ef5bc`). Other good finds: `20130822-OC-RBN-2957` (USDA, public domain, finisher house with a farmer) and `Broiler Chicks.jpg` (Ibgroup2018, CC BY-SA 4.0, modern house with young birds). The Commons API rate-limits quickly; leave about a second between requests.
 
 ## Other open items
 

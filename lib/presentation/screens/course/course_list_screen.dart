@@ -5,6 +5,7 @@ import '../../../config/theme.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../services/farm_store.dart';
 import '../../../services/lesson_progress.dart';
+import '../../ui/broiler_photos.dart';
 import '../../ui/components.dart';
 import '../home_screen.dart';
 import 'course_guide_data.dart';
@@ -161,8 +162,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
     final next = LessonProgress.nextLesson(done);
     final finished = next == null;
     return PhotoCard(
-      image: 'assets/images/sunset_farm.jpg',
-      imageAlignment: const Alignment(0, 0.3),
+      image: BroilerPhotos.finisher,
       padding: const EdgeInsets.all(AppSpace.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

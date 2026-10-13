@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Opens external apps: the phone dialer for vets, the browser for videos.
+/// Opens external apps: the phone dialer for vets, the browser for videos
+/// and web links.
 ///
-/// Small and testable on purpose: every caller in the app goes through these
-/// two methods, so a change in URL policy only needs one edit.
+/// Small and testable on purpose: every caller in the app goes through this
+/// class, so a change in URL policy only needs one edit.
 class ExternalActions {
   const ExternalActions();
 
@@ -27,7 +28,12 @@ class ExternalActions {
 
   /// Opens [url] in the external browser / YouTube app.
   /// Returns true when the link was opened.
-  Future<bool> openVideo(BuildContext context, String url) async {
+  Future<bool> openVideo(BuildContext context, String url) =>
+      openLink(context, url);
+
+  /// Opens [url] in the external browser (or the app that owns the link).
+  /// Shows the URL in a snackbar when nothing could open it.
+  Future<bool> openLink(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
     if (uri == null || (!uri.hasScheme)) {
       if (context.mounted) _showFallback(context, url);
@@ -44,8 +50,6 @@ class ExternalActions {
   }
 
   void _showFallback(BuildContext context, String value) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(value)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
   }
 }

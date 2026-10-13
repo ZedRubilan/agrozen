@@ -57,6 +57,7 @@ Plus Jakarta Sans has no basic Cyrillic, so every style names `AppFonts.fallback
 - Cards float on a soft shadow (`AppShadow.card`), no outline. Raised elements (flock card over the hero, nav bar) use `AppShadow.raised`; solid discs and the hero tile use `AppShadow.glow(colour)`.
 - Gradients only in two places: the photo-hero shade and the one `sun` hero tile per screen.
 - Photos: real, relevant farm photos only (`assets/images/`), always with an `errorBuilder` fallback. One hero photo per tab at most; thumbnails on link cards.
+- Broiler photos follow the flock's age: `BroilerPhotos.forDay(day)` (`lib/presentation/ui/broiler_photos.dart`) returns `broiler_starter.jpg` (days 1–10, chicks), `broiler_grower.jpg` (11–24) or `broiler_finisher.jpg` (25–42), using the Ross-308 phase from `BroilerGrowerLibrary`. Used by the Today hero, the Settings profile card and the onboarding batch preview; the Learn course card uses the finisher photo. Bundled photos are about 1200 px on the long side and under 250 KB each. Each one is credited in `assets/images/CREDITS.md` and `PhotoCredit.all`, which Settings → About → Photo credits shows. CC BY-SA photos must be listed there with a licence link.
 - Content width is capped at 640 px; on desktop the app is centred in a phone frame (`DesktopWebShell`).
 
 ## 5. Components (`components.dart`)
@@ -68,7 +69,7 @@ Weather: `WeatherSummaryCard` = animated `WeatherScene` (sky from the WMO weathe
 
 ## 6. App structure
 - **Navigation:** floating rounded `NavigationBar` (white, `AppShadow.raised`, solid green pill on the selected tab) with four labelled tabs — *Bugun / Today*, *Kundalik / Diary*, *Yordamchi / Assistant*, *O'rganish / Learn*. Settings is the gear on the Today header.
-- **Today:** photo hero (greeting, location, settings, day ring X/42, phase) with the flock card (alive, lost, days left) floating over its edge → alerts → today's targets (temperature as the filled `sun` tile; feed, water, weight) → record discs (deaths, feed, weight) → today's checklist → weather → useful (calculators photo card, district vet with a call button).
+- **Today:** flock-age photo hero (greeting, location, settings, day ring X/42, phase) with the flock card (alive, lost, days left) floating over its edge → alerts → today's targets (temperature as the filled `sun` tile; feed, water, weight) → record discs (deaths, feed, weight) → today's checklist → weather → useful (calculators photo card, district vet with a call button).
 - **Diary:** record cards (solid disc + big "+"; feed shows a fed-vs-target bar; under-watch stepper) → batch summary (survival ring, alive count, lost / feed / days recorded) → growth chart → day-by-day history (off-norm values highlighted).
 - **Assistant:** one chat with the chick logo as the assistant's avatar; before the first question: a "check a photo" `PhotoCard` and four quick-question tiles (solid discs). Mic when the input is empty, send when typing; optional read-aloud.
 - **Learn:** course `PhotoCard` (lessons ring X/5, white pill button) → 5 lesson cards (gradient icon tile per lesson, duration pill, done check, green outline + "Up next" on the next one) → two reference tiles (42-day plan, ask the assistant).
@@ -76,7 +77,7 @@ Weather: `WeatherSummaryCard` = animated `WeatherScene` (sky from the WMO weathe
 - **Logging (`LogEntryScreen`, one screen for deaths / feed / weight):** tinted header with the record's solid disc and the question → big number with round −/+ steppers (1 bird, 1 kg, 10 g) and "+N" quick-add pills, unit under the number → live gauge that updates while typing (feed: today's total vs target; deaths: today's % vs the 1 % norm, same formula as `AlertEngine`; weight: % of target with the −15 % line) → Save pinned at the bottom.
 - **42-day plan:** day strip tinted by phase (starter gold, grower green, finisher orange; dot = today, filled green = selected) → phase-coloured day card with cycle ring → `TargetTile` grid (temperature is the hero tile) → feed type → tasks → tip card → previous / next day buttons; swipe left/right also changes day.
 - `TargetTile` (in `components.dart`) is the one tile for a target number on Today and in the plan.
-- **Settings:** `PhotoCard` profile (logo avatar, name, day · phase and flock pills, edit-name button) → language as three flag tiles → farm list → "Start a new batch" as a red card → about.
+- **Settings:** `PhotoCard` profile on the flock-age photo (logo avatar, name, day · phase and flock pills, edit-name button) → language as three flag tiles → farm list → "Start a new batch" as a red card → about (safety rule, photo credits, version).
 - **Lesson / quiz / certificate:** each lesson keeps one icon and colour everywhere (`lessonLook`). Lesson: lesson-coloured hero → numbered rule cards → "why it matters" card → detail → video `PhotoCard`; quiz button pinned at the bottom. Quiz: lesson-coloured question card → A–D answers that turn green / red (wrong one shakes once) → result card; a correct answer fires `ConfettiBurst` once. Certificate: cream paper in a double gold frame with the chick medal (one shine sweep) and confetti once; locked = gold progress ring + the five lesson discs.
 - **Calculators:** FCR and EPEF as `TargetTile`s plus a round A/B/C grade badge; net profit on a green (loss: red) card that counts up; costs as one stacked bar scaled to revenue (chicks `sunDeep`, feed `info`, other `primary` — validated palette, 2 px gaps) with a labelled legend row each; equipment and space as `TargetTile`s.
 - **Splash:** logo on a radial green glow (`primary` → `heroShade`); it hands off after one frame.
@@ -86,7 +87,7 @@ Weather: `WeatherSummaryCard` = animated `WeatherScene` (sky from the WMO weathe
 Four steps sharing `OnboardingScaffold`: an animated 4-segment step bar with `1 / 4`, a gradient icon disc beside the title (none on step 1, which has the photo), content that `Reveal`s in, and one primary button (trailing arrow) pinned to the bottom on a raised white bar. `OptionCard` pops its check when selected.
 1. **Language** — `sunset_farm.jpg` hero (one slow zoom) with the `AgroChickIcon` logo; flags via `AgroFlagBadge`.
 2. **Region** (green pin) — GPS as a prominent card with a blue disc (status line under it), search, town chips, district list with the selected row tinted.
-3. **Batch** (gold) — name, arrival date, count with 500 / 1 000 / 2 000 / 5 000 pills, and a live `PhotoCard` preview: today's batch day ring, phase and house temperature target for the chosen date.
+3. **Batch** (gold) — name, arrival date, count with 500 / 1 000 / 2 000 / 5 000 pills, and a live `PhotoCard` preview on the flock-age photo: today's batch day ring, phase and house temperature target for the chosen date.
 4. **Notice** (blue shield) — each safety point as its own card with a solid disc.
 Launch never shows a spinner.
 

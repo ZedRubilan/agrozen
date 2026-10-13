@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app.dart';
 import '../../config/theme.dart';
 import '../../core/localization/app_strings.dart';
+import '../../services/external_actions.dart';
 import '../../services/farm_store.dart';
 import '../../services/flock_context_service.dart';
+import '../ui/broiler_photos.dart';
 import '../ui/components.dart';
 import '../widgets/agro_icons.dart';
 import '../ui/format.dart';
@@ -132,6 +134,66 @@ class _SettingsScreenState extends State<SettingsScreen>
     FlockContextService().clearHistory();
     if (!mounted) return;
     context.go('/onboarding/batch');
+  }
+
+  /// Title, author and licence of each bundled broiler photo; tapping one
+  /// opens its Commons page (CC BY-SA requires the credit and a link).
+  void _showPhotoCredits() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(
+          Icons.photo_library_outlined,
+          color: AppColors.primary,
+          size: 36,
+        ),
+        title: Text(
+          _t('Rasmlar mualliflari', 'Авторы фотографий', 'Photo credits'),
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(
+          AppSpace.sm,
+          AppSpace.lg,
+          AppSpace.sm,
+          0,
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final credit in PhotoCredit.all)
+                ListTile(
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    child: Image.asset(
+                      credit.asset,
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const SizedBox(width: 56, height: 56),
+                    ),
+                  ),
+                  title: Text(credit.author, style: AppText.cardTitle),
+                  subtitle: Text(
+                    '${credit.title}\n${credit.licence}'
+                    '${credit.licenceUrl != null ? ' · ${credit.licenceUrl}' : ''}',
+                    style: AppText.caption,
+                  ),
+                  isThreeLine: true,
+                  onTap: () =>
+                      const ExternalActions().openLink(context, credit.url),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(_t('Yopish', 'Закрыть', 'Close')),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSafety() {
@@ -316,6 +378,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                         onTap: _showSafety,
                       ),
                       ListRow(
+                        icon: Icons.photo_library_rounded,
+                        tone: Tone.info,
+                        title: _t(
+                          'Rasmlar mualliflari',
+                          'Авторы фотографий',
+                          'Photo credits',
+                        ),
+                        subtitle: 'Wikimedia Commons',
+                        onTap: _showPhotoCredits,
+                      ),
+                      ListRow(
                         icon: Icons.info_rounded,
                         tone: Tone.neutral,
                         title: 'AgroZen 1.0',
@@ -337,8 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   /// one-line batch summary.
   Widget _buildProfile(FarmSnapshot farm) {
     return PhotoCard(
-      image: 'assets/images/sunset_farm.jpg',
-      imageAlignment: const Alignment(0, 0.3),
+      image: BroilerPhotos.forDay(farm.batchDay),
       padding: const EdgeInsets.all(AppSpace.lg),
       child: Row(
         children: [

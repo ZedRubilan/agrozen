@@ -8,6 +8,7 @@ import '../../../config/theme.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../domain/broiler/broiler_grower_library.dart';
 import '../../../services/farm_store.dart';
+import '../../ui/broiler_photos.dart';
 import '../../ui/components.dart';
 import '../../ui/format.dart';
 import 'onboarding_scaffold.dart';
@@ -272,7 +273,7 @@ class _BatchSetupScreenState extends State<BatchSetupScreen> {
     final spec = BroilerGrowerLibrary.specForDay(day);
     final fmt = Fmt(_lang);
     return PhotoCard(
-      image: 'assets/images/chick_starter.jpg',
+      image: BroilerPhotos.forDay(day),
       padding: const EdgeInsets.all(AppSpace.lg),
       child: Row(
         children: [
