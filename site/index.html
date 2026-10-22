@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroZen — broyler fermerlari uchun yordamchi</title>
+<meta name="description" content="AgroZen — broyler fermerlari uchun bepul ilova: 42 kunlik reja, partiya kundaligi, ogohlantirishlar va AI maslahatchi. Android uchun yuklab oling.">
+<meta name="theme-color" content="#F4F7F4">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta property="og:title" content="AgroZen — broyler fermerlari uchun yordamchi">
+<meta property="og:description" content="42 kunlik reja, kundalik, ogohlantirishlar va AI maslahatchi. Bepul, Android uchun.">
+<meta property="og:image" content="https://zedrubilan.github.io/agrozen/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Same tokens as the app (DESIGN.md) */
+  :root {
+    --primary: #15803D; --primary-dark: #14532D; --primary-soft: #E6F4EA;
+    --bg: #F4F7F4; --surface: #FFFFFF; --muted: #F1F5F2; --border: #E2EBE4;
+    --ink: #0F172A; --ink2: #52665A; --ink3: #63796A;
+    --warning: #B45309; --warning-soft: #FEF3C7; --info: #1D4ED8; --info-soft: #DBEAFE;
+    --danger: #DC2626; --danger-soft: #FEE2E2;
+    --card: 0 3px 12px rgba(15, 23, 42, .05);
+    --raised: 0 4px 16px rgba(15, 23, 42, .07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+    font-family: "Plus Jakarta Sans", "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-weight: 500; line-height: 1.45;
+  }
+  a { color: inherit; }
+  .wrap { width: 100%; max-width: 520px; margin: 0 auto; padding: 0 16px; }
+
+  /* Header */
+  header { padding: 32px 0 8px; text-align: center; }
+  .logo {
+    width: 96px; height: 96px; border-radius: 50%; display: block; margin: 0 auto 14px;
+    box-shadow: var(--raised); animation: pop .6s cubic-bezier(.2, .9, .3, 1.15) both;
+  }
+  @keyframes pop { from { transform: scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
+  h1 { font-size: 40px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.05; }
+  .tag { font-size: 17px; color: var(--ink2); margin: 8px auto 0; max-width: 380px; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 16px 0 4px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px;
+    background: var(--surface); box-shadow: var(--card); font-size: 13px; font-weight: 700; color: var(--ink2);
+  }
+  .chip svg { width: 15px; height: 15px; color: var(--primary); }
+
+  /* Actions */
+  .actions { margin-top: 22px; display: grid; gap: 10px; }
+  .btn {
+    display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px 18px; border-radius: 18px;
+    text-decoration: none; text-align: left; transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn .ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; flex: none; }
+  .btn .ic svg { width: 24px; height: 24px; }
+  .btn b { display: block; font-size: 18px; font-weight: 800; line-height: 1.25; }
+  .btn small { display: block; font-size: 13px; font-weight: 600; margin-top: 2px; }
+  .btn.dl { background: var(--primary); color: #fff; box-shadow: 0 10px 24px rgba(21, 128, 61, .28); }
+  .btn.dl .ic { background: rgba(255, 255, 255, .18); }
+  .btn.dl small { color: rgba(255, 255, 255, .85); }
+  .btn.web { background: var(--surface); color: var(--ink); box-shadow: var(--card); }
+  .btn.web .ic { background: var(--info-soft); color: var(--info); }
+  .btn.web small { color: var(--ink3); }
+  .btn.ios-first { order: -1; }
+  .status { text-align: center; font-size: 14px; font-weight: 700; color: var(--primary); }
+
+  /* Desktop: scan with a phone */
+  .scan {
+    display: none; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--surface);
+    box-shadow: var(--card); align-items: center; gap: 16px;
+  }
+  .scan .qr { width: 108px; height: 108px; flex: none; padding: 6px; border-radius: 12px; background: #fff; border: 1px solid var(--border); }
+  .scan .qr svg { width: 100%; height: 100%; display: block; }
+  .scan b { display: block; font-size: 16px; font-weight: 800; }
+  .scan span { font-size: 14px; color: var(--ink2); }
+  .desktop .scan { display: flex; }
+
+  /* Screenshots */
+  .shots { margin: 30px 0 6px; }
+  .shots h2, section h2 { font-size: 17px; font-weight: 700; margin: 0 0 10px; }
+  .shots h2 { padding: 0 16px; max-width: 520px; margin-left: auto; margin-right: auto; }
+  .rail {
+    display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 16px 14px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  figure { flex: none; width: 62%; max-width: 230px; scroll-snap-align: center; text-align: center; }
+  figure .phone {
+    border-radius: 26px; overflow: hidden; background: var(--surface); aspect-ratio: 540 / 1169;
+    box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--border), var(--raised);
+  }
+  figure img { width: 100%; height: 100%; display: block; object-fit: cover; }
+  figcaption { margin-top: 12px; font-size: 14px; font-weight: 700; color: var(--ink2); }
+  @media (min-width: 760px) {
+    .rail { justify-content: center; overflow: visible; max-width: 1000px; margin: 0 auto; }
+    figure { width: 210px; }
+  }
+
+  /* Cards */
+  section { margin-top: 22px; }
+  .card { background: var(--surface); border-radius: 22px; box-shadow: var(--card); overflow: hidden; }
+  .row { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; }
+  .row + .row { border-top: 1px solid var(--border); }
+  .badge { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+  .badge svg { width: 21px; height: 21px; }
+  .g { background: var(--primary-soft); color: var(--primary); }
+  .a { background: var(--warning-soft); color: var(--warning); }
+  .b { background: var(--info-soft); color: var(--info); }
+  .r { background: var(--danger-soft); color: var(--danger); }
+  .row b { display: block; font-size: 15px; font-weight: 700; }
+  .row span { display: block; font-size: 14px; color: var(--ink2); }
+  .row a { color: var(--primary); font-weight: 700; text-decoration: none; }
+  ol.steps { list-style: none; counter-reset: s; }
+  ol.steps li { counter-increment: s; display: flex; gap: 14px; align-items: flex-start; padding: 13px 16px; font-size: 15px; }
+  ol.steps li + li { border-top: 1px solid var(--border); }
+  ol.steps li::before {
+    content: counter(s); width: 28px; height: 28px; border-radius: 9px; flex: none; display: grid; place-items: center;
+    background: var(--primary-soft); color: var(--primary-dark); font-weight: 800; font-size: 14px;
+  }
+  .note { margin-top: 10px; padding: 13px 16px; border-radius: 16px; background: var(--warning-soft); font-size: 14px; color: #713F12; }
+  .note b { color: var(--ink); }
+
+  /* Language + footer */
+  .lang { display: flex; justify-content: center; gap: 6px; margin: 28px 0 0; }
+  .lang button {
+    border: 0; background: var(--surface); box-shadow: var(--card); border-radius: 999px; padding: 9px 14px;
+    font: inherit; font-size: 14px; font-weight: 700; color: var(--ink2); cursor: pointer;
+  }
+  .lang button.on { background: var(--primary-soft); color: var(--primary-dark); box-shadow: inset 0 0 0 1.5px var(--primary); }
+  footer { text-align: center; font-size: 13px; color: var(--ink3); padding: 20px 0 36px; line-height: 1.6; }
+  footer a { color: var(--ink2); font-weight: 700; }
+  .hide { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { .logo { animation: none; } .btn { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="icon.png" alt="AgroZen" width="96" height="96">
+    <h1>AgroZen</h1>
+    <p class="tag" data-t="tag"></p>
+    <div class="chips">
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-t="free"></span></span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M2 2l20 20"/></svg><span data-t="offline"></span></span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14M9 4v4M7 8c0 5 4 9 9 10M17 8c-1 4-4 7-9 9"/></svg>uz · ru · en</span>
+    </div>
+  </header>
+
+  <div class="actions" id="actions">
+    <a class="btn dl" id="dl" href="https://github.com/ZedRubilan/agrozen/releases/latest/download/AgroZen-release.apk">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span>
+      <span><b data-t="dl"></b><small id="meta" data-t="dlSub"></small></span>
+    </a>
+    <a class="btn web" id="web" href="app/">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg></span>
+      <span><b data-t="web"></b><small data-t="webSub"></small></span>
+    </a>
+    <div class="status" id="status" aria-live="polite"></div>
+  </div>
+
+  <div class="scan">
+    <div class="qr" id="qr" aria-hidden="true"></div>
+    <div><b data-t="scanT"></b><span data-t="scanS"></span></div>
+  </div>
+</div>
+
+<div class="shots">
+  <h2 data-t="shotsT"></h2>
+  <div class="rail">
+    <figure><div class="phone"><img data-shot="today" alt="" loading="lazy"></div><figcaption data-t="sToday"></figcaption></figure>
+    <figure><div class="phone"><img data-shot="diary" alt="" loading="lazy"></div><figcaption data-t="sDiary"></figcaption></figure>
+    <figure><div class="phone"><img data-shot="assistant" alt="" loading="lazy"></div><figcaption data-t="sAsk"></figcaption></figure>
+    <figure><div class="phone"><img data-shot="learn" alt="" loading="lazy"></div><figcaption data-t="sLearn"></figcaption></figure>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="howto">
+    <h2 data-t="howT"></h2>
+    <div class="card">
+      <ol class="steps">
+        <li data-t="how1"></li>
+        <li data-t="how2"></li>
+        <li data-t="how3"></li>
+        <li data-t="how4"></li>
+      </ol>
+    </div>
+    <div class="note" data-h="protect"></div>
+  </section>
+
+  <section>
+    <h2 data-t="safeT"></h2>
+    <div class="card">
+      <div class="row">
+        <span class="badge g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <div><b data-t="s1T"></b><span data-h="s1"></span></div>
+      </div>
+      <div class="row">
+        <span class="badge g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/><path d="M3 3l18 18"/></svg></span>
+        <div><b data-t="s2T"></b><span data-t="s2"></span></div>
+      </div>
+      <div class="row">
+        <span class="badge r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <div><b data-t="s3T"></b><span data-t="s3"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-t="permT"></h2>
+    <div class="card">
+      <div class="row">
+        <span class="badge b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></span>
+        <div><b data-t="p1T"></b><span data-t="p1"></span></div>
+      </div>
+      <div class="row">
+        <span class="badge a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+        <div><b data-t="p2T"></b><span data-t="p2"></span></div>
+      </div>
+      <div class="row">
+        <span class="badge r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span>
+        <div><b data-t="p3T"></b><span data-t="p3"></span></div>
+      </div>
+      <div class="row">
+        <span class="badge g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></span>
+        <div><b data-t="p4T"></b><span data-t="p4"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="lang">
+    <button data-l="uz">O‘zbekcha</button><button data-l="ru">Русский</button><button data-l="en">English</button>
+  </div>
+  <footer>
+    <span data-t="authors"></span><br>
+    <span data-t="credits"></span><br>
+    <a href="https://github.com/ZedRubilan/agrozen">github.com/ZedRubilan/agrozen</a>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+const REPO = "ZedRubilan/agrozen";
+const T = {
+  uz: {
+    tag: "Broyler fermerlari uchun yordamchi: 42 kunlik reja, kundalik, ogohlantirishlar va AI maslahatchi",
+    free: "Bepul", offline: "Internetsiz ishlaydi",
+    dl: "Android uchun yuklab olish", dlSub: "AgroZen-release.apk · Android 7.0+",
+    web: "Brauzerda ochish", webSub: "iPhone va kompyuter uchun — o‘rnatmasdan",
+    scanT: "Telefon bilan skanerlang", scanS: "Kamerani QR-kodga qarating — yuklab olish sahifasi telefonda ochiladi.",
+    shotsT: "Ilova ichida", sToday: "Bugun", sDiary: "Kundalik", sAsk: "Yordamchi", sLearn: "O‘rganish",
+    howT: "Qanday o‘rnatiladi",
+    how1: "Yashil «Yuklab olish» tugmasini bosing. Brauzer «fayl xavfli bo‘lishi mumkin» desa, «Baribir yuklab olish»ni tanlang.",
+    how2: "Yuklangan faylni oching: bildirishnomadan yoki Fayllar → Yuklanmalar bo‘limidan.",
+    how3: "Telefon noma’lum ilovalarni o‘rnatishga ruxsat so‘rasa: Sozlamalar → ruxsat bering → orqaga qayting.",
+    how4: "«O‘rnatish» → «Ochish». Tayyor!",
+    protect: "<b>Nega ogohlantirish chiqadi?</b> AgroZen hozircha Play Marketda emas, shuning uchun Android va Google Play Protect har qanday shunday ilova haqida ogohlantiradi. Play Protect so‘rasa: «Batafsil» → «Baribir o‘rnatish».",
+    safeT: "Xavfsizmi?",
+    s1T: "Ochiq kod", s1: "Ilovaning butun kodi ochiq — har kim tekshira oladi: <a href=\"https://github.com/ZedRubilan/agrozen\">GitHub</a>.",
+    s2T: "Ro‘yxatdan o‘tish va reklama yo‘q", s2: "Hisob ochish, telefon raqami yoki to‘lov so‘ralmaydi.",
+    s3T: "Talabalar loyihasi", s3: "NamDTU talabalari tomonidan StudEXPO-2026 uchun yaratilgan. Dori va dozalar tavsiya qilinmaydi — kasallikda tuman veterinariga murojaat qiling.",
+    permT: "Ilova nimaga ruxsat so‘raydi",
+    p1T: "Joylashuv", p1: "Tumaningiz ob-havosi va veterinarini topish uchun.",
+    p2T: "Mikrofon", p2: "Savolni ovoz bilan berish uchun.",
+    p3T: "Qo‘ng‘iroq", p3: "Bir tugma bilan tuman veterinariga qo‘ng‘iroq qilish uchun.",
+    p4T: "Bildirishnomalar", p4: "Kundalik eslatma uchun. Har birini rad etishingiz mumkin.",
+    starting: "Yuklab olish boshlandi…", updated: "yangilangan",
+    authors: "Mualliflar: Zamalitdinov Salimbek, Kodirov Ulug‘bek · NamDTU",
+    credits: "Ilovadagi suratlar: Wikimedia Commons (litsenziyalar ilovada ko‘rsatilgan)",
+  },
+  ru: {
+    tag: "Помощник для бройлерных фермеров: план на 42 дня, дневник, предупреждения и AI-консультант",
+    free: "Бесплатно", offline: "Работает без интернета",
+    dl: "Скачать для Android", dlSub: "AgroZen-release.apk · Android 7.0+",
+    web: "Открыть в браузере", webSub: "для iPhone и компьютера — без установки",
+    scanT: "Отсканируйте телефоном", scanS: "Наведите камеру на QR-код — страница скачивания откроется на телефоне.",
+    shotsT: "Внутри приложения", sToday: "Сегодня", sDiary: "Дневник", sAsk: "Помощник", sLearn: "Обучение",
+    howT: "Как установить",
+    how1: "Нажмите зелёную кнопку «Скачать». Если браузер предупредит, что файл может быть опасен, выберите «Всё равно скачать».",
+    how2: "Откройте скачанный файл: из уведомления или в Файлы → Загрузки.",
+    how3: "Если телефон попросит разрешить установку неизвестных приложений: Настройки → разрешить → назад.",
+    how4: "«Установить» → «Открыть». Готово!",
+    protect: "<b>Почему появляется предупреждение?</b> AgroZen пока нет в Play Маркете, поэтому Android и Google Play Protect предупреждают о любом таком приложении. Если Play Protect спросит: «Подробнее» → «Всё равно установить».",
+    safeT: "Это безопасно?",
+    s1T: "Открытый код", s1: "Весь код приложения открыт — проверить может каждый: <a href=\"https://github.com/ZedRubilan/agrozen\">GitHub</a>.",
+    s2T: "Без регистрации и рекламы", s2: "Не нужно создавать аккаунт, вводить номер телефона или платить.",
+    s3T: "Студенческий проект", s3: "Создан студентами НамГТУ для StudEXPO-2026. Лекарства и дозы не назначает — при болезни обращайтесь к районному ветеринару.",
+    permT: "Какие разрешения просит приложение",
+    p1T: "Местоположение", p1: "Чтобы показать погоду и ветеринара вашего района.",
+    p2T: "Микрофон", p2: "Чтобы задать вопрос голосом.",
+    p3T: "Звонки", p3: "Чтобы позвонить районному ветеринару одной кнопкой.",
+    p4T: "Уведомления", p4: "Для ежедневного напоминания. От любого можно отказаться.",
+    starting: "Загрузка началась…", updated: "обновлено",
+    authors: "Авторы: Замалитдинов Салимбек, Кодиров Улугбек · НамГТУ",
+    credits: "Фото в приложении: Wikimedia Commons (лицензии указаны в приложении)",
+  },
+  en: {
+    tag: "A helper for broiler farmers: 42-day plan, flock diary, warnings and an AI advisor",
+    free: "Free", offline: "Works offline",
+    dl: "Download for Android", dlSub: "AgroZen-release.apk · Android 7.0+",
+    web: "Open in browser", webSub: "for iPhone and computers — no install",
+    scanT: "Scan with your phone", scanS: "Point your camera at the QR code to open this page on your phone.",
+    shotsT: "Inside the app", sToday: "Today", sDiary: "Diary", sAsk: "Assistant", sLearn: "Learn",
+    howT: "How to install",
+    how1: "Tap the green “Download” button. If the browser says the file might be harmful, choose “Download anyway”.",
+    how2: "Open the downloaded file from the notification or from Files → Downloads.",
+    how3: "If your phone asks to allow installing unknown apps: Settings → allow → go back.",
+    how4: "“Install” → “Open”. Done!",
+    protect: "<b>Why is there a warning?</b> AgroZen isn't on Google Play yet, so Android and Google Play Protect warn about every app like it. If Play Protect asks: “More details” → “Install anyway”.",
+    safeT: "Is it safe?",
+    s1T: "Open source", s1: "All of the app's code is public, so anyone can check it: <a href=\"https://github.com/ZedRubilan/agrozen\">GitHub</a>.",
+    s2T: "No sign-up, no ads", s2: "No account, phone number or payment needed.",
+    s3T: "A student project", s3: "Built by NamSTU students for StudEXPO-2026. It never prescribes medicines or doses — for sick birds it points you to the district vet.",
+    permT: "What the app asks for",
+    p1T: "Location", p1: "To show your district's weather and vet.",
+    p2T: "Microphone", p2: "To ask a question by voice.",
+    p3T: "Phone calls", p3: "To call the district vet with one tap.",
+    p4T: "Notifications", p4: "For a daily reminder. You can say no to any of these.",
+    starting: "Download started…", updated: "updated",
+    authors: "Authors: Salimbek Zamalitdinov, Ulugbek Kodirov · NamSTU",
+    credits: "Photos in the app: Wikimedia Commons (licences listed in the app)",
+  },
+};
+
+let lang = (navigator.language || "uz").slice(0, 2);
+if (!T[lang]) lang = "uz";
+try { lang = localStorage.getItem("agrozen-lang") || lang; } catch (e) {}
+let release = null;
+
+function meta() {
+  const t = T[lang];
+  if (!release) return t.dlSub;
+  const mb = Math.round(release.size / 1048576);
+  const d = new Date(release.date);
+  // Browsers format Uzbek dates inconsistently, so spell the month out.
+  const uzMonths = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+  const date = lang === "uz"
+    ? `${d.getDate()}-${uzMonths[d.getMonth()]}`
+    : d.toLocaleDateString(lang === "ru" ? "ru-RU" : "en-GB", { day: "numeric", month: "short" });
+  return `${release.tag} · ${mb} MB · ${t.updated} ${date}`;
+}
+
+function apply() {
+  const t = T[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach((e) => (e.textContent = t[e.dataset.t]));
+  document.querySelectorAll("[data-h]").forEach((e) => (e.innerHTML = t[e.dataset.h]));
+  document.querySelectorAll("[data-l]").forEach((b) => b.classList.toggle("on", b.dataset.l === lang));
+  document.querySelectorAll("[data-shot]").forEach((img) => {
+    img.src = `shots/${lang}-${img.dataset.shot}.webp`;
+    img.alt = img.closest("figure").querySelector("figcaption").textContent;
+  });
+  document.getElementById("meta").textContent = meta();
+}
+document.querySelectorAll("[data-l]").forEach((b) => b.addEventListener("click", () => {
+  lang = b.dataset.l;
+  try { localStorage.setItem("agrozen-lang", lang); } catch (e) {}
+  apply();
+}));
+apply();
+
+// Version, size and date of the newest APK; the button keeps working without them.
+fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
+  .then((r) => (r.ok ? r.json() : null))
+  .then((j) => {
+    const apk = j && (j.assets || []).find((a) => a.name.endsWith(".apk"));
+    if (!apk) return;
+    release = { tag: j.tag_name, size: apk.size, date: j.published_at };
+    document.getElementById("dl").href = apk.browser_download_url;
+    apply();
+  })
+  .catch(() => {});
+
+const ua = navigator.userAgent;
+const android = /Android/i.test(ua);
+const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+if (ios) {
+  // iPhones can't install APKs: the web app is the main action.
+  document.getElementById("dl").classList.add("hide");
+  document.getElementById("howto").classList.add("hide");
+  document.getElementById("web").classList.add("ios-first");
+} else if (!android && matchMedia("(min-width: 760px)").matches) {
+  // On a computer, offer this page as a QR code to open on a phone.
+  document.body.classList.add("desktop");
+  try {
+    const qr = qrcode(0, "M");
+    qr.addData(location.href.split("#")[0]);
+    qr.make();
+    document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+    document.querySelector("#qr path").setAttribute("fill", "#14532D");
+  } catch (e) {
+    document.body.classList.remove("desktop");
+  }
+}
+document.getElementById("dl").addEventListener("click", () => {
+  document.getElementById("status").textContent = T[lang].starting;
+});
+</script>
+</body>
+</html>

@@ -321,7 +321,7 @@ async function icon(name, hex, px = 256) {
   s.addText([
     { text: "Download and try it", options: { bold: true, fontSize: 17, color: C.ink, breakLine: true } },
     { text: "Android app", options: { fontSize: 13, color: C.ink2, breakLine: true } },
-    { text: "github.com/ZedRubilan/agrozen", options: { fontSize: 12, color: C.primary } },
+    { text: "zedrubilan.github.io/agrozen", options: { fontSize: 12, color: C.primary } },
   ], { x: 9.3, y: 4.05, w: 3.23, h: 1.3, fontFace: FONT, margin: 0, align: "center", valign: "middle" });
   for (const [k, x] of [["green", 9.55], ["amber", 10.55], ["red", 11.55]]) {
     s.addImage({ path: A(`chick_${k}.png`), x, y: 5.75, w: 0.8, h: 0.8 });
