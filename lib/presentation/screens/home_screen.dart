@@ -91,8 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: CourseListScreen(isEmbeddedInPageView: true),
         );
       default:
-        // Today draws its photo hero under the status bar.
-        return const TodayScreen();
+        return const SafeArea(bottom: false, child: TodayScreen());
     }
   }
 

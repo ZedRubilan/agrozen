@@ -238,29 +238,19 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
     return PageBody(
       key: ValueKey(day),
       children: [
-        // Phase-coloured day card with the cycle ring.
-        Container(
-          padding: const EdgeInsets.all(AppSpace.lg),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [phase, Color.lerp(phase, Colors.black, 0.22)!],
-            ),
-            boxShadow: AppShadow.glow(phase),
-          ),
+        // Day card with the cycle ring in the phase colour.
+        AppCard(
           child: Row(
             children: [
               ProgressRing(
                 value: day / 42,
                 size: 72,
                 stroke: 7,
-                color: Colors.white,
-                trackColor: Colors.white.withAlpha(60),
+                color: phase,
+                trackColor: AppColors.surfaceMuted,
                 child: Text(
                   '${(day / 42 * 100).round()}%',
-                  style: AppText.label.copyWith(color: Colors.white),
+                  style: AppText.label,
                 ),
               ),
               const SizedBox(width: AppSpace.lg),
@@ -270,10 +260,7 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                   children: [
                     Text(
                       '${_fmt.day(day)} · ${FarmSnapshot.phaseNameFor(day, _lang)}',
-                      style: AppText.screenTitle.copyWith(
-                        color: Colors.white,
-                        fontSize: 22,
-                      ),
+                      style: AppText.metric,
                     ),
                     const SizedBox(height: AppSpace.xs),
                     Text(
@@ -282,25 +269,14 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
                         'Рассчитано на ${_fmt.birds(farm.currentCount)}',
                         'Calculated for ${_fmt.birds(farm.currentCount)}',
                       ),
-                      style: AppText.caption.copyWith(
-                        color: Colors.white.withAlpha(225),
-                      ),
+                      style: AppText.bodyMuted,
                     ),
                     if (isToday) ...[
                       const SizedBox(height: AppSpace.sm),
-                      GlassPill(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.today_rounded, size: 14),
-                            const SizedBox(width: 4),
-                            Text(_t('Bugun', 'Сегодня', 'Today')),
-                          ],
-                        ),
+                      StatusPill(
+                        label: _t('Bugun', 'Сегодня', 'Today'),
+                        tone: Tone.primary,
+                        icon: Icons.today_rounded,
                       ),
                     ],
                   ],
@@ -457,7 +433,7 @@ class _DailyPlanScreenState extends State<DailyPlanScreen> {
   }
 }
 
-/// Tip of the day on a soft green card with a lightbulb disc.
+/// Tip of the day on a soft green banner.
 class _TipCard extends StatelessWidget {
   final String title;
   final String message;
@@ -465,47 +441,10 @@ class _TipCard extends StatelessWidget {
   const _TipCard({required this.title, required this.message});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpace.lg),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primarySoft, Color(0xFFF4FBF6)],
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-              boxShadow: AppShadow.glow(AppColors.primary),
-            ),
-            child: const Icon(
-              Icons.tips_and_updates_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: AppSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppText.cardTitle),
-                const SizedBox(height: AppSpace.xs),
-                Text(message, style: AppText.body),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => NoticeBanner(
+    tone: Tone.primary,
+    icon: Icons.tips_and_updates_rounded,
+    title: title,
+    message: message,
+  );
 }

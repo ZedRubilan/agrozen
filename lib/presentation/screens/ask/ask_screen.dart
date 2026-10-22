@@ -55,7 +55,8 @@ class AskScreen extends StatefulWidget {
   State<AskScreen> createState() => _AskScreenState();
 }
 
-class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMixin {
+class _AskScreenState extends State<AskScreen>
+    with SingleTickerProviderStateMixin {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final _knowledgeRepo = KnowledgeRepository();
@@ -72,12 +73,14 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   int _remainingQuestions = 30;
   bool _isLoading = false;
   bool _isRecording = false;
+
   /// Read every answer aloud (hands-free use in the barn).
   bool _readAloud = false;
   String _livePartialTranscript = '';
   String? _selectedImagePath;
   String? _analyzingImagePath;
-  String _selectedPhotoCategory = 'chick'; // 'chick', 'droppings', 'litter', 'clustering'
+  String _selectedPhotoCategory =
+      'chick'; // 'chick', 'droppings', 'litter', 'clustering'
   String? _speakingText;
   LiveFlockContext? _liveContext;
   Locale? _observedLocale;
@@ -96,7 +99,8 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-    if (widget.initialPrompt != null && widget.initialPrompt!.trim().isNotEmpty) {
+    if (widget.initialPrompt != null &&
+        widget.initialPrompt!.trim().isNotEmpty) {
       _lastHandledInitialPrompt = widget.initialPrompt;
       _controller.text = widget.initialPrompt!;
     }
@@ -141,29 +145,9 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     final prefs = await DailyCounters.rolled(
       maxDailyQuestions: AppConstants.maxDailyQuestions,
     );
-    final resolvedLang = prefs.getString('app_language') ?? localeOverride ?? 'uz';
+    final resolvedLang =
+        prefs.getString('app_language') ?? localeOverride ?? 'uz';
     final context = await _flockContextService.getLiveContext();
-
-    final bDay = context.batchDay;
-    final cCount = context.currentCount;
-    final welcomeMessage = ChatMessage(
-      text: AppStrings.tr(
-        lang: resolvedLang,
-        uz: "Assalomu alaykum, ${context.farmerName}! Men AgroZen aqlli yordamchingizman.\n"
-            "Sizning partiyangiz $bDay-kunda ($cCount ta parrandalar). Harorat, yem, shamollatish yoki jo'jalar sog'lig'i bo'yicha savolingizni bering yoki surat yuboring.",
-        ru: "Здравствуйте, ${context.farmerName}! Я ваш помощник AgroZen.\n"
-            "Ваша партия на $bDay-м дне ($cCount голов). Задавайте любые вопросы по температуре, кормам, вентиляции или отправьте фото птичника.",
-        en: "Hello, ${context.farmerName}! I am your AgroZen assistant.\n"
-            "Your flock is on Day $bDay ($cCount birds). Ask any questions about temperature, feed, ventilation, or share a flock photo.",
-      ),
-      isUser: false,
-      source: AppStrings.tr(
-        lang: resolvedLang,
-        uz: 'AgroZen bilimlar bazasi',
-        ru: 'База знаний AgroZen',
-        en: 'AgroZen Knowledge Base',
-      ),
-    );
 
     if (!mounted) return;
     setState(() {
@@ -173,11 +157,6 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         maxDailyQuestions: AppConstants.maxDailyQuestions,
       );
       _liveContext = context;
-      if (_messages.isEmpty) {
-        _messages.add(welcomeMessage);
-      } else if (_messages.length == 1 && !_messages.first.isUser) {
-        _messages[0] = welcomeMessage;
-      }
     });
   }
 
@@ -485,14 +464,13 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     final prefs = await DailyCounters.rolled(
       maxDailyQuestions: AppConstants.maxDailyQuestions,
     );
-    await DailyCounters.setRemainingQuestions(
-      prefs,
-      _remainingQuestions,
-    );
+    await DailyCounters.setRemainingQuestions(prefs, _remainingQuestions);
 
     _flockContextService.recordTurn(
       role: 'user',
-      text: attachedImage != null ? '[SURAT] $effectiveUserText' : effectiveUserText,
+      text: attachedImage != null
+          ? '[SURAT] $effectiveUserText'
+          : effectiveUserText,
     );
     _scrollToBottom();
 
@@ -556,9 +534,10 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           final questionLabel = effectiveLang == 'en'
               ? 'Question'
               : (effectiveLang == 'ru' ? 'Вопрос' : 'Savol');
-          final historySnippet =
-              _flockContextService.getConversationHistorySnippet(effectiveLang);
-          final dossierBlock = _liveContext?.toPromptContextBlock(effectiveLang) ?? '';
+          final historySnippet = _flockContextService
+              .getConversationHistorySnippet(effectiveLang);
+          final dossierBlock =
+              _liveContext?.toPromptContextBlock(effectiveLang) ?? '';
           final promptParts = <String>[
             if (dossierBlock.isNotEmpty) dossierBlock,
             if (historySnippet.isNotEmpty) historySnippet,
@@ -647,14 +626,17 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   }
 
   static String _noAnswerMessage(String lang) => AppStrings.tr(
-        lang: lang,
-        uz: "Bu savol bo'yicha tekshirilgan bazada aniq javob topa olmadim. "
-            "Iltimos, parrandachilik bo'yicha savolingizni biroz aniqlashtirib yozing yoki tumaningiz veterinariga murojaat qiling.",
-        ru: 'Я не нашёл точного ответа на этот вопрос в проверенной базе знаний. '
-            'Пожалуйста, уточните ваш вопрос по птицеводству или обратитесь к ветеринару вашего района.',
-        en: 'I could not find a specific answer for that in the verified knowledge base. '
-            'Please clarify your poultry question or consult your district veterinarian.',
-      );
+    lang: lang,
+    uz:
+        "Bu savol bo'yicha tekshirilgan bazada aniq javob topa olmadim. "
+        "Iltimos, parrandachilik bo'yicha savolingizni biroz aniqlashtirib yozing yoki tumaningiz veterinariga murojaat qiling.",
+    ru:
+        'Я не нашёл точного ответа на этот вопрос в проверенной базе знаний. '
+        'Пожалуйста, уточните ваш вопрос по птицеводству или обратитесь к ветеринару вашего района.',
+    en:
+        'I could not find a specific answer for that in the verified knowledge base. '
+        'Please clarify your poultry question or consult your district veterinarian.',
+  );
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -685,10 +667,16 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     setState(() => _readAloud = !_readAloud);
     _showSnack(
       _readAloud
-          ? _t("Javoblar ovoz bilan o'qiladi", 'Ответы будут озвучиваться',
-              'Answers will be read aloud')
-          : _t("Ovozli o'qish o'chirildi", 'Озвучивание выключено',
-              'Reading aloud is off'),
+          ? _t(
+              "Javoblar ovoz bilan o'qiladi",
+              'Ответы будут озвучиваться',
+              'Answers will be read aloud',
+            )
+          : _t(
+              "Ovozli o'qish o'chirildi",
+              'Озвучивание выключено',
+              'Reading aloud is off',
+            ),
     );
   }
 
@@ -698,15 +686,21 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppSpace.screen, 0, AppSpace.screen, AppSpace.lg),
+            AppSpace.screen,
+            0,
+            AppSpace.screen,
+            AppSpace.lg,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                _t("Jo'jalar, axlat yoki to'shamani suratga oling",
-                    'Сфотографируйте птицу, помёт или подстилку',
-                    'Take a photo of birds, droppings or litter'),
+                _t(
+                  "Jo'jalar, axlat yoki to'shamani suratga oling",
+                  'Сфотографируйте птицу, помёт или подстилку',
+                  'Take a photo of birds, droppings or litter',
+                ),
                 style: AppText.section,
               ),
               const Gap(),
@@ -735,53 +729,66 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final quotaText = AppStrings.tr(
-      lang: _lang,
-      uz: 'Bugun qoldi: $_remainingQuestions/30',
-      ru: 'Осталось: $_remainingQuestions/30 сегодня',
-      en: 'Remaining today: $_remainingQuestions/30',
-    );
-
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: !widget.isEmbeddedInPageView,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_t('AgroZen yordamchisi', 'Помощник AgroZen', 'AgroZen assistant')),
-            Text(
-              quotaText,
-              style: AppText.caption.copyWith(
-                color: _remainingQuestions > 0 ? AppColors.inkMuted : AppColors.danger,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: _t("Javoblarni ovoz bilan o'qish", 'Озвучивать ответы',
-                'Read answers aloud'),
-            onPressed: _toggleReadAloud,
-            isSelected: _readAloud,
-            icon: const Icon(Icons.volume_off_outlined),
-            selectedIcon: const Icon(Icons.volume_up_rounded, color: AppColors.primary),
-          ),
-          const SizedBox(width: AppSpace.xs),
-        ],
-      ),
+      appBar: widget.isEmbeddedInPageView ? null : AppBar(),
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            const Divider(),
             Expanded(
               child: ListView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpace.screen, AppSpace.lg, AppSpace.screen, AppSpace.lg),
+                  AppSpace.screen,
+                  AppSpace.lg,
+                  AppSpace.screen,
+                  AppSpace.lg,
+                ),
                 children: [
+                  PageHeader(
+                    title: _t(
+                      'AgroZen yordamchisi',
+                      'Помощник AgroZen',
+                      'AgroZen assistant',
+                    ),
+                    subtitle: _liveContext == null
+                        ? null
+                        : _t(
+                            '${_liveContext!.batchDay}-kun · ${_liveContext!.currentCount} ta parranda',
+                            'День ${_liveContext!.batchDay} · ${_liveContext!.currentCount} птиц',
+                            'Day ${_liveContext!.batchDay} · ${_liveContext!.currentCount} birds',
+                          ),
+                    trailing: IconButton(
+                      tooltip: _t(
+                        "Javoblarni ovoz bilan o'qish",
+                        'Озвучивать ответы',
+                        'Read answers aloud',
+                      ),
+                      onPressed: _toggleReadAloud,
+                      isSelected: _readAloud,
+                      icon: const Icon(
+                        Icons.volume_off_outlined,
+                        color: AppColors.inkSecondary,
+                      ),
+                      selectedIcon: const Icon(
+                        Icons.volume_up_rounded,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  if (_messages.isEmpty) ...[
+                    Text(
+                      _t(
+                        'Sizga qanday yordam beray?',
+                        'Чем вам помочь?',
+                        'What would you like help with?',
+                      ),
+                      style: AppText.section,
+                    ),
+                    const Gap(AppSpace.sm),
+                  ],
                   for (final msg in _messages) _buildMessage(msg),
-                  if (_messages.length <= 1 && !_isLoading) _buildSuggestions(),
+                  if (_messages.isEmpty && !_isLoading) _buildSuggestions(),
                   if (_isLoading) _buildThinking(),
                 ],
               ),
@@ -800,37 +807,46 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       (
         Icons.thermostat_rounded,
         _t('Bugungi harorat', 'Температура сегодня', "Today's temperature"),
-        _t("Bugun binoda harorat qanday bo'lishi kerak?",
-            'Какая сегодня должна быть температура в птичнике?',
-            'What should the house temperature be today?'),
+        _t(
+          "Bugun binoda harorat qanday bo'lishi kerak?",
+          'Какая сегодня должна быть температура в птичнике?',
+          'What should the house temperature be today?',
+        ),
       ),
       (
         Icons.grain_rounded,
         _t('Yem miqdori', 'Норма корма', 'How much feed'),
-        _t('Bugun qancha yem berishim kerak?', 'Сколько корма давать сегодня?',
-            'How much feed should I give today?'),
+        _t(
+          'Bugun qancha yem berishim kerak?',
+          'Сколько корма давать сегодня?',
+          'How much feed should I give today?',
+        ),
       ),
       (
         Icons.air_rounded,
         _t('Shamollatish', 'Вентиляция', 'Ventilation'),
-        _t('Parrandaxonani qanday shamollatish kerak?',
-            'Как правильно проветривать птичник?',
-            'How should I ventilate the poultry house?'),
+        _t(
+          'Parrandaxonani qanday shamollatish kerak?',
+          'Как правильно проветривать птичник?',
+          'How should I ventilate the poultry house?',
+        ),
       ),
       (
         Icons.water_drop_outlined,
         _t('Suv', 'Вода', 'Water'),
-        _t("Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
-            'Какой температуры должна быть вода для цыплят?',
-            'What should the drinking water temperature be?'),
+        _t(
+          "Jo'jalar uchun suv harorati qanday bo'lishi kerak?",
+          'Какой температуры должна быть вода для цыплят?',
+          'What should the drinking water temperature be?',
+        ),
       ),
     ];
-    final colors = [AppColors.sun, AppColors.gold, AppColors.info, AppColors.primary];
+    final tones = [Tone.warning, Tone.warning, Tone.neutral, Tone.info];
     final tiles = <Widget>[
       for (var i = 0; i < items.length; i++)
         _QuickQuestionTile(
           icon: items[i].$1,
-          color: colors[i % colors.length],
+          tone: tones[i % tones.length],
           label: items[i].$2,
           onTap: () => _sendMessage(items[i].$3),
         ),
@@ -843,19 +859,25 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _PhotoCheckCard(
-              title: _t('Rasmni tekshirish', 'Проверить по фото', 'Check a photo'),
+              title: _t(
+                'Rasmni tekshirish',
+                'Проверить по фото',
+                'Check a photo',
+              ),
               subtitle: _t(
-                "Jo'jalar, axlat yoki to'shamani suratga oling",
-                'Сфотографируйте птицу, помёт или подстилку',
-                'Take a photo of birds, droppings or litter',
+                "Jo'jalar, axlat yoki to'shama",
+                'Птица, помёт или подстилка',
+                'Birds, droppings or litter',
               ),
               onTap: _choosePhoto,
             ),
             const SizedBox(height: AppSpace.lg),
-            Text(_t('Tez savollar', 'Быстрые вопросы', 'Quick questions'),
-                style: AppText.section),
+            Text(
+              _t('Tez savollar', 'Быстрые вопросы', 'Quick questions'),
+              style: AppText.section,
+            ),
             const SizedBox(height: AppSpace.sm),
-            MetricGrid(children: tiles),
+            ListGroup(children: tiles),
           ],
         ),
       ),
@@ -876,8 +898,16 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
           const SizedBox(width: AppSpace.md),
           Text(
             analyzingPhoto
-                ? _t('Rasm tekshirilmoqda…', 'Проверяю фото…', 'Checking the photo…')
-                : _t('Javob tayyorlanmoqda…', 'Готовлю ответ…', 'Preparing an answer…'),
+                ? _t(
+                    'Rasm tekshirilmoqda…',
+                    'Проверяю фото…',
+                    'Checking the photo…',
+                  )
+                : _t(
+                    'Javob tayyorlanmoqda…',
+                    'Готовлю ответ…',
+                    'Preparing an answer…',
+                  ),
             style: AppText.bodyMuted,
           ),
         ],
@@ -887,11 +917,24 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
 
   Widget _imagePreview(String path, {double size = 64}) {
     final image = kIsWeb
-        ? Image.network(path, width: size, height: size, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => SizedBox(width: size, height: size))
-        : Image.file(File(path), width: size, height: size, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => SizedBox(width: size, height: size));
-    return ClipRRect(borderRadius: BorderRadius.circular(AppRadius.sm), child: image);
+        ? Image.network(
+            path,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => SizedBox(width: size, height: size),
+          )
+        : Image.file(
+            File(path),
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => SizedBox(width: size, height: size),
+          );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: image,
+    );
   }
 
   Widget _buildAttachment() {
@@ -904,7 +947,11 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(
-          AppSpace.screen, AppSpace.md, AppSpace.screen, 0),
+        AppSpace.screen,
+        AppSpace.md,
+        AppSpace.screen,
+        0,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -914,8 +961,14 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_t('Nimani tekshiramiz?', 'Что проверить?', 'What should I check?'),
-                    style: AppText.label),
+                Text(
+                  _t(
+                    'Nimani tekshiramiz?',
+                    'Что проверить?',
+                    'What should I check?',
+                  ),
+                  style: AppText.label,
+                ),
                 const SizedBox(height: AppSpace.xs),
                 Wrap(
                   spacing: 6,
@@ -948,20 +1001,32 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       width: double.infinity,
       color: AppColors.dangerSoft,
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpace.screen, vertical: AppSpace.md),
+        horizontal: AppSpace.screen,
+        vertical: AppSpace.md,
+      ),
       child: Row(
         children: [
           FadeTransition(
-            opacity: Tween<double>(begin: 0.3, end: 1).animate(_pulseController),
-            child: const Icon(Icons.fiber_manual_record, color: AppColors.danger, size: 16),
+            opacity: Tween<double>(
+              begin: 0.3,
+              end: 1,
+            ).animate(_pulseController),
+            child: const Icon(
+              Icons.fiber_manual_record,
+              color: AppColors.danger,
+              size: 16,
+            ),
           ),
           const SizedBox(width: AppSpace.sm),
           Expanded(
             child: Text(
               _livePartialTranscript.isNotEmpty
                   ? _livePartialTranscript
-                  : _t('Gapiring… tugatgach to\'xtatish tugmasini bosing',
-                      'Говорите… затем нажмите «стоп»', 'Speak… then tap stop'),
+                  : _t(
+                      'Gapiring… tugatgach to\'xtatish tugmasini bosing',
+                      'Говорите… затем нажмите «стоп»',
+                      'Speak… then tap stop',
+                    ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppText.body,
@@ -973,6 +1038,12 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
   }
 
   Widget _buildInputBar() {
+    final quotaText = AppStrings.tr(
+      lang: _lang,
+      uz: 'Bugun qoldi: $_remainingQuestions/30',
+      ru: 'Осталось: $_remainingQuestions/30 сегодня',
+      en: 'Remaining today: $_remainingQuestions/30',
+    );
     final hasText = _controller.text.trim().isNotEmpty;
     final canSend = hasText || _selectedImagePath != null;
     return Container(
@@ -981,7 +1052,11 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
       padding: const EdgeInsets.fromLTRB(
-          AppSpace.sm, AppSpace.sm, AppSpace.sm, AppSpace.sm),
+        AppSpace.sm,
+        AppSpace.sm,
+        AppSpace.sm,
+        AppSpace.sm,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -1000,10 +1075,21 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _sendMessage(),
               decoration: InputDecoration(
-                hintText: _t('Savolingizni yozing…', 'Напишите вопрос…',
-                    'Type your question…'),
+                hintText: _t(
+                  'Savolingizni yozing…',
+                  'Напишите вопрос…',
+                  'Type your question…',
+                ),
+                helperText: quotaText,
+                helperStyle: AppText.caption.copyWith(
+                  color: _remainingQuestions > 0
+                      ? AppColors.inkMuted
+                      : AppColors.danger,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.lg, vertical: AppSpace.md),
+                  horizontal: AppSpace.lg,
+                  vertical: AppSpace.md,
+                ),
                 filled: true,
                 fillColor: AppColors.surfaceMuted,
                 enabledBorder: OutlineInputBorder(
@@ -1030,14 +1116,24 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
                 : IconButton.filled(
                     tooltip: _isRecording
                         ? _t("To'xtatish", 'Стоп', 'Stop')
-                        : _t('Ovoz bilan so\'rash', 'Спросить голосом', 'Ask by voice'),
+                        : _t(
+                            'Ovoz bilan so\'rash',
+                            'Спросить голосом',
+                            'Ask by voice',
+                          ),
                     style: IconButton.styleFrom(
-                      backgroundColor: _isRecording ? AppColors.danger : AppColors.primary,
+                      backgroundColor: _isRecording
+                          ? AppColors.danger
+                          : AppColors.primary,
                     ),
                     onPressed: _isLoading
                         ? null
-                        : (_isRecording ? _stopVoiceRecording : _startVoiceRecording),
-                    icon: Icon(_isRecording ? Icons.stop_rounded : Icons.mic_rounded),
+                        : (_isRecording
+                              ? _stopVoiceRecording
+                              : _startVoiceRecording),
+                    icon: Icon(
+                      _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                    ),
                   ),
           ),
         ],
@@ -1051,7 +1147,10 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       return Align(
         alignment: Alignment.centerRight,
         child: Container(
-          margin: const EdgeInsets.only(bottom: AppSpace.md, left: AppSpace.xxl),
+          margin: const EdgeInsets.only(
+            bottom: AppSpace.md,
+            left: AppSpace.xxl,
+          ),
           constraints: BoxConstraints(maxWidth: maxWidth),
           padding: const EdgeInsets.all(AppSpace.md),
           decoration: const BoxDecoration(
@@ -1084,7 +1183,11 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       child: AppCard(
         borderColor: msg.riskLevel == RiskLevel.high ? AppColors.danger : null,
         padding: const EdgeInsets.fromLTRB(
-            AppSpace.lg, AppSpace.md, AppSpace.sm, AppSpace.md),
+          AppSpace.lg,
+          AppSpace.md,
+          AppSpace.sm,
+          AppSpace.md,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1097,34 +1200,49 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
                   onPressed: () => _toggleSpeak(msg.text),
                   style: TextButton.styleFrom(
                     minimumSize: const Size(0, 32),
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpace.sm,
+                    ),
                   ),
                   icon: Icon(
-                    speaking ? Icons.stop_circle_outlined : Icons.volume_up_outlined,
+                    speaking
+                        ? Icons.stop_circle_outlined
+                        : Icons.volume_up_outlined,
                     size: 18,
                   ),
-                  label: Text(speaking
-                      ? _t("To'xtatish", 'Стоп', 'Stop')
-                      : _t('Tinglash', 'Слушать', 'Listen')),
+                  label: Text(
+                    speaking
+                        ? _t("To'xtatish", 'Стоп', 'Stop')
+                        : _t('Tinglash', 'Слушать', 'Listen'),
+                  ),
                 ),
               ],
             ),
             if (msg.riskLevel != RiskLevel.low) ...[
               const SizedBox(height: AppSpace.xs),
               StatusPill(
-                tone: msg.riskLevel == RiskLevel.high ? Tone.danger : Tone.warning,
+                tone: msg.riskLevel == RiskLevel.high
+                    ? Tone.danger
+                    : Tone.warning,
                 icon: msg.riskLevel == RiskLevel.high
                     ? Icons.local_hospital_outlined
                     : Icons.warning_amber_rounded,
                 label: msg.riskLevel == RiskLevel.high
                     ? _t('Veterinar kerak', 'Нужен ветеринар', 'See a vet')
-                    : _t("E'tibor bering", 'Обратите внимание', 'Needs attention'),
+                    : _t(
+                        "E'tibor bering",
+                        'Обратите внимание',
+                        'Needs attention',
+                      ),
               ),
             ],
             const SizedBox(height: AppSpace.sm),
             Padding(
               padding: const EdgeInsets.only(right: AppSpace.sm),
-              child: Text(_formatMarkdownForDisplay(msg.text), style: AppText.body),
+              child: Text(
+                _formatMarkdownForDisplay(msg.text),
+                style: AppText.body,
+              ),
             ),
             if (msg.source != null && msg.source!.isNotEmpty) ...[
               const SizedBox(height: AppSpace.sm),
@@ -1142,8 +1260,13 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
                   minimumSize: const Size(0, 44),
                 ),
                 icon: const Icon(Icons.phone_in_talk, size: 18),
-                label: Text(_t("Veterinarga qo'ng'iroq", 'Позвонить ветеринару',
-                    'Call the vet')),
+                label: Text(
+                  _t(
+                    "Veterinarga qo'ng'iroq",
+                    'Позвонить ветеринару',
+                    'Call the vet',
+                  ),
+                ),
               ),
             ],
           ],
@@ -1172,18 +1295,17 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
       '',
     );
     // Format markdown table rows into readable dash-separated lines
-    text = text.replaceAllMapped(
-      RegExp(r'^\s*\|(.+)\|\s*$', multiLine: true),
-      (m) {
-        final cells = m
-            .group(1)!
-            .split('|')
-            .map((c) => c.trim())
-            .where((c) => c.isNotEmpty)
-            .toList();
-        return cells.isEmpty ? '' : '• ${cells.join(' — ')}';
-      },
-    );
+    text = text.replaceAllMapped(RegExp(r'^\s*\|(.+)\|\s*$', multiLine: true), (
+      m,
+    ) {
+      final cells = m
+          .group(1)!
+          .split('|')
+          .map((c) => c.trim())
+          .where((c) => c.isNotEmpty)
+          .toList();
+      return cells.isEmpty ? '' : '• ${cells.join(' — ')}';
+    });
     // Convert markdown bullet points (* or -) into clean bullets
     text = text.replaceAllMapped(
       RegExp(r'^(\s*)[-*]\s+', multiLine: true),
@@ -1197,50 +1319,26 @@ class _AskScreenState extends State<AskScreen> with SingleTickerProviderStateMix
     text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     return text.trim();
   }
-
 }
 
-/// Square quick-question tile: solid coloured disc and a short label.
+/// Full-width question row; long translations can wrap.
 class _QuickQuestionTile extends StatelessWidget {
   final IconData icon;
-  final Color color;
+  final Tone tone;
   final String label;
   final VoidCallback onTap;
-
   const _QuickQuestionTile({
     required this.icon,
-    required this.color,
+    required this.tone,
     required this.label,
     required this.onTap,
   });
-
   @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppSpace.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              boxShadow: AppShadow.glow(color),
-            ),
-            child: Icon(icon, color: Colors.white, size: 22),
-          ),
-          const SizedBox(height: AppSpace.md),
-          Text(label, style: AppText.cardTitle),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      ListRow(icon: icon, tone: tone, title: label, onTap: onTap);
 }
 
-/// Wide photo card that opens the camera / gallery sheet.
+/// Compact photo entry that opens the camera / gallery sheet.
 class _PhotoCheckCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -1253,77 +1351,36 @@ class _PhotoCheckCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: onTap,
-        child: PhotoCard(
-          image: BroilerPhotos.chicksCloseup,
-          padding: const EdgeInsets.all(AppSpace.lg),
-          child: SizedBox(
-            height: 120,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(56),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withAlpha(90)),
-                  ),
-                  child: const Icon(
-                    Icons.photo_camera_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const Spacer(),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: AppText.section.copyWith(color: Colors.white),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            subtitle,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppText.caption.copyWith(
-                              color: Colors.white.withAlpha(220),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpace.sm),
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.arrow_forward_rounded,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+  Widget build(BuildContext context) => AppCard(
+    onTap: onTap,
+    padding: const EdgeInsets.all(AppSpace.md),
+    child: Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Image.asset(
+            BroilerPhotos.chicksCloseup,
+            width: 64,
+            height: 64,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                const IconBadge(icon: Icons.photo_camera_outlined, size: 64),
           ),
         ),
-      ),
-    );
-  }
+        const SizedBox(width: AppSpace.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppText.cardTitle),
+              const Gap(AppSpace.xs),
+              Text(subtitle, style: AppText.caption),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpace.sm),
+        const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+      ],
+    ),
+  );
 }

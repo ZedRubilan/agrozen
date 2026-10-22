@@ -145,88 +145,43 @@ class _LessonScreenState extends State<LessonScreen> {
     );
   }
 
-  /// Lesson-coloured card: big icon tile, title, subtitle, duration, passed.
+  /// White card with the lesson's icon tile, title, subtitle, duration and
+  /// passed state.
   Widget _buildHero(CourseModuleGuide module, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpace.lg),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color, Color.lerp(color, Colors.black, 0.25)!],
-        ),
-        boxShadow: AppShadow.glow(color),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(56),
+                  color: color.withAlpha(36),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(icon, color: Colors.white, size: 32),
+                child: Icon(icon, color: color, size: 30),
               ),
               const Spacer(),
-              GlassPill(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.schedule_rounded, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      module.durationLabel,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
+              StatusPill(
+                label: module.durationLabel,
+                icon: Icons.schedule_rounded,
               ),
               if (_passed) ...[
                 const SizedBox(width: AppSpace.xs),
-                GlassPill(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_rounded, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        _t("O'tildi", 'Пройден', 'Passed'),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
+                StatusPill(
+                  label: _t("O'tildi", 'Пройден', 'Passed'),
+                  tone: Tone.primary,
+                  icon: Icons.check_rounded,
                 ),
               ],
             ],
           ),
           const SizedBox(height: AppSpace.lg),
-          Text(
-            module.title,
-            style: AppText.screenTitle.copyWith(
-              color: Colors.white,
-              fontSize: 22,
-            ),
-          ),
+          Text(module.title, style: AppText.screenTitle.copyWith(fontSize: 22)),
           const SizedBox(height: AppSpace.xs),
-          Text(
-            module.subtitle,
-            style: AppText.bodyMuted.copyWith(
-              color: Colors.white.withAlpha(225),
-            ),
-          ),
+          Text(module.subtitle, style: AppText.bodyMuted),
         ],
       ),
     );
@@ -296,7 +251,7 @@ class _LessonScreenState extends State<LessonScreen> {
   }
 }
 
-/// Soft green "why it matters" card with a lightbulb disc.
+/// "Why it matters" on a soft green banner.
 class _WhyCard extends StatelessWidget {
   final String title;
   final String message;
@@ -304,49 +259,12 @@ class _WhyCard extends StatelessWidget {
   const _WhyCard({required this.title, required this.message});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpace.lg),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primarySoft, Color(0xFFF4FBF6)],
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-              boxShadow: AppShadow.glow(AppColors.primary),
-            ),
-            child: const Icon(
-              Icons.lightbulb_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: AppSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppText.cardTitle),
-                const SizedBox(height: AppSpace.xs),
-                Text(message, style: AppText.body),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => NoticeBanner(
+    tone: Tone.primary,
+    icon: Icons.lightbulb_rounded,
+    title: title,
+    message: message,
+  );
 }
 
 /// Photo card with a big white play button.

@@ -184,9 +184,11 @@ class _LegendKey extends StatelessWidget {
           child: CustomPaint(painter: _KeyPainter(color, dashed)),
         ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: AppText.caption.copyWith(color: AppColors.inkSecondary),
+        Flexible(
+          child: Text(
+            label,
+            style: AppText.caption.copyWith(color: AppColors.inkSecondary),
+          ),
         ),
       ],
     );

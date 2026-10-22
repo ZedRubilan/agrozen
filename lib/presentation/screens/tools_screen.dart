@@ -187,7 +187,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final rawFcr = ready && farm.currentCount > 0
         ? feed / (farm.currentCount * weight / 1000)
         : null;
-    final implausible = rawFcr != null &&
+    final implausible =
+        rawFcr != null &&
         !BroilerGrowerLibrary.isPlausibleFcr(day: farm.batchDay, fcr: rawFcr);
 
     return AppCard(
@@ -563,32 +564,22 @@ class _ProfitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loss = amount < 0;
-    final color = loss ? AppColors.danger : AppColors.primary;
+    final tone = loss ? Tone.danger : Tone.primary;
     return AnimatedContainer(
       duration: AppMotion.medium,
       padding: const EdgeInsets.all(AppSpace.lg),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color, Color.lerp(color, Colors.black, 0.25)!],
-        ),
-        boxShadow: AppShadow.glow(color),
+        color: tone.background,
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(56),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              loss ? Icons.trending_down_rounded : Icons.trending_up_rounded,
-              color: Colors.white,
-            ),
+          IconBadge(
+            icon: loss
+                ? Icons.trending_down_rounded
+                : Icons.trending_up_rounded,
+            tone: tone,
+            size: 48,
           ),
           const SizedBox(width: AppSpace.md),
           Expanded(
@@ -597,9 +588,7 @@ class _ProfitCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: AppText.label.copyWith(
-                    color: Colors.white.withAlpha(230),
-                  ),
+                  style: AppText.label.copyWith(color: AppColors.inkSecondary),
                 ),
                 FittedBox(
                   fit: BoxFit.scaleDown,
@@ -608,7 +597,7 @@ class _ProfitCard extends StatelessWidget {
                     value: amount,
                     format: format,
                     style: AppText.display.copyWith(
-                      color: Colors.white,
+                      color: tone.foreground,
                       fontSize: 28,
                     ),
                   ),
@@ -617,7 +606,7 @@ class _ProfitCard extends StatelessWidget {
                   Text(
                     '$afterLoanLabel: ${format(afterLoan)}',
                     style: AppText.caption.copyWith(
-                      color: Colors.white.withAlpha(230),
+                      color: AppColors.inkSecondary,
                     ),
                   ),
               ],

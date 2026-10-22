@@ -27,7 +27,7 @@ class AppColors {
   // Ink
   static const Color ink = Color(0xFF0F172A); // Slate Ink
   static const Color inkSecondary = Color(0xFF52665A); // Muted Sage
-  static const Color inkMuted = Color(0xFF7A8E7E);
+  static const Color inkMuted = Color(0xFF63796A);
 
   // Status
   static const Color warning = Color(0xFFB45309);
@@ -54,11 +54,11 @@ class AppShadow {
   AppShadow._();
 
   static const List<BoxShadow> card = [
-    BoxShadow(color: Color(0x0F0F172A), blurRadius: 24, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x080F172A), blurRadius: 12, offset: Offset(0, 3)),
   ];
 
   static const List<BoxShadow> raised = [
-    BoxShadow(color: Color(0x1F0F172A), blurRadius: 32, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0x100F172A), blurRadius: 16, offset: Offset(0, 4)),
   ];
 
   static List<BoxShadow> glow(Color color) => [
@@ -301,7 +301,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.primary,
+        indicatorColor: AppColors.primarySoft,
         indicatorShape: const StadiumBorder(),
         height: 66,
         elevation: 0,
@@ -321,7 +321,7 @@ class AppTheme {
           (states) => IconThemeData(
             size: 24,
             color: states.contains(WidgetState.selected)
-                ? Colors.white
+                ? AppColors.primaryDark
                 : AppColors.inkSecondary,
           ),
         ),

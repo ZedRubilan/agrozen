@@ -82,7 +82,9 @@ class _AppCardState extends State<AppCard> {
     final tinted = widget.color != null && widget.color != AppColors.surface;
     return AnimatedScale(
       scale: _pressed ? 0.97 : 1,
-      duration: AppMotion.fast,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : AppMotion.fast,
       curve: AppMotion.curve,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -126,22 +128,38 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpace.sm, bottom: AppSpace.sm),
-      child: Row(
-        children: [
-          Expanded(child: Text(title, style: AppText.section)),
-          if (actionLabel != null && onAction != null)
-            TextButton(
-              onPressed: onAction,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(0, 36),
-                padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
-              ),
-              child: Text(actionLabel!),
+    final action = actionLabel != null && onAction != null
+        ? TextButton(
+            onPressed: onAction,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
             ),
-        ],
-      ),
+            child: Text(actionLabel!),
+          )
+        : null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpace.sm),
+      child: MediaQuery.textScalerOf(context).scale(14) > 19
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppText.section),
+                if (action != null) action,
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: Text(title, style: AppText.section)),
+                if (action != null)
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: action,
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 }
@@ -298,6 +316,17 @@ class MetricGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.textScalerOf(context).scale(14) > 19) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const Gap(AppSpace.sm),
+            children[i],
+          ],
+        ],
+      );
+    }
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i += 2) {
       if (i > 0) rows.add(const SizedBox(height: AppSpace.sm));
@@ -488,12 +517,14 @@ class ListGroup extends StatelessWidget {
 class PageHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
+  final Color? subtitleColor;
   final Widget? trailing;
 
   const PageHeader({
     super.key,
     required this.title,
     this.subtitle,
+    this.subtitleColor,
     this.trailing,
   });
 
@@ -511,7 +542,10 @@ class PageHeader extends StatelessWidget {
                 Text(title, style: AppText.screenTitle),
                 if (subtitle != null) ...[
                   const SizedBox(height: AppSpace.xs),
-                  Text(subtitle!, style: AppText.bodyMuted),
+                  Text(
+                    subtitle!,
+                    style: AppText.bodyMuted.copyWith(color: subtitleColor),
+                  ),
                 ],
               ],
             ),
@@ -931,9 +965,10 @@ class PhotoCard extends StatelessWidget {
   }
 }
 
-/// One target number (temperature, feed, water, weight…) as a tappable tile
-/// whose value counts up. The [hero] tile is the filled sun-orange one —
-/// use at most one per screen (brooding temperature matters most).
+/// One target number (temperature, feed, water, weight…) as a tappable tile:
+/// small semantic icon beside the label, the value, a supporting caption.
+/// The [hero] tile is tinted soft amber — use at most one per screen
+/// (brooding temperature matters most).
 class TargetTile extends StatelessWidget {
   final bool hero;
   final IconData icon;
@@ -958,72 +993,101 @@ class TargetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = hero ? Colors.white : AppColors.ink;
-    final muted = hero ? Colors.white.withAlpha(215) : AppColors.inkMuted;
-    final tile = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: hero ? Colors.white.withAlpha(56) : tone.background,
-                shape: BoxShape.circle,
+    return AppCard(
+      onTap: onTap,
+      color: hero ? AppColors.warningSoft : null,
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: tone.foreground),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppText.caption.copyWith(
+                    color: AppColors.inkSecondary,
+                  ),
+                ),
               ),
-              child: Icon(
-                icon,
-                size: 22,
-                color: hero ? Colors.white : tone.foreground,
-              ),
-            ),
-            const Spacer(),
-            if (onTap != null)
-              Icon(Icons.arrow_outward_rounded, size: 18, color: muted),
+            ],
+          ),
+          const Gap(AppSpace.sm),
+          Text(format(value), style: AppText.metric),
+          if (caption.isNotEmpty) ...[
+            const Gap(AppSpace.xs),
+            Text(caption, style: AppText.caption),
           ],
-        ),
-        const SizedBox(height: AppSpace.md),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppText.caption.copyWith(
-            color: hero ? Colors.white.withAlpha(230) : AppColors.inkSecondary,
-          ),
-        ),
-        const SizedBox(height: 2),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: CountUpText(
-            value: value,
-            format: format,
-            style: AppText.metric.copyWith(color: fg, fontSize: 24),
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          caption,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: AppText.caption.copyWith(color: muted),
-        ),
-      ],
-    );
-
-    if (!hero) return AppCard(onTap: onTap, child: tile);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.sun, AppColors.sunDeep],
-        ),
-        boxShadow: AppShadow.glow(AppColors.sun),
+        ],
       ),
-      child: AppCard(color: Colors.transparent, onTap: onTap, child: tile),
+    );
+  }
+}
+
+/// The card under a tab's [PageHeader]: where things stand right now, with a
+/// small farm photo, an optional progress line and an optional action.
+class SummaryCard extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final String image;
+  final double? progress;
+  final Widget? action;
+
+  const SummaryCard({
+    super.key,
+    required this.title,
+    required this.image,
+    this.subtitle,
+    this.progress,
+    this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: AppText.metric),
+                    if (subtitle != null) ...[
+                      const Gap(AppSpace.xs),
+                      Text(subtitle!, style: AppText.bodyMuted),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpace.md),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: Image.asset(
+                  image,
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: ColoredBox(color: AppColors.primarySoft),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (progress != null) ...[
+            const Gap(AppSpace.md),
+            AppProgressBar(value: progress!, color: AppColors.primary),
+          ],
+          if (action != null) ...[const Gap(AppSpace.lg), action!],
+        ],
+      ),
     );
   }
 }
@@ -1127,4 +1191,53 @@ class _ConfettiPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ConfettiPainter old) => false;
+}
+
+/// Secondary information stays discoverable without dominating the page.
+/// Text grows naturally; the entire labelled header is a touch target.
+class DetailSection extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final Tone tone;
+  final List<Widget> children;
+  const DetailSection({
+    super.key,
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    this.tone = Tone.primary,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: EdgeInsets.zero,
+    child: ExpansionTile(
+      shape: const Border(),
+      collapsedShape: const Border(),
+      tilePadding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.lg,
+        vertical: AppSpace.xs,
+      ),
+      childrenPadding: const EdgeInsets.fromLTRB(
+        AppSpace.md,
+        0,
+        AppSpace.md,
+        AppSpace.md,
+      ),
+      leading: IconBadge(icon: icon, tone: tone),
+      title: Text(title, style: AppText.cardTitle),
+      subtitle: subtitle == null
+          ? null
+          : Text(subtitle!, style: AppText.bodyMuted),
+      expansionAnimationStyle: AnimationStyle(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : AppMotion.medium,
+        curve: AppMotion.curve,
+      ),
+      children: children,
+    ),
+  );
 }

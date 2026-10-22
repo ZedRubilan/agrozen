@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../core/localization/app_strings.dart';
@@ -12,14 +11,13 @@ import '../../services/location_service.dart';
 import '../ui/broiler_photos.dart';
 import '../ui/components.dart';
 import '../ui/format.dart';
-import '../widgets/agro_icons.dart';
 import '../widgets/alert_card.dart';
 import '../widgets/task_checklist_card.dart';
 import '../widgets/weather_summary_card.dart';
 
 /// "Today" tab: what the farmer needs to know and do today, in order —
-/// a photo hero with the batch day, flock status, warnings, today's targets,
-/// quick logging and the task list.
+/// warnings, the batch day and flock, quick logging, today's targets and the
+/// task list.
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
 
@@ -117,6 +115,35 @@ class _TodayScreenState extends State<TodayScreen> {
     Widget reveal(Widget child) => Reveal(index: section++, child: child);
 
     final content = <Widget>[
+      reveal(
+        PageHeader(
+          title: _t(
+            'Assalomu alaykum, ${farm.farmerName}!',
+            'Здравствуйте, ${farm.farmerName}!',
+            'Hello, ${farm.farmerName}!',
+          ),
+          subtitle: farm.locationLabel,
+          trailing: IconButton(
+            tooltip: _t('Sozlamalar', 'Настройки', 'Settings'),
+            onPressed: () => _open('/settings'),
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: AppColors.inkSecondary,
+            ),
+          ),
+        ),
+      ),
+      for (final alert in _alerts) ...[
+        reveal(
+          AlertCard.fromAlertResult(
+            alert: alert,
+            locale: _lang,
+            vetPhone: vetPhone,
+            vetName: vetName,
+          ),
+        ),
+        const Gap(),
+      ],
       if (farm.batchFinished) ...[
         reveal(
           NoticeBanner(
@@ -175,26 +202,16 @@ class _TodayScreenState extends State<TodayScreen> {
         ),
         const Gap(),
       ],
-      for (final alert in _alerts) ...[
-        reveal(
-          AlertCard.fromAlertResult(
-            alert: alert,
-            locale: _lang,
-            vetPhone: vetPhone,
-            vetName: vetName,
-          ),
-        ),
-        const Gap(),
-      ],
       reveal(
-        SectionHeader(
-          title: _t("Bugungi me'yorlar", 'Нормы на сегодня', "Today's targets"),
-          actionLabel: _t('Batafsil', 'Подробнее', 'Details'),
-          onAction: () => _open('/daily-plan'),
+        SummaryCard(
+          image: BroilerPhotos.forDay(farm.batchDay),
+          title: _fmt.dayOf(farm.batchDay, 42),
+          subtitle:
+              '${farm.phaseName()} · ${_t('${Fmt.grouped(farm.currentCount.toDouble())} ta tirik', '${Fmt.grouped(farm.currentCount.toDouble())} живых', '${Fmt.grouped(farm.currentCount.toDouble())} alive')}',
+          progress: farm.batchDay / 42,
         ),
       ),
-      reveal(_buildTargets(farm)),
-      const Gap(AppSpace.xl),
+      const Gap(AppSpace.lg),
       reveal(
         SectionHeader(
           title: _t(
@@ -205,8 +222,17 @@ class _TodayScreenState extends State<TodayScreen> {
         ),
       ),
       reveal(_buildQuickLog(farm)),
+      const Gap(AppSpace.lg),
+      reveal(
+        SectionHeader(
+          title: _t("Bugungi me'yorlar", 'Нормы на сегодня', "Today's targets"),
+          actionLabel: _t('Batafsil', 'Подробнее', 'Details'),
+          onAction: () => _open('/daily-plan'),
+        ),
+      ),
+      reveal(_buildTargets(farm)),
       if (_tasks.isNotEmpty) ...[
-        const Gap(AppSpace.xl),
+        const Gap(AppSpace.lg),
         reveal(
           SectionHeader(
             title: _t(
@@ -220,7 +246,7 @@ class _TodayScreenState extends State<TodayScreen> {
         ),
         reveal(TaskChecklistCard(day: farm.batchDay, tasks: _tasks)),
       ],
-      const Gap(AppSpace.xl),
+      const Gap(AppSpace.lg),
       reveal(SectionHeader(title: _t('Ob-havo', 'Погода', 'Weather'))),
       reveal(
         WeatherSummaryCard(
@@ -231,49 +257,37 @@ class _TodayScreenState extends State<TodayScreen> {
           language: _lang,
         ),
       ),
-      const Gap(AppSpace.xl),
-      reveal(SectionHeader(title: _t('Foydali', 'Полезное', 'Useful'))),
+      const Gap(AppSpace.lg),
       reveal(
-        _PhotoLinkCard(
-          image: BroilerPhotos.feed,
-          icon: Icons.calculate_rounded,
-          title: _t('Hisob-kitoblar', 'Калькуляторы', 'Calculators'),
-          subtitle: _t(
-            'FCR, samaradorlik va kutilayotgan foyda',
-            'FCR, эффективность и ожидаемая прибыль',
-            'FCR, efficiency and expected profit',
+        DetailSection(
+          title: _t(
+            'Asboblar va hisobotlar',
+            'Инструменты и отчёты',
+            'Tools & reports',
           ),
-          onTap: () => _open('/tools'),
-        ),
-      ),
-      const Gap(),
-      reveal(
-        _PhotoLinkCard(
-          image: BroilerPhotos.finisher,
-          icon: Icons.sensors_rounded,
-          tone: Tone.info,
-          title: _t('Aqlli ferma', 'Ферма онлайн', 'Smart barn'),
           subtitle: _t(
-            'Sensorlar, AI-kamera va avto-shamollatish',
-            'Датчики, AI-камера и автовентиляция',
-            'Sensors, AI camera and auto ventilation',
+            'Hisob-kitoblar, aqlli ferma, bank hisoboti',
+            'Калькуляторы, датчики, отчёт для банка',
+            'Calculators, smart barn, bank report',
           ),
-          onTap: () => _open('/monitor'),
-        ),
-      ),
-      const Gap(),
-      reveal(
-        _PhotoLinkCard(
-          image: BroilerPhotos.farmAerial,
-          icon: Icons.account_balance_rounded,
-          tone: Tone.primary,
-          title: _t('Bank uchun hisobot', 'Отчёт для банка', 'Bank report'),
-          subtitle: _t(
-            'Partiya hisoboti PDF — sizning roziligingiz bilan',
-            'Отчёт о партии в PDF — с вашего согласия',
-            'Batch report as a PDF — with your consent',
-          ),
-          onTap: () => _open('/bank-report'),
+          icon: Icons.grid_view_rounded,
+          children: [
+            ListRow(
+              icon: Icons.calculate_outlined,
+              title: _t('Hisob-kitoblar', 'Калькуляторы', 'Calculators'),
+              onTap: () => _open('/tools'),
+            ),
+            ListRow(
+              icon: Icons.sensors_rounded,
+              title: _t('Aqlli ferma', 'Ферма онлайн', 'Smart barn'),
+              onTap: () => _open('/monitor'),
+            ),
+            ListRow(
+              icon: Icons.account_balance_outlined,
+              title: _t('Bank uchun hisobot', 'Отчёт для банка', 'Bank report'),
+              onTap: () => _open('/bank-report'),
+            ),
+          ],
         ),
       ),
       if (vetPhone != null) ...[
@@ -289,289 +303,7 @@ class _TodayScreenState extends State<TodayScreen> {
       ],
     ];
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: RefreshIndicator(
-        onRefresh: _load,
-        edgeOffset: MediaQuery.paddingOf(context).top,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: AppSpace.xxl),
-          children: [
-            _buildHeroWithFlock(farm),
-            const Gap(AppSpace.lg),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.screen,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: content,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Photo of the flock with the greeting and the batch-day ring, and the
-  /// flock card floating over its bottom edge.
-  Widget _buildHeroWithFlock(FarmSnapshot farm) {
-    const overlap = 48.0;
-    final top = MediaQuery.paddingOf(context).top;
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: overlap),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(AppRadius.hero),
-            ),
-            child: Stack(
-              children: [
-                Positioned.fill(child: _HeroPhoto(day: farm.batchDay)),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpace.screen,
-                    top + AppSpace.md,
-                    AppSpace.screen,
-                    AppSpace.xl + overlap + 12,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const AgroChickIcon(size: 44),
-                          const SizedBox(width: AppSpace.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _t(
-                                    'Assalomu alaykum, ${farm.farmerName}!',
-                                    'Здравствуйте, ${farm.farmerName}!',
-                                    'Hello, ${farm.farmerName}!',
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppText.section.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on_rounded,
-                                      size: 15,
-                                      color: Colors.white70,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Flexible(
-                                      child: Text(
-                                        farm.locationLabel,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppText.caption.copyWith(
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: AppSpace.sm),
-                          GlassPill(
-                            tooltip: _t('Sozlamalar', 'Настройки', 'Settings'),
-                            padding: const EdgeInsets.all(10),
-                            onTap: () => _open('/settings'),
-                            child: const Icon(Icons.settings_rounded, size: 22),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpace.xl),
-                      Row(
-                        children: [
-                          ProgressRing(
-                            value: farm.cycleProgress,
-                            size: 104,
-                            stroke: 9,
-                            color: Colors.white,
-                            trackColor: Colors.white.withAlpha(56),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CountUpText(
-                                  value: farm.batchDay.toDouble(),
-                                  format: (v) => '${v.round()}',
-                                  style: AppText.display.copyWith(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  '/ 42',
-                                  style: AppText.caption.copyWith(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: AppSpace.lg),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                GlassPill(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.eco_rounded, size: 15),
-                                      const SizedBox(width: 5),
-                                      Text(farm.phaseName()),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpace.sm),
-                                Text(
-                                  _fmt.dayOf(farm.batchDay, 42),
-                                  style: AppText.screenTitle.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          left: AppSpace.screen,
-          right: AppSpace.screen,
-          bottom: 0,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 640),
-              child: _buildFlockCard(farm),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFlockCard(FarmSnapshot farm) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: AppShadow.raised,
-      ),
-      child: AppCard(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpace.md,
-          vertical: AppSpace.lg,
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              _miniStat(
-                icon: Icons.favorite_rounded,
-                tone: Tone.primary,
-                value: farm.currentCount.toDouble(),
-                format: Fmt.grouped,
-                label: _t('tirik', 'живых', 'alive'),
-              ),
-              const VerticalDivider(width: AppSpace.lg),
-              _miniStat(
-                icon: Icons.heart_broken_rounded,
-                tone: Tone.danger,
-                value: farm.totalDeaths.toDouble(),
-                format: (v) => '${v.round()}',
-                label: _t('nobud', 'падёж', 'lost'),
-                caption: '${Fmt.num(farm.cumulativeMortalityPct)}%',
-              ),
-              const VerticalDivider(width: AppSpace.lg),
-              _miniStat(
-                icon: Icons.flag_rounded,
-                tone: Tone.info,
-                value: farm.daysLeft.toDouble(),
-                format: (v) => '${v.round()}',
-                label: _t('kun qoldi', 'дн. осталось', 'days left'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _miniStat({
-    required IconData icon,
-    required Tone tone,
-    required double value,
-    required String Function(double) format,
-    required String label,
-    String? caption,
-  }) {
-    return Expanded(
-      child: Row(
-        children: [
-          IconBadge(icon: icon, tone: tone, size: 32),
-          const SizedBox(width: AppSpace.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      CountUpText(
-                        value: value,
-                        format: format,
-                        style: AppText.metric.copyWith(fontSize: 20),
-                      ),
-                      if (caption != null) ...[
-                        const SizedBox(width: 3),
-                        Text(caption, style: AppText.caption),
-                      ],
-                    ],
-                  ),
-                ),
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.caption.copyWith(height: 1.15),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return PageBody(onRefresh: _load, children: content);
   }
 
   Widget _buildTargets(FarmSnapshot farm) {
@@ -635,92 +367,48 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Widget _buildQuickLog(FarmSnapshot farm) {
-    return Row(
-      children: [
-        Expanded(
-          child: _LogButton(
-            icon: Icons.heart_broken_rounded,
-            tone: Tone.danger,
-            label: _t("O'lim", 'Падёж', 'Deaths'),
-            value: '${farm.todayDeaths}',
-            onTap: () => _open('/diary/mortality'),
-          ),
-        ),
-        const SizedBox(width: AppSpace.md),
-        Expanded(
-          child: _LogButton(
-            icon: Icons.grain_rounded,
-            tone: Tone.warning,
-            label: _t('Yem', 'Корм', 'Feed'),
-            value: farm.todayFeedKg > 0 ? _fmt.kg(farm.todayFeedKg) : '—',
-            onTap: () => _open('/diary/feed'),
-          ),
-        ),
-        const SizedBox(width: AppSpace.md),
-        Expanded(
-          child: _LogButton(
-            icon: Icons.scale_rounded,
-            tone: Tone.info,
-            label: _t('Vazn', 'Вес', 'Weight'),
-            value: farm.todayRecord?.weightG != null
-                ? _fmt.grams(farm.todayRecord!.weightG!)
-                : '—',
-            onTap: () => _open('/diary/weight'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Photo of a broiler house at the flock's age (chicks, growers or finished
-/// birds) behind the Today header, with a gentle one-time zoom-out and a
-/// deep green shade so white text stays readable in bright sunlight.
-class _HeroPhoto extends StatelessWidget {
-  final int day;
-
-  const _HeroPhoto({required this.day});
-
-  @override
-  Widget build(BuildContext context) {
-    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const ColoredBox(color: AppColors.primaryDark),
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: still ? 1 : 1.12, end: 1),
-          duration: still ? Duration.zero : const Duration(milliseconds: 1600),
-          curve: Curves.easeOutCubic,
-          builder: (context, scale, child) =>
-              Transform.scale(scale: scale, child: child),
-          child: Image.asset(
-            BroilerPhotos.forDay(day),
-            fit: BoxFit.cover,
-            alignment: const Alignment(0, 0.2),
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.heroShade.withAlpha(170),
-                AppColors.heroShade.withAlpha(60),
-                AppColors.heroShade.withAlpha(215),
-              ],
-              stops: const [0, 0.42, 1],
+    final add = _t("+ qo'shish", '+ добавить', '+ add');
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _LogButton(
+              icon: Icons.heart_broken_rounded,
+              tone: Tone.danger,
+              label: _t("O'lim", 'Падёж', 'Deaths'),
+              value: farm.todayDeaths > 0 ? '${farm.todayDeaths}' : add,
+              onTap: () => _open('/diary/mortality'),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: _LogButton(
+              icon: Icons.grain_rounded,
+              tone: Tone.warning,
+              label: _t('Yem', 'Корм', 'Feed'),
+              value: farm.todayFeedKg > 0 ? _fmt.kg(farm.todayFeedKg) : add,
+              onTap: () => _open('/diary/feed'),
+            ),
+          ),
+          const SizedBox(width: AppSpace.md),
+          Expanded(
+            child: _LogButton(
+              icon: Icons.scale_rounded,
+              tone: Tone.primary,
+              label: _t('Vazn', 'Вес', 'Weight'),
+              value: farm.todayRecord?.weightG != null
+                  ? _fmt.grams(farm.todayRecord!.weightG!)
+                  : add,
+              onTap: () => _open('/diary/weight'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// Big round "record" button: coloured disc, label, today's value.
 class _LogButton extends StatelessWidget {
   final IconData icon;
   final Tone tone;
@@ -737,127 +425,21 @@ class _LogButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpace.sm,
-        AppSpace.lg,
-        AppSpace.sm,
-        AppSpace.md,
-      ),
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: tone.solid,
-                  shape: BoxShape.circle,
-                  boxShadow: AppShadow.glow(tone.solid),
-                ),
-                child: Icon(icon, color: Colors.white, size: 28),
-              ),
-              Positioned(
-                right: -4,
-                bottom: -4,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: AppShadow.card,
-                  ),
-                  child: Icon(
-                    Icons.add_rounded,
-                    size: 16,
-                    color: tone.foreground,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpace.md),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.label,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.caption,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppCard(
+    onTap: onTap,
+    padding: const EdgeInsets.all(AppSpace.md),
+    child: Column(
+      children: [
+        IconBadge(icon: icon, tone: tone),
+        const Gap(AppSpace.sm),
+        Text(label, textAlign: TextAlign.center, style: AppText.cardTitle),
+        const Gap(2),
+        Text(value, textAlign: TextAlign.center, style: AppText.caption),
+      ],
+    ),
+  );
 }
 
-/// Link card with a photo thumbnail on the right.
-class _PhotoLinkCard extends StatelessWidget {
-  final String image;
-  final IconData icon;
-  final Tone tone;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _PhotoLinkCard({
-    required this.image,
-    required this.icon,
-    this.tone = Tone.warning,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppSpace.md),
-      child: Row(
-        children: [
-          const SizedBox(width: AppSpace.xs),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconBadge(icon: icon, tone: tone, size: 34),
-                const SizedBox(height: AppSpace.sm),
-                Text(title, style: AppText.cardTitle),
-                const SizedBox(height: 2),
-                Text(subtitle, style: AppText.caption),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpace.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: Image.asset(
-              image,
-              width: 96,
-              height: 96,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const SizedBox.square(dimension: 96),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// District vet with one big call button.
 class _VetCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -905,10 +487,9 @@ class _VetCard extends StatelessWidget {
             child: Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
-                boxShadow: AppShadow.glow(AppColors.primary),
               ),
               child: const Icon(Icons.call_rounded, color: Colors.white),
             ),

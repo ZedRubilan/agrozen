@@ -176,7 +176,8 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            height: _sceneHeight,
+            height:
+                _sceneHeight * MediaQuery.textScalerOf(context).scale(14) / 14,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -317,10 +318,16 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard> {
                 const SizedBox(height: AppSpace.md),
                 Row(
                   children: [
-                    Flexible(
-                      child: StatusPill(label: advice.statusBadge, tone: tone),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: StatusPill(
+                          label: advice.statusBadge,
+                          tone: tone,
+                        ),
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: AppSpace.sm),
                     AnimatedRotation(
                       turns: _expanded ? 0.5 : 0,
                       duration: AppMotion.medium,
@@ -434,9 +441,16 @@ class _WeatherSummaryCardState extends State<WeatherSummaryCard> {
         children: [
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 5),
-          Text(value, style: AppText.label),
-          const SizedBox(width: 4),
-          Text(label, style: AppText.caption),
+          Flexible(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: '$value ', style: AppText.label),
+                  TextSpan(text: label, style: AppText.caption),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

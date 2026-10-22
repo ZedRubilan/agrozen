@@ -409,18 +409,16 @@ class _SettingsScreenState extends State<SettingsScreen>
   /// Farm photo with the farmer's avatar, name (tap to edit), place and a
   /// one-line batch summary.
   Widget _buildProfile(FarmSnapshot farm) {
-    return PhotoCard(
-      image: BroilerPhotos.forDay(farm.batchDay),
-      padding: const EdgeInsets.all(AppSpace.lg),
+    return AppCard(
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(3),
             decoration: const BoxDecoration(
-              color: Colors.white,
+              color: AppColors.primarySoft,
               shape: BoxShape.circle,
             ),
-            child: const AgroChickIcon(size: 60),
+            child: const AgroChickIcon(size: 56),
           ),
           const SizedBox(width: AppSpace.lg),
           Expanded(
@@ -431,46 +429,30 @@ class _SettingsScreenState extends State<SettingsScreen>
                   farm.farmerName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.screenTitle.copyWith(
-                    color: Colors.white,
-                    fontSize: 22,
-                  ),
+                  style: AppText.metric,
                 ),
                 const SizedBox(height: AppSpace.xs),
                 Wrap(
                   spacing: AppSpace.xs,
                   runSpacing: AppSpace.xs,
                   children: [
-                    GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      child: Text(
-                        '${_fmt.day(farm.batchDay)} · ${farm.phaseName()}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
+                    StatusPill(
+                      label: '${_fmt.day(farm.batchDay)} · ${farm.phaseName()}',
+                      tone: Tone.primary,
                     ),
-                    GlassPill(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      child: Text(
-                        _fmt.birds(farm.currentCount),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
+                    StatusPill(label: _fmt.birds(farm.currentCount)),
                   ],
                 ),
               ],
             ),
           ),
-          GlassPill(
+          IconButton(
             tooltip: _t('Ismni o\'zgartirish', 'Изменить имя', 'Edit name'),
-            padding: const EdgeInsets.all(10),
-            onTap: _editName,
-            child: const Icon(Icons.edit_rounded, size: 20),
+            onPressed: _editName,
+            icon: const Icon(
+              Icons.edit_outlined,
+              color: AppColors.inkSecondary,
+            ),
           ),
         ],
       ),

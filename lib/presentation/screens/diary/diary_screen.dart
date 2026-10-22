@@ -119,35 +119,92 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 const Gap(),
               ],
               reveal(SectionHeader(title: _t('Bugun', 'Сегодня', 'Today'))),
-              ..._buildToday(farm).map(reveal),
-              const Gap(AppSpace.xl),
+              reveal(ListGroup(children: _buildToday(farm))),
+              const Gap(AppSpace.lg),
+              reveal(_buildGrowth(farm)),
+              const Gap(AppSpace.lg),
               reveal(
-                SectionHeader(
+                DetailSection(
                   title: _t('Partiya bo\'yicha', 'За всю партию', 'This batch'),
+                  subtitle: _t(
+                    '${Fmt.grouped(farm.currentCount.toDouble())} ta tirik · ${farm.totalDeaths} ta nobud',
+                    '${Fmt.grouped(farm.currentCount.toDouble())} живых · ${farm.totalDeaths} падёж',
+                    '${Fmt.grouped(farm.currentCount.toDouble())} alive · ${farm.totalDeaths} lost',
+                  ),
+                  icon: Icons.pie_chart_outline_rounded,
+                  children: [_buildBatchSummary(farm)],
                 ),
               ),
-              reveal(_buildBatchSummary(farm)),
-              const Gap(AppSpace.xl),
-              reveal(SectionHeader(title: _t("O'sish", 'Рост', 'Growth'))),
+              const Gap(),
               reveal(
-                GrowthChartCard(
-                  weighings: _weighings(farm),
-                  batchDay: farm.batchDay,
-                  lang: _lang,
-                ),
-              ),
-              const Gap(AppSpace.xl),
-              reveal(
-                SectionHeader(
+                DetailSection(
                   title: _t("Kunlar bo'yicha", 'По дням', 'Day by day'),
+                  subtitle: _t(
+                    'Oldingi yozuvlarni ochish',
+                    'Открыть предыдущие записи',
+                    'View previous records',
+                  ),
+                  icon: Icons.history_rounded,
+                  children: [_buildHistory(farm)],
                 ),
               ),
-              reveal(_buildHistory(farm)),
             ],
           );
 
     if (widget.isEmbeddedInPageView) return body;
     return Scaffold(appBar: AppBar(), body: body);
+  }
+
+  Widget _buildGrowth(FarmSnapshot farm) {
+    final weighings = _weighings(farm);
+    if (weighings.isNotEmpty) {
+      return DetailSection(
+        title: _t("O'sish grafigi", 'График роста', 'Growth chart'),
+        subtitle: _t(
+          'Vaznni me’yor bilan solishtirish',
+          'Сравнить вес с нормой',
+          'Compare weight with the target',
+        ),
+        icon: Icons.show_chart_rounded,
+        children: [
+          GrowthChartCard(
+            weighings: weighings,
+            batchDay: farm.batchDay,
+            lang: _lang,
+          ),
+        ],
+      );
+    }
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            _t(
+              'Vaznni kuzatishni boshlang',
+              'Начните следить за весом',
+              'Start your growth record',
+            ),
+            style: AppText.section,
+          ),
+          const Gap(AppSpace.sm),
+          Text(
+            _t(
+              'Vaznni yozing va me’yor bilan solishtiring.',
+              'Запишите вес, чтобы сравнить его с нормой.',
+              'Add a sample weight to compare with the target.',
+            ),
+            style: AppText.bodyMuted,
+          ),
+          const Gap(AppSpace.md),
+          PrimaryButton(
+            label: _t('Vaznni yozish', 'Записать вес', 'Record weight'),
+            icon: Icons.scale_rounded,
+            onPressed: () => _open('/diary/weight'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Batch day → sample weight, from the history plus the latest weighing.
@@ -177,7 +234,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
         ),
         onTap: () => _open('/diary/mortality'),
       ),
-      const Gap(),
       _RecordCard(
         icon: Icons.grain_rounded,
         tone: Tone.warning,
@@ -192,10 +248,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
             : null,
         onTap: () => _open('/diary/feed'),
       ),
-      const Gap(),
       _RecordCard(
         icon: Icons.scale_rounded,
-        tone: Tone.info,
+        tone: Tone.primary,
         title: _t('Nazorat vaznini yozish', 'Записать вес', 'Record weight'),
         subtitle: farm.hasWeight
             ? _t(
@@ -210,7 +265,6 @@ class _DiaryScreenState extends State<DiaryScreen> {
               ),
         onTap: () => _open('/diary/weight'),
       ),
-      const Gap(),
       _RecordCard(
         icon: Icons.visibility_rounded,
         tone: Tone.neutral,
@@ -231,117 +285,62 @@ class _DiaryScreenState extends State<DiaryScreen> {
     ];
   }
 
-  /// Survival ring + alive count, then lost / feed / days recorded.
+  /// Details use readable rows rather than squeezing values into a ring.
   Widget _buildBatchSummary(FarmSnapshot farm) {
-    final loggedDays = farm.history.length;
-    final lostHigh = farm.cumulativeMortalityPct > 4;
-    return AppCard(
-      child: Column(
-        children: [
-          Row(
-            children: [
-              ProgressRing(
-                value: farm.survivalPct / 100,
-                size: 96,
-                stroke: 10,
-                color: lostHigh ? AppColors.danger : AppColors.primary,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CountUpText(
-                      value: farm.survivalPct,
-                      format: (v) => '${Fmt.num(v)}%',
-                      style: AppText.cardTitle.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      _t('saqlanish', 'сохранность', 'survival'),
-                      style: AppText.caption.copyWith(fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpace.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.favorite_rounded,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _t('Tirik', 'Живых', 'Alive'),
-                          style: AppText.caption,
-                        ),
-                      ],
-                    ),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: CountUpText(
-                        value: farm.currentCount.toDouble(),
-                        format: Fmt.grouped,
-                        style: AppText.display,
-                      ),
-                    ),
-                    Text(
-                      _t(
-                        '${Fmt.grouped(farm.initialCount.toDouble())} tadan',
-                        'из ${Fmt.grouped(farm.initialCount.toDouble())}',
-                        'of ${Fmt.grouped(farm.initialCount.toDouble())}',
-                      ),
-                      style: AppText.caption,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpace.lg),
-          const Divider(height: 1),
-          const SizedBox(height: AppSpace.md),
-          IntrinsicHeight(
+    final stats = <(IconData, Tone, String, String)>[
+      (
+        Icons.favorite_outline_rounded,
+        Tone.primary,
+        _t('Tirik', 'Живых', 'Alive'),
+        Fmt.grouped(farm.currentCount.toDouble()),
+      ),
+      (
+        Icons.shield_outlined,
+        Tone.primary,
+        _t('Saqlanish', 'Сохранность', 'Survival'),
+        '${Fmt.num(farm.survivalPct)}%',
+      ),
+      (
+        Icons.heart_broken_outlined,
+        farm.cumulativeMortalityPct > 4 ? Tone.danger : Tone.neutral,
+        _t('Jami nobud', 'Всего падёж', 'Total lost'),
+        '${farm.totalDeaths}',
+      ),
+      (
+        Icons.grain_rounded,
+        Tone.warning,
+        _t('Jami yem', 'Всего корма', 'Total feed'),
+        _fmt.kg(farm.totalFeedLoggedKg),
+      ),
+      (
+        Icons.event_available_outlined,
+        Tone.neutral,
+        _t('Yozilgan kunlar', 'Дней с записями', 'Days recorded'),
+        '${farm.history.length}/${farm.batchDay}',
+      ),
+    ];
+    return Column(
+      children: [
+        for (final stat in stats)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.sm),
             child: Row(
               children: [
-                _SummaryStat(
-                  icon: Icons.heart_broken_rounded,
-                  tone: lostHigh ? Tone.danger : Tone.neutral,
-                  label: _t('Jami nobud', 'Всего падёж', 'Total lost'),
-                  value: farm.totalDeaths.toDouble(),
-                  format: (v) => '${v.round()}',
-                  caption: '${Fmt.num(farm.cumulativeMortalityPct)}%',
-                ),
-                const VerticalDivider(width: AppSpace.lg),
-                _SummaryStat(
-                  icon: Icons.grain_rounded,
-                  tone: Tone.warning,
-                  label: _t('Jami yem', 'Всего корма', 'Total feed'),
-                  value: farm.totalFeedLoggedKg,
-                  format: _fmt.kg,
-                ),
-                const VerticalDivider(width: AppSpace.lg),
-                _SummaryStat(
-                  icon: Icons.event_available_rounded,
-                  tone: Tone.info,
-                  label: _t(
-                    'Yozilgan kunlar',
-                    'Дней с записями',
-                    'Days recorded',
+                IconBadge(icon: stat.$1, tone: stat.$2),
+                const SizedBox(width: AppSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(stat.$3, style: AppText.caption),
+                      Text(stat.$4, style: AppText.metric),
+                    ],
                   ),
-                  value: loggedDays.toDouble(),
-                  format: (v) => '${v.round()}/${farm.batchDay}',
                 ),
               ],
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -407,111 +406,61 @@ class _RecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = tone.solid;
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppSpace.md),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              boxShadow: AppShadow.glow(color),
-            ),
-            child: Icon(icon, color: Colors.white, size: 26),
-          ),
-          const SizedBox(width: AppSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppText.cardTitle),
-                const SizedBox(height: 2),
-                Text(subtitle, style: AppText.caption),
-                if (progress != null) ...[
-                  const SizedBox(height: AppSpace.sm),
-                  AppProgressBar(
-                    value: progress!,
-                    color: progress! >= 1 ? AppColors.primary : color,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpace.sm),
-          trailing ??
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: AppColors.primarySoft,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.add_rounded,
-                  color: AppColors.primaryDark,
-                ),
-              ),
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppText.cardTitle),
+        const Gap(AppSpace.xs),
+        Text(subtitle, style: AppText.caption),
+        if (progress != null) ...[
+          const Gap(AppSpace.sm),
+          AppProgressBar(value: progress!, color: AppColors.primary),
         ],
-      ),
+      ],
     );
-  }
-}
-
-class _SummaryStat extends StatelessWidget {
-  final IconData icon;
-  final Tone tone;
-  final String label;
-  final double value;
-  final String Function(double) format;
-  final String? caption;
-
-  const _SummaryStat({
-    required this.icon,
-    required this.tone,
-    required this.label,
-    required this.value,
-    required this.format,
-    this.caption,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IconBadge(icon: icon, tone: tone, size: 30),
-          const SizedBox(height: AppSpace.sm),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpace.lg,
+          vertical: AppSpace.md,
+        ),
+        child: LayoutBuilder(
+          builder: (context, box) {
+            // The stepper sits beside the text unless a narrow screen or large
+            // text needs the room.
+            final trailingBelow =
+                trailing != null &&
+                (box.maxWidth < 320 ||
+                    MediaQuery.textScalerOf(context).scale(14) > 19);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CountUpText(
-                  value: value,
-                  format: format,
-                  style: AppText.metric.copyWith(fontSize: 19),
+                Row(
+                  children: [
+                    IconBadge(icon: icon, tone: tone),
+                    const SizedBox(width: AppSpace.md),
+                    Expanded(child: content),
+                    const SizedBox(width: AppSpace.sm),
+                    if (trailing == null)
+                      const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    else if (!trailingBelow)
+                      trailing!,
+                  ],
                 ),
-                if (caption != null) ...[
-                  const SizedBox(width: 3),
-                  Text(caption!, style: AppText.caption),
-                ],
+                if (trailingBelow)
+                  Align(alignment: Alignment.centerRight, child: trailing!),
               ],
-            ),
-          ),
-          Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.caption.copyWith(height: 1.15),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -527,8 +476,8 @@ class _Stepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget button(IconData icon, VoidCallback? onTap) => SizedBox(
-      width: 36,
-      height: 36,
+      width: 48,
+      height: 48,
       child: IconButton.filledTonal(
         padding: EdgeInsets.zero,
         onPressed: onTap,
