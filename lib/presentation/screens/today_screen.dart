@@ -246,6 +246,36 @@ class _TodayScreenState extends State<TodayScreen> {
           onTap: () => _open('/tools'),
         ),
       ),
+      const Gap(),
+      reveal(
+        _PhotoLinkCard(
+          image: BroilerPhotos.finisher,
+          icon: Icons.sensors_rounded,
+          tone: Tone.info,
+          title: _t('Aqlli ferma', 'Ферма онлайн', 'Smart barn'),
+          subtitle: _t(
+            'Sensorlar, AI-kamera va avto-shamollatish',
+            'Датчики, AI-камера и автовентиляция',
+            'Sensors, AI camera and auto ventilation',
+          ),
+          onTap: () => _open('/monitor'),
+        ),
+      ),
+      const Gap(),
+      reveal(
+        _PhotoLinkCard(
+          image: BroilerPhotos.farmAerial,
+          icon: Icons.account_balance_rounded,
+          tone: Tone.primary,
+          title: _t('Bank uchun hisobot', 'Отчёт для банка', 'Bank report'),
+          subtitle: _t(
+            'Partiya hisoboti PDF — sizning roziligingiz bilan',
+            'Отчёт о партии в PDF — с вашего согласия',
+            'Batch report as a PDF — with your consent',
+          ),
+          onTap: () => _open('/bank-report'),
+        ),
+      ),
       if (vetPhone != null) ...[
         const Gap(),
         reveal(
@@ -775,6 +805,7 @@ class _LogButton extends StatelessWidget {
 class _PhotoLinkCard extends StatelessWidget {
   final String image;
   final IconData icon;
+  final Tone tone;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -782,6 +813,7 @@ class _PhotoLinkCard extends StatelessWidget {
   const _PhotoLinkCard({
     required this.image,
     required this.icon,
+    this.tone = Tone.warning,
     required this.title,
     required this.subtitle,
     required this.onTap,
@@ -799,7 +831,7 @@ class _PhotoLinkCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconBadge(icon: icon, tone: Tone.warning, size: 34),
+                IconBadge(icon: icon, tone: tone, size: 34),
                 const SizedBox(height: AppSpace.sm),
                 Text(title, style: AppText.cardTitle),
                 const SizedBox(height: 2),

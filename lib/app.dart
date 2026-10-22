@@ -20,6 +20,9 @@ import 'presentation/screens/course/course_list_screen.dart';
 import 'presentation/screens/course/lesson_screen.dart';
 import 'presentation/screens/course/quiz_screen.dart';
 import 'presentation/screens/course/certificate_screen.dart';
+import 'presentation/screens/monitor/farm_monitor_screen.dart';
+import 'services/monitoring/barn_data_source.dart';
+import 'presentation/screens/report/bank_report_screen.dart';
 import 'presentation/screens/settings_screen.dart';
 import 'presentation/screens/tools_screen.dart';
 import 'presentation/widgets/desktop_web_shell.dart';
@@ -69,6 +72,18 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(path: '/certificate', builder: (context, state) => const CertificateScreen()),
     GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
+    GoRoute(
+      path: '/monitor',
+      builder: (context, state) {
+        final name = state.uri.queryParameters['scenario'];
+        final scenario = DemoScenario.values.where((s) => s.name == name);
+        return FarmMonitorScreen(
+          initialScenario:
+              scenario.isEmpty ? DemoScenario.normal : scenario.first,
+        );
+      },
+    ),
+    GoRoute(path: '/bank-report', builder: (context, state) => const BankReportScreen()),
   ],
 );
 

@@ -52,6 +52,10 @@ dependencies:
   http: ^1.6.0
   web: ^1.0.0
 
+  # Bank report: the on-screen report is rendered to an image and wrapped
+  # in a one-page A4 PDF, so Cyrillic and the app's fonts come out as shown.
+  pdf: ^3.13.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
