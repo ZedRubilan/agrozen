@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroZen for Banks</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Tokens mirror lib/config/theme.dart (DESIGN.md). */
+:root {
+  --primary: #15803D; --primary-dark: #14532D; --primary-soft: #E6F4EA;
+  --bg: #F4F7F4; --surface: #FFFFFF; --surface-muted: #F1F5F2; --border: #E2EBE4;
+  --ink: #0F172A; --ink-2: #52665A; --ink-3: #7A8E7E;
+  --warning: #B45309; --warning-soft: #FEF3C7; --gold: #F59E0B;
+  --danger: #DC2626; --danger-soft: #FEE2E2;
+  --info: #1D4ED8; --info-soft: #DBEAFE;
+  --hero: #052E16;
+  --r-sm: 12px; --r-md: 18px; --r-lg: 24px;
+  --shadow: 0 8px 24px rgba(15, 23, 42, .06);
+  --shadow-raised: 0 12px 32px rgba(15, 23, 42, .12);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 500 15px/1.45 "Plus Jakarta Sans", "Segoe UI", Roboto, Arial, sans-serif;
+}
+button { font: inherit; cursor: pointer; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; }
+
+/* Header */
+header.top { background: var(--hero); color: #fff; }
+header.top .wrap { display: flex; align-items: center; gap: 16px; padding-top: 18px; padding-bottom: 18px; }
+.brand { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.brand img { width: 44px; height: 44px; border-radius: 50%; background: #fff; }
+.brand h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.2px; }
+.brand p { margin: 0; font-size: 13px; color: rgba(255,255,255,.75); }
+.demo-pill { background: rgba(255,255,255,.14); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.lang { display: flex; background: rgba(255,255,255,.12); border-radius: 999px; padding: 3px; }
+.lang button { background: none; border: 0; color: rgba(255,255,255,.8); padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; min-height: 32px; }
+.lang button[aria-pressed="true"] { background: #fff; color: var(--primary-dark); }
+
+h2 { font-size: 17px; font-weight: 700; margin: 0 0 12px; letter-spacing: -.2px; }
+.section { margin-top: 24px; }
+.card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 20px; }
+.muted { color: var(--ink-2); }
+.caption { font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
+
+/* KPI row */
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
+.kpi { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 16px; }
+.kpi .label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+.kpi .value { font-size: 28px; font-weight: 800; letter-spacing: -.5px; margin-top: 6px; }
+.kpi .sub { font-size: 12.5px; color: var(--ink-3); font-weight: 600; }
+.dot-ic { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; }
+.dot-ic svg { width: 16px; height: 16px; }
+
+/* Alert card */
+.alert-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-top: 12px; }
+.outbreak { background: var(--danger-soft); border-radius: var(--r-lg); padding: 20px; display: flex; gap: 16px; align-items: flex-start; }
+.outbreak .disc { flex: none; width: 48px; height: 48px; border-radius: 50%; background: var(--danger); display: grid; place-items: center; box-shadow: 0 10px 24px rgba(220,38,38,.35); }
+.outbreak h3 { margin: 0 0 4px; font-size: 16px; }
+.outbreak p { margin: 0 0 12px; color: var(--ink); font-size: 14px; }
+.btn { border: 0; border-radius: var(--r-sm); min-height: 44px; padding: 0 18px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-ghost { background: var(--surface-muted); color: var(--ink); }
+.sent-log { font-size: 13px; }
+.sent-log ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.sent-log li { padding: 8px 0; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: space-between; }
+.sent-log li:first-child { border-top: 0; }
+
+/* Charts */
+.charts { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.legend i.dash { width: 16px; height: 0; border-top: 2px dashed var(--info); border-radius: 0; vertical-align: 3px; }
+svg text { font-family: inherit; }
+.chart-wrap { position: relative; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; font-size: 12.5px; font-weight: 600; padding: 8px 10px; border-radius: 10px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); opacity: 0; transition: opacity .12s; z-index: 5; }
+.tip.on { opacity: 1; }
+.tip b { font-weight: 800; }
+
+.risk-stack { display: flex; gap: 2px; height: 28px; border-radius: 8px; overflow: hidden; margin: 8px 0 16px; }
+.risk-stack div { height: 100%; }
+.risk-rows { display: grid; gap: 10px; }
+.risk-row { display: flex; align-items: center; gap: 10px; }
+.risk-row .n { margin-left: auto; font-weight: 800; font-size: 18px; }
+
+.pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 4px 10px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.pill svg { width: 13px; height: 13px; }
+.low { background: var(--primary-soft); color: var(--primary); }
+.medium { background: var(--warning-soft); color: var(--warning); }
+.high { background: var(--danger-soft); color: var(--danger); }
+
+/* Table */
+.table-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.table-head h2 { margin: 0; flex: 1; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 13px; min-height: 36px; color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.table-card { padding: 0; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 860px; }
+th { text-align: left; font-size: 12.5px; font-weight: 700; color: var(--ink-2); padding: 14px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th button { background: none; border: 0; padding: 0; color: inherit; font-weight: 700; display: inline-flex; gap: 4px; align-items: center; }
+th.num, td.num { text-align: right; }
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+tbody tr { cursor: pointer; transition: background .15s; }
+tbody tr:hover { background: var(--surface-muted); }
+tbody tr:last-child td { border-bottom: 0; }
+.who b { display: block; font-weight: 700; }
+.who span { font-size: 12.5px; color: var(--ink-3); font-weight: 600; }
+.bar-mini { width: 70px; height: 6px; border-radius: 999px; background: var(--surface-muted); display: inline-block; vertical-align: middle; margin-left: 8px; overflow: hidden; }
+.bar-mini span { display: block; height: 100%; border-radius: 999px; }
+.score { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; }
+.tag-iot { font-size: 11px; font-weight: 700; color: var(--info); background: var(--info-soft); border-radius: 999px; padding: 2px 8px; margin-left: 6px; }
+
+/* Drawer */
+.scrim { position: fixed; inset: 0; background: rgba(15,23,42,.35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 100%); background: var(--bg); box-shadow: var(--shadow-raised); transform: translateX(100%); transition: transform .22s cubic-bezier(.33,1,.68,1); z-index: 21; overflow-y: auto; }
+.drawer.on { transform: none; }
+.drawer-head { background: var(--surface); padding: 20px; display: flex; gap: 12px; align-items: flex-start; position: sticky; top: 0; z-index: 2; box-shadow: var(--shadow); }
+.drawer-head h3 { margin: 0; font-size: 20px; font-weight: 800; }
+.drawer-body { padding: 16px 20px 32px; display: grid; gap: 12px; }
+.close { margin-left: auto; background: var(--surface-muted); border: 0; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; line-height: 1; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.facts div span { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
+.facts div b { font-weight: 700; }
+.factor { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin-top: 12px; }
+.factor .track { grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--surface-muted); overflow: hidden; }
+.factor .track span { display: block; height: 100%; border-radius: 999px; }
+.ring-row { display: flex; align-items: center; gap: 16px; }
+.ring-row svg { flex: none; }
+.sensor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.sensor { background: var(--surface-muted); border-radius: var(--r-sm); padding: 10px; }
+.sensor b { display: block; font-size: 18px; font-weight: 800; }
+
+/* Modal */
+.modal { position: fixed; inset: 0; display: grid; place-items: center; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .2s; padding: 16px; }
+.modal.on { opacity: 1; pointer-events: auto; }
+.modal .scrim { opacity: 1; pointer-events: auto; position: absolute; z-index: 0; }
+.modal .sheet { position: relative; z-index: 1; background: var(--surface); border-radius: var(--r-lg); padding: 24px; width: min(560px, 100%); box-shadow: var(--shadow-raised); }
+.modal h3 { margin: 0 0 4px; font-size: 20px; }
+select, textarea { width: 100%; font: inherit; border: 1px solid var(--border); background: var(--surface-muted); border-radius: var(--r-sm); padding: 12px; color: var(--ink); }
+textarea { min-height: 120px; resize: vertical; }
+label.f { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin: 16px 0 6px; }
+.modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: var(--r-sm); font-weight: 700; opacity: 0; transition: .2s; z-index: 40; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+footer { margin-top: 24px; text-align: center; }
+
+@media (max-width: 960px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .alert-row, .charts { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px 40px; }
+  header.top .wrap { flex-wrap: wrap; gap: 12px; }
+  .brand { flex: 1 1 100%; }
+  .brand h1 { font-size: 18px; }
+  .kpi .value { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <img src="../icons/Icon-192.png" alt="">
+      <div>
+        <h1 data-t="title"></h1>
+        <p data-t="subtitle"></p>
+      </div>
+    </div>
+    <span class="demo-pill" data-t="demo"></span>
+    <div class="lang" role="group" aria-label="Language">
+      <button data-lang="uz">UZ</button><button data-lang="ru">RU</button><button data-lang="en">EN</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="kpis" id="kpis"></section>
+
+  <section class="alert-row">
+    <div class="outbreak">
+      <div class="disc"><svg viewBox="0 0 24 24" width="26" height="26" fill="#fff"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg></div>
+      <div>
+        <h3 data-t="outbreakTitle"></h3>
+        <p data-t="outbreakText"></p>
+        <button class="btn btn-danger" id="openAlert"><span data-t="outbreakBtn"></span></button>
+      </div>
+    </div>
+    <div class="card sent-log">
+      <h2 data-t="sentTitle"></h2>
+      <div id="sentLog"></div>
+    </div>
+  </section>
+
+  <section class="section charts">
+    <div class="card">
+      <h2 data-t="survivalTitle"></h2>
+      <div class="legend" id="survLegend"></div>
+      <div class="chart-wrap" id="survChart"></div>
+    </div>
+    <div class="card">
+      <h2 data-t="riskTitle"></h2>
+      <div id="riskDist"></div>
+      <p class="caption" data-t="riskNote" style="margin:16px 0 0"></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="table-head">
+      <h2 data-t="farmersTitle"></h2>
+      <div class="chips" id="filters"></div>
+    </div>
+    <div class="card table-card"><table id="table"></table></div>
+  </section>
+
+  <footer class="caption" data-t="footer"></footer>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="scrim" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h3 id="mTitle" data-t="modalTitle"></h3>
+    <p class="muted" data-t="modalSub" style="margin:0"></p>
+    <label class="f" for="mDistrict" data-t="modalDistrict"></label>
+    <select id="mDistrict"></select>
+    <label class="f" for="mText" data-t="modalMessage"></label>
+    <textarea id="mText"></textarea>
+    <p class="caption" data-t="modalSafety" style="margin:8px 0 0"></p>
+    <div class="actions">
+      <button class="btn btn-ghost" data-close><span data-t="cancel"></span></button>
+      <button class="btn btn-danger" id="sendAlert"></button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------------------------------------------------------------- i18n
+const T = {
+  en: {
+    title: "AgroZen for Banks", subtitle: "Broiler loan portfolio · Namangan region pilot",
+    demo: "Demo data", farmers: "Farmers", birdsAlive: "Birds alive", ofPlaced: "of {n} placed",
+    avgSurvival: "Average survival", normFrom: "norm: at least {n}%", atRisk: "Need attention",
+    mediumHigh: "medium or high risk", portfolio: "Loan portfolio", mlnSum: "mln UZS",
+    outbreakTitle: "Disease outbreak alert",
+    outbreakText: "If a vet reports a disease in a district, warn every farmer of the bank there in one tap. Farmers get a push in AgroZen in their own language.",
+    outbreakBtn: "Send an alert to farmers", sentTitle: "Alerts sent", noneSent: "No alerts sent yet.",
+    survivalTitle: "Survival by farmer", survLegendBar: "Survival so far", survLegendBelow: "Below norm", survLegendNorm: "Norm {n}%",
+    riskTitle: "Repayment risk", riskNote: "Scored by fixed rules from the farmer's diary — survival 40, diary 25, weight 20, training 15 — not by AI.",
+    low: "Low risk", medium: "Medium risk", high: "High risk", all: "All",
+    farmersTitle: "Farmers", colFarmer: "Farmer", colDay: "Batch day", colBirds: "Birds", colSurvival: "Survival",
+    colDiary: "Diary", colWeight: "Weight", colScore: "Score", colRisk: "Risk", day: "Day {n}", notWeighed: "not weighed",
+    ofTarget: "{n}% of target", iot: "Smart barn",
+    footer: "Data is shared by each farmer with their consent from the AgroZen app. Norms: Ross-308 / Cobb-500. Demo portfolio for StudEXPO-2026.",
+    placed: "Placed", alive: "Alive", district: "District", loan: "Loan", consent: "Consent given",
+    factors: "Score breakdown", fSurvival: "Survival", fDiary: "Diary", fWeight: "Weight", fTraining: "Training",
+    lossesOf: "losses {a}% (limit {b}%)", daysOf: "{a} of {b} days recorded", lessonsOf: "{a} of 5 lessons", certified: "certificate earned",
+    curveTitle: "Cumulative losses by batch day", curveLegend: "Losses, % of chicks placed", limit: "Limit {n}%",
+    sensorsTitle: "Smart barn sensors", temp: "Temperature", nh3: "Ammonia", co2: "CO2", ok: "on norm",
+    noSensors: "No sensors installed. Data comes from the farmer's diary.",
+    modalTitle: "Send a disease alert", modalSub: "The alert goes to every farmer of the bank in the chosen district.",
+    modalDistrict: "District", modalMessage: "Message", allDistricts: "All districts",
+    modalSafety: "AgroZen never names medicines or doses. Treatment is decided only by the district vet.",
+    cancel: "Cancel", send: "Send · recipients: {n}", sent: "Alert sent · recipients: {n}",
+    preset: "A contagious bird disease has been reported in {d}. Keep visitors out of the poultry house, disinfect footwear at the door, watch your flock closely and call your district vet at the first sign of illness.",
+    regionWide: "the region", birds: "birds", region: "Namangan region",
+  },
+  ru: {
+    title: "AgroZen для банков", subtitle: "Портфель бройлерных кредитов · пилот в Наманганской области",
+    demo: "Демо-данные", farmers: "Фермеры", birdsAlive: "Живой птицы", ofPlaced: "из {n} посаженных",
+    avgSurvival: "Средняя сохранность", normFrom: "норма: от {n}%", atRisk: "Требуют внимания",
+    mediumHigh: "средний или высокий риск", portfolio: "Кредитный портфель", mlnSum: "млн сум",
+    outbreakTitle: "Тревога о вспышке болезни",
+    outbreakText: "Если ветеринар сообщил о болезни в районе, предупредите всех фермеров банка там одним нажатием. Фермеры получат уведомление в AgroZen на своём языке.",
+    outbreakBtn: "Отправить тревогу фермерам", sentTitle: "Отправленные тревоги", noneSent: "Тревог пока не было.",
+    survivalTitle: "Сохранность по фермерам", survLegendBar: "Сохранность на сегодня", survLegendBelow: "Ниже нормы", survLegendNorm: "Норма {n}%",
+    riskTitle: "Риск невозврата", riskNote: "Оценка по правилам из дневника фермера — сохранность 40, дневник 25, вес 20, обучение 15 — а не нейросетью.",
+    low: "Низкий риск", medium: "Средний риск", high: "Высокий риск", all: "Все",
+    farmersTitle: "Фермеры", colFarmer: "Фермер", colDay: "День партии", colBirds: "Поголовье", colSurvival: "Сохранность",
+    colDiary: "Дневник", colWeight: "Вес", colScore: "Оценка", colRisk: "Риск", day: "День {n}", notWeighed: "не взвешивали",
+    ofTarget: "{n}% от нормы", iot: "Ферма онлайн",
+    footer: "Каждый фермер передаёт данные со своего согласия из приложения AgroZen. Нормы Ross-308 / Cobb-500. Демо-портфель для StudEXPO-2026.",
+    placed: "Посажено", alive: "Живых", district: "Район", loan: "Кредит", consent: "Согласие дано",
+    factors: "Из чего сложилась оценка", fSurvival: "Сохранность", fDiary: "Дневник", fWeight: "Вес", fTraining: "Обучение",
+    lossesOf: "падёж {a}% (порог {b}%)", daysOf: "записи за {a} из {b} дн.", lessonsOf: "{a} из 5 уроков", certified: "сертификат получен",
+    curveTitle: "Падёж нарастающим итогом", curveLegend: "Падёж, % от посаженных", limit: "Порог {n}%",
+    sensorsTitle: "Датчики в птичнике", temp: "Температура", nh3: "Аммиак", co2: "CO2", ok: "в норме",
+    noSensors: "Датчики не установлены. Данные — из дневника фермера.",
+    modalTitle: "Отправить тревогу о болезни", modalSub: "Тревогу получат все фермеры банка в выбранном районе.",
+    modalDistrict: "Район", modalMessage: "Сообщение", allDistricts: "Все районы",
+    modalSafety: "AgroZen никогда не называет лекарства и дозы. Лечение назначает только районный ветеринар.",
+    cancel: "Отмена", send: "Отправить · получателей: {n}", sent: "Тревога отправлена · получателей: {n}",
+    preset: "В районе {d} выявлена заразная болезнь птицы. Не пускайте посторонних в птичник, дезинфицируйте обувь у входа, внимательно следите за птицей и при первых признаках болезни звоните районному ветеринару.",
+    regionWide: "области", birds: "гол.", region: "Наманганская область",
+  },
+  uz: {
+    title: "AgroZen banklar uchun", subtitle: "Broyler kreditlari portfeli · Namangan viloyatida pilot",
+    demo: "Demo ma'lumotlar", farmers: "Fermerlar", birdsAlive: "Tirik parranda", ofPlaced: "{n} tadan",
+    avgSurvival: "O'rtacha saqlanish", normFrom: "me'yor: kamida {n}%", atRisk: "E'tibor kerak",
+    mediumHigh: "o'rtacha yoki yuqori xavf", portfolio: "Kredit portfeli", mlnSum: "mln so'm",
+    outbreakTitle: "Kasallik tarqalishi haqida ogohlantirish",
+    outbreakText: "Veterinar tumanda kasallik borligini xabar qilsa, u yerdagi bankning barcha fermerlarini bir bosishda ogohlantiring. Fermerlar AgroZen'da o'z tilida xabar oladi.",
+    outbreakBtn: "Fermerlarga ogohlantirish yuborish", sentTitle: "Yuborilgan ogohlantirishlar", noneSent: "Hali ogohlantirish yuborilmagan.",
+    survivalTitle: "Fermerlar bo'yicha saqlanish", survLegendBar: "Bugungi saqlanish", survLegendBelow: "Me'yordan past", survLegendNorm: "Me'yor {n}%",
+    riskTitle: "Kreditni qaytarmaslik xavfi", riskNote: "Fermer kundaligidan qoidalar bo'yicha hisoblanadi — saqlanish 40, kundalik 25, vazn 20, o'qish 15 — neyrotarmoq emas.",
+    low: "Past xavf", medium: "O'rtacha xavf", high: "Yuqori xavf", all: "Hammasi",
+    farmersTitle: "Fermerlar", colFarmer: "Fermer", colDay: "Partiya kuni", colBirds: "Parranda", colSurvival: "Saqlanish",
+    colDiary: "Kundalik", colWeight: "Vazn", colScore: "Ball", colRisk: "Xavf", day: "{n}-kun", notWeighed: "tortilmagan",
+    ofTarget: "me'yorning {n}%", iot: "Aqlli ferma",
+    footer: "Har bir fermer ma'lumotni AgroZen ilovasidan o'z roziligi bilan beradi. Me'yorlar: Ross-308 / Cobb-500. StudEXPO-2026 uchun demo portfel.",
+    placed: "Qo'yilgan", alive: "Tirik", district: "Tuman", loan: "Kredit", consent: "Rozilik berilgan",
+    factors: "Ball nimadan iborat", fSurvival: "Saqlanish", fDiary: "Kundalik", fWeight: "Vazn", fTraining: "O'qish",
+    lossesOf: "nobudlik {a}% (chegara {b}%)", daysOf: "{b} kundan {a} kun yozilgan", lessonsOf: "5 darsdan {a} tasi", certified: "sertifikat olingan",
+    curveTitle: "Jami nobudlik, kunlar bo'yicha", curveLegend: "Nobudlik, qo'yilganlarga nisbatan %", limit: "Chegara {n}%",
+    sensorsTitle: "Parrandaxona sensorlari", temp: "Harorat", nh3: "Ammiak", co2: "CO2", ok: "me'yorda",
+    noSensors: "Sensorlar o'rnatilmagan. Ma'lumotlar fermer kundaligidan.",
+    modalTitle: "Kasallik haqida ogohlantirish", modalSub: "Ogohlantirishni tanlangan tumandagi bankning barcha fermerlari oladi.",
+    modalDistrict: "Tuman", modalMessage: "Xabar", allDistricts: "Barcha tumanlar",
+    modalSafety: "AgroZen hech qachon dori va dozalarni aytmaydi. Davolashni faqat tuman veterinari belgilaydi.",
+    cancel: "Bekor qilish", send: "Yuborish · qabul qiluvchilar: {n}", sent: "Ogohlantirish yuborildi · qabul qiluvchilar: {n}",
+    preset: "{d} hududida yuqumli parranda kasalligi aniqlandi. Parrandaxonaga begonalarni kiritmang, kirishda poyabzalni dezinfeksiya qiling, parrandalarni diqqat bilan kuzating va birinchi belgilardayoq tuman veterinariga qo'ng'iroq qiling.",
+    regionWide: "viloyat", birds: "bosh", region: "Namangan viloyati",
+  },
+};
+
+// ---------------------------------------------------------------- data
+// Ten pilot farmers (fictional). Scores use the same rules as the app's
+// LoanReport: survival 40 · diary 25 · weight 20 · training 15.
+const LIMIT = 4.0;
+const FARMERS = [
+  { id: 1, name: "Dilshod A.",   district: "Namangan",      day: 31, placed: 3000, alive: 2928, diary: 30, weight: 0.99, lessons: 5, loan: 180, iot: true,  consent: "05.09.2026" },
+  { id: 2, name: "Gulnora T.",   district: "Chortoq",       day: 18, placed: 2000, alive: 1971, diary: 18, weight: 0.91, lessons: 3, loan: 120, iot: false, consent: "05.10.2026" },
+  { id: 3, name: "Rustam Y.",    district: "Chust",         day: 25, placed: 1500, alive: 1455, diary: 20, weight: 0.96, lessons: 5, loan: 95,  iot: false, consent: "28.09.2026" },
+  { id: 4, name: "Sardor M.",    district: "Pop",           day: 12, placed: 1000, alive: 991,  diary: 12, weight: null, lessons: 2, loan: 60,  iot: false, consent: "11.10.2026" },
+  { id: 5, name: "Malika R.",    district: "Uychi",         day: 36, placed: 2500, alive: 2380, diary: 28, weight: 0.93, lessons: 4, loan: 150, iot: false, consent: "17.09.2026" },
+  { id: 6, name: "Jasur N.",     district: "Kosonsoy",      day: 22, placed: 2000, alive: 1890, diary: 11, weight: 0.86, lessons: 1, loan: 120, iot: false, consent: "01.10.2026" },
+  { id: 7, name: "Nodira S.",    district: "To'raqo'rg'on", day: 40, placed: 1500, alive: 1462, diary: 38, weight: 1.01, lessons: 5, loan: 95,  iot: true,  consent: "13.09.2026" },
+  { id: 8, name: "Bekzod H.",    district: "Uchqo'rg'on",   day: 9,  placed: 1000, alive: 984,  diary: 9,  weight: null, lessons: 5, loan: 60,  iot: false, consent: "14.10.2026" },
+  { id: 9, name: "Shoira K.",    district: "Yangiqo'rg'on", day: 28, placed: 2000, alive: 1806, diary: 14, weight: 0.82, lessons: 0, loan: 120, iot: false, consent: "25.09.2026", spike: 4 },
+  { id: 10, name: "Otabek U.",   district: "Mingbuloq",     day: 15, placed: 1000, alive: 978,  diary: 13, weight: 0.97, lessons: 3, loan: 60,  iot: false, consent: "08.10.2026" },
+];
+
+function score(f) {
+  const mort = (f.placed - f.alive) * 100 / f.placed;
+  const survival = mort <= LIMIT / 2 ? 40 : mort <= LIMIT ? 30 : mort <= LIMIT * 2 ? 15 : 0;
+  const diary = Math.round(25 * Math.min(1, f.diary / f.day));
+  const weight = f.weight == null ? 5 : f.weight >= 0.95 ? 20 : f.weight >= 0.85 ? 10 : 0;
+  const training = Math.round(15 * f.lessons / 5);
+  const total = survival + diary + weight + training;
+  return { mort, survival, diary, weight, training, total,
+           risk: total >= 75 ? "low" : total >= 50 ? "medium" : "high" };
+}
+
+// Daily losses: most in the first week (as in any broiler flock), a spike
+// in the given week for a farmer with a disease problem.
+function dailyLosses(f) {
+  const deaths = f.placed - f.alive;
+  const w = [];
+  for (let d = 1; d <= f.day; d++) {
+    let x = d <= 7 ? 2.2 : d <= 14 ? 1.2 : 0.9;
+    if (f.spike && Math.ceil(d / 7) === f.spike) x *= 6;
+    w.push(x);
+  }
+  const sum = w.reduce((a, b) => a + b, 0);
+  const raw = w.map((x) => x / sum * deaths);
+  const out = raw.map(Math.floor);
+  let rest = deaths - out.reduce((a, b) => a + b, 0);
+  raw.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0])
+     .slice(0, rest).forEach(([, i]) => out[i]++);
+  return out;
+}
+
+FARMERS.forEach((f) => { f.s = score(f); f.losses = dailyLosses(f); });
+
+// ---------------------------------------------------------------- helpers
+let lang = "en";
+try { lang = localStorage.getItem("agrozen_bank_lang") || (navigator.language || "en").slice(0, 2); } catch (_) {}
+if (!T[lang]) lang = "en";
+const t = (k, vars = {}) => (T[lang][k] || T.en[k] || k).replace(/\{(\w+)\}/g, (_, v) => vars[v]);
+const grp = (n) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+const num = (n, d = 1) => { const r = +n.toFixed(d); return (r === Math.round(r) ? Math.round(r) : r.toFixed(d)).toString(); };
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ICON = {
+  shield: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm5 11H7v-2h10v2z"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4zm8 0h-1c1.2.9 2 2 2 4v3h7v-3c0-2.7-5.3-4-8-4z"/></svg>',
+  bird: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a5 5 0 0 0-5 5v1H5l2 3a7 7 0 0 0 12.8 3.9L22 12h-3V8a5 5 0 0 0-5-5h-2zm2 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21 10.6 19.7C5.4 15 2 11.9 2 8.1 2 5 4.4 2.6 7.5 2.6c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3.1 0 5.5 2.4 5.5 5.5 0 3.8-3.4 6.9-8.6 11.6L12 21z"/></svg>',
+  bank: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 2 6v2h20V6L12 1zM4 10v7h3v-7H4zm6.5 0v7h3v-7h-3zM17 10v7h3v-7h-3zM2 22h20v-3H2v3z"/></svg>',
+};
+const RISK_ICON = { low: ICON.shield, medium: ICON.warn, high: ICON.stop };
+const RISK_COLOR = { low: "var(--primary)", medium: "var(--gold)", high: "var(--danger)" };
+const riskPill = (r) => `<span class="pill ${r}">${RISK_ICON[r]}${t(r)}</span>`;
+const tone = (share) => share >= 0.75 ? "var(--primary)" : share >= 0.4 ? "var(--gold)" : "var(--danger)";
+
+// ---------------------------------------------------------------- KPIs
+function renderKpis() {
+  const placed = FARMERS.reduce((a, f) => a + f.placed, 0);
+  const alive = FARMERS.reduce((a, f) => a + f.alive, 0);
+  const avg = FARMERS.reduce((a, f) => a + f.alive / f.placed * 100, 0) / FARMERS.length;
+  const atRisk = FARMERS.filter((f) => f.s.risk !== "low").length;
+  const loans = FARMERS.reduce((a, f) => a + f.loan, 0);
+  const tile = (ic, bg, fg, label, value, sub) => `
+    <div class="kpi"><div class="label"><span class="dot-ic" style="background:${bg};color:${fg}">${ic}</span>${label}</div>
+    <div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+  el("kpis").innerHTML =
+    tile(ICON.people, "var(--primary-soft)", "var(--primary)", t("farmers"), FARMERS.length, t("region")) +
+    tile(ICON.bird, "var(--warning-soft)", "var(--warning)", t("birdsAlive"), grp(alive), t("ofPlaced", { n: grp(placed) })) +
+    tile(ICON.heart, "var(--primary-soft)", "var(--primary)", t("avgSurvival"), num(avg) + "%", t("normFrom", { n: 100 - LIMIT })) +
+    tile(ICON.warn, "var(--danger-soft)", "var(--danger)", t("atRisk"), atRisk, t("mediumHigh")) +
+    tile(ICON.bank, "var(--info-soft)", "var(--info)", t("portfolio"), grp(loans), t("mlnSum"));
+}
+
+// ---------------------------------------------------------------- survival chart
+function renderSurvival() {
+  const norm = 100 - LIMIT;
+  el("survLegend").innerHTML =
+    `<span><i style="background:var(--primary)"></i>${t("survLegendBar")}</span>` +
+    `<span><i style="background:var(--danger)"></i>${t("survLegendBelow")}</span>` +
+    `<span><i class="dash"></i>${t("survLegendNorm", { n: norm })}</span>`;
+  const data = [...FARMERS].sort((a, b) => b.alive / b.placed - a.alive / a.placed);
+  const W = 640, H = 260, L = 40, R = 8, Tp = 16, B = 44;
+  const lo = 88, hi = 100;
+  const y = (v) => Tp + (hi - v) / (hi - lo) * (H - Tp - B);
+  const slot = (W - L - R) / data.length, bw = Math.min(36, slot - 12);
+  let g = "";
+  for (let v = lo; v <= hi; v += 4) {
+    g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)" stroke-width="1"/>`;
+    g += `<text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--ink-3)" font-weight="600">${v}%</text>`;
+  }
+  data.forEach((f, i) => {
+    const s = f.alive / f.placed * 100;
+    const x = L + i * slot + (slot - bw) / 2;
+    const top = y(s), base = y(lo);
+    const fill = s < norm ? "var(--danger)" : "var(--primary)";
+    const r = 4;
+    g += `<path d="M${x},${base} V${top + r} Q${x},${top} ${x + r},${top} H${x + bw - r} Q${x + bw},${top} ${x + bw},${top + r} V${base} Z" fill="${fill}"/>`;
+    g += `<rect x="${L + i * slot}" y="${Tp}" width="${slot}" height="${H - Tp - B + 30}" fill="transparent" data-i="${f.id}" class="hit"/>`;
+    g += `<text x="${x + bw / 2}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="var(--ink-2)" font-weight="600">${esc(f.name.split(" ")[0])}</text>`;
+    // Below-norm bars end under the norm line, so their label sits inside the bar.
+    if (s < norm) g += `<text x="${x + bw / 2}" y="${top + 16}" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">${num(s)}</text>`;
+  });
+  g += `<line x1="${L}" x2="${W - R}" y1="${y(norm)}" y2="${y(norm)}" stroke="var(--info)" stroke-width="2" stroke-dasharray="6 4"/>`;
+  el("survChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(t("survivalTitle"))}">${g}</svg><div class="tip" id="survTip"></div>`;
+  const tip = el("survTip"), svg = el("survChart").querySelector("svg");
+  svg.querySelectorAll(".hit").forEach((h) => {
+    const f = FARMERS.find((x) => x.id === +h.dataset.i);
+    h.addEventListener("mouseenter", () => {
+      const box = h.getBoundingClientRect(), wrap = el("survChart").getBoundingClientRect();
+      const s = f.alive / f.placed * 100;
+      tip.innerHTML = `<b>${esc(f.name)}</b> · ${esc(f.district)}<br>${t("colSurvival")}: <b>${num(s)}%</b> · ${t("day", { n: f.day })}`;
+      tip.style.left = (box.left - wrap.left + box.width / 2) + "px";
+      tip.style.top = (y(s) / H * wrap.height) + "px";
+      tip.classList.add("on");
+    });
+    h.addEventListener("mouseleave", () => tip.classList.remove("on"));
+    h.addEventListener("click", () => openDrawer(f.id));
+  });
+}
+
+// ---------------------------------------------------------------- risk distribution
+function renderRisk() {
+  const counts = { low: 0, medium: 0, high: 0 };
+  FARMERS.forEach((f) => counts[f.s.risk]++);
+  const n = FARMERS.length;
+  const stack = ["low", "medium", "high"].filter((r) => counts[r])
+    .map((r) => `<div style="flex:${counts[r]};background:${RISK_COLOR[r]}" title="${t(r)}: ${counts[r]}"></div>`).join("");
+  const rows = ["low", "medium", "high"].map((r) =>
+    `<div class="risk-row">${riskPill(r)}<span class="caption">${Math.round(counts[r] / n * 100)}%</span><span class="n">${counts[r]}</span></div>`).join("");
+  el("riskDist").innerHTML = `<div class="risk-stack">${stack}</div><div class="risk-rows">${rows}</div>`;
+}
+
+// ---------------------------------------------------------------- table
+let filter = "all";
+let sort = { key: "risk", dir: -1 };
+const RISK_RANK = { low: 0, medium: 1, high: 2 };
+const SORTS = {
+  name: (f) => f.name, day: (f) => f.day, birds: (f) => f.alive,
+  survival: (f) => f.alive / f.placed, diary: (f) => f.diary / f.day,
+  weight: (f) => f.weight ?? -1, score: (f) => f.s.total,
+  risk: (f) => RISK_RANK[f.s.risk] * 1000 - f.s.total,
+};
+
+function renderFilters() {
+  el("filters").innerHTML = ["all", "low", "medium", "high"].map((k) =>
+    `<button class="chip" data-f="${k}" aria-pressed="${filter === k}">${t(k)}</button>`).join("");
+  el("filters").querySelectorAll(".chip").forEach((b) => b.onclick = () => { filter = b.dataset.f; renderFilters(); renderTable(); });
+}
+
+function renderTable() {
+  const cols = [
+    ["name", t("colFarmer")], ["day", t("colDay"), "num"], ["birds", t("colBirds"), "num"],
+    ["survival", t("colSurvival"), "num"], ["diary", t("colDiary")], ["weight", t("colWeight")],
+    ["score", t("colScore"), "num"], ["risk", t("colRisk")],
+  ];
+  const arrow = (k) => sort.key === k ? (sort.dir > 0 ? " ↑" : " ↓") : "";
+  const head = `<thead><tr>${cols.map(([k, label, cls]) =>
+    `<th class="${cls || ""}"><button data-k="${k}">${label}${arrow(k)}</button></th>`).join("")}</tr></thead>`;
+  const rows = FARMERS.filter((f) => filter === "all" || f.s.risk === filter)
+    .sort((a, b) => { const x = SORTS[sort.key](a), y = SORTS[sort.key](b); return (x > y ? 1 : x < y ? -1 : 0) * sort.dir; })
+    .map((f) => {
+      const surv = f.alive / f.placed * 100, cov = Math.min(1, f.diary / f.day);
+      return `<tr data-id="${f.id}">
+        <td class="who"><b>${esc(f.name)}${f.iot ? `<span class="tag-iot">${t("iot")}</span>` : ""}</b><span>${esc(f.district)}</span></td>
+        <td class="num">${t("day", { n: f.day })}</td>
+        <td class="num">${grp(f.alive)}</td>
+        <td class="num" style="color:${surv < 100 - LIMIT ? "var(--danger)" : "inherit"};font-weight:700">${num(surv)}%</td>
+        <td>${Math.round(cov * 100)}%<span class="bar-mini"><span style="width:${cov * 100}%;background:${tone(cov)}"></span></span></td>
+        <td>${f.weight == null ? `<span class="caption">${t("notWeighed")}</span>` : t("ofTarget", { n: Math.round(f.weight * 100) })}</td>
+        <td class="num"><span class="score">${f.s.total}<span class="caption">/100</span></span></td>
+        <td>${riskPill(f.s.risk)}</td></tr>`;
+    }).join("");
+  el("table").innerHTML = head + `<tbody>${rows}</tbody>`;
+  el("table").querySelectorAll("th button").forEach((b) => b.onclick = () => {
+    const k = b.dataset.k;
+    sort = sort.key === k ? { key: k, dir: -sort.dir } : { key: k, dir: k === "name" ? 1 : -1 };
+    renderTable();
+  });
+  el("table").querySelectorAll("tbody tr").forEach((r) => r.onclick = () => openDrawer(+r.dataset.id));
+}
+
+// ---------------------------------------------------------------- drawer
+function ring(value, color) {
+  const r = 42, c = 2 * Math.PI * r;
+  return `<svg width="104" height="104" viewBox="0 0 104 104" role="img" aria-label="${value}/100">
+    <circle cx="52" cy="52" r="${r}" fill="none" stroke="var(--surface-muted)" stroke-width="10"/>
+    <circle cx="52" cy="52" r="${r}" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round"
+      stroke-dasharray="${c * value / 100} ${c}" transform="rotate(-90 52 52)"/>
+    <text x="52" y="56" text-anchor="middle" font-size="26" font-weight="800" fill="var(--ink)">${value}</text>
+    <text x="52" y="74" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink-3)">/ 100</text></svg>`;
+}
+
+function curve(f) {
+  const W = 420, H = 190, L = 34, R = 10, Tp = 12, B = 26;
+  let cum = 0;
+  const pts = f.losses.map((d, i) => { cum += d; return [i + 1, cum * 100 / f.placed]; });
+  const maxV = Math.max(LIMIT * 1.5, ...pts.map((p) => p[1])) * 1.05;
+  const x = (d) => L + (d - 1) / 41 * (W - L - R);
+  const y = (v) => Tp + (1 - v / maxV) * (H - Tp - B);
+  let g = "";
+  const step = maxV > 8 ? 4 : 2;
+  for (let v = 0; v <= maxV; v += step) {
+    g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)"/>`;
+    g += `<text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10.5" fill="var(--ink-3)" font-weight="600">${v}%</text>`;
+  }
+  [1, 7, 14, 21, 28, 35, 42].forEach((d) => g += `<text x="${x(d)}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="var(--ink-3)" font-weight="600">${d}</text>`);
+  g += `<line x1="${L}" x2="${W - R}" y1="${y(LIMIT)}" y2="${y(LIMIT)}" stroke="var(--info)" stroke-width="2" stroke-dasharray="6 4"/>`;
+  g += `<path d="${pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + "," + y(p[1]).toFixed(1)).join(" ")}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const last = pts[pts.length - 1];
+  g += `<circle cx="${x(last[0])}" cy="${y(last[1])}" r="4.5" fill="var(--primary)" stroke="var(--surface)" stroke-width="2"/>`;
+  g += `<text x="${x(last[0]) + 8}" y="${y(last[1]) - 8}" font-size="11.5" font-weight="700" fill="var(--ink)">${num(last[1])}%</text>`;
+  g += `<line id="cx" x1="0" x2="0" y1="${Tp}" y2="${H - B}" stroke="var(--ink-3)" stroke-width="1" opacity="0"/>`;
+  g += `<circle id="cdot" r="5" fill="var(--primary)" stroke="var(--surface)" stroke-width="2" opacity="0"/>`;
+  g += `<rect x="${L}" y="${Tp}" width="${W - L - R}" height="${H - Tp - B}" fill="transparent" id="chit"/>`;
+  return { svg: `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(t("curveTitle"))}">${g}</svg>`, pts, x, y, W, H, L, R };
+}
+
+function openDrawer(id) {
+  const f = FARMERS.find((x) => x.id === id), s = f.s;
+  const factors = [
+    [t("fSurvival"), s.survival, 40, t("lossesOf", { a: num(s.mort), b: num(LIMIT) })],
+    [t("fDiary"), s.diary, 25, t("daysOf", { a: f.diary, b: f.day })],
+    [t("fWeight"), s.weight, 20, f.weight == null ? t("notWeighed") : t("ofTarget", { n: Math.round(f.weight * 100) })],
+    [t("fTraining"), s.training, 15, f.lessons >= 5 ? t("certified") : t("lessonsOf", { a: f.lessons })],
+  ].map(([n, p, m, d]) => `<div class="factor"><b>${n}</b><b style="color:${tone(p / m)}">${p} / ${m}</b>
+      <span class="caption" style="grid-column:1/-1">${d}</span><div class="track"><span style="width:${p / m * 100}%;background:${tone(p / m)}"></span></div></div>`).join("");
+  const c = curve(f);
+  const sensors = f.iot
+    ? `<div class="sensor-grid">
+        <div class="sensor"><span class="caption">${t("temp")}</span><b>${f.day > 35 ? "20.4" : "22.1"}°C</b><span class="pill low">${t("ok")}</span></div>
+        <div class="sensor"><span class="caption">${t("nh3")}</span><b>6 ppm</b><span class="pill low">${t("ok")}</span></div>
+        <div class="sensor"><span class="caption">${t("co2")}</span><b>1${" "}850 ppm</b><span class="pill low">${t("ok")}</span></div></div>`
+    : `<p class="muted" style="margin:0">${t("noSensors")}</p>`;
+  el("drawer").innerHTML = `
+    <div class="drawer-head"><div><h3>${esc(f.name)}</h3><div class="caption">${esc(f.district)} · ${t("day", { n: f.day })} / 42</div></div>
+      <button class="close" aria-label="Close" id="closeDrawer">×</button></div>
+    <div class="drawer-body">
+      <div class="card"><div class="ring-row">${ring(s.total, RISK_COLOR[s.risk])}<div>${riskPill(s.risk)}
+        <p class="caption" style="margin:8px 0 0">${t("riskNote")}</p></div></div>
+        <h2 style="margin:16px 0 0">${t("factors")}</h2>${factors}</div>
+      <div class="card"><div class="facts">
+        <div><span>${t("placed")}</span><b>${grp(f.placed)} ${t("birds")}</b></div>
+        <div><span>${t("alive")}</span><b>${grp(f.alive)} ${t("birds")}</b></div>
+        <div><span>${t("loan")}</span><b>${grp(f.loan)} ${t("mlnSum")}</b></div>
+        <div><span>${t("consent")}</span><b>${f.consent}</b></div></div></div>
+      <div class="card"><h2>${t("curveTitle")}</h2>
+        <div class="legend"><span><i style="background:var(--primary)"></i>${t("curveLegend")}</span><span><i class="dash"></i>${t("limit", { n: LIMIT })}</span></div>
+        <div class="chart-wrap" id="curveWrap">${c.svg}<div class="tip" id="curveTip"></div></div></div>
+      <div class="card"><h2>${t("sensorsTitle")}</h2>${sensors}</div>
+    </div>`;
+  const svg = el("curveWrap").querySelector("svg"), tip = el("curveTip");
+  const hit = svg.querySelector("#chit"), cx = svg.querySelector("#cx"), dot = svg.querySelector("#cdot");
+  const move = (e) => {
+    const r = svg.getBoundingClientRect();
+    const sx = (e.clientX - r.left) / r.width * c.W;
+    const d = Math.max(1, Math.min(c.pts.length, Math.round((sx - c.L) / (c.W - c.L - c.R) * 41 + 1)));
+    const p = c.pts[d - 1];
+    cx.setAttribute("x1", c.x(p[0])); cx.setAttribute("x2", c.x(p[0])); cx.setAttribute("opacity", 1);
+    dot.setAttribute("cx", c.x(p[0])); dot.setAttribute("cy", c.y(p[1])); dot.setAttribute("opacity", 1);
+    tip.innerHTML = `${t("day", { n: p[0] })}: <b>${num(p[1])}%</b>`;
+    tip.style.left = c.x(p[0]) / c.W * r.width + "px"; tip.style.top = c.y(p[1]) / c.H * r.height + "px";
+    tip.classList.add("on");
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerleave", () => { tip.classList.remove("on"); cx.setAttribute("opacity", 0); dot.setAttribute("opacity", 0); });
+  el("closeDrawer").onclick = closeDrawer;
+  el("drawer").classList.add("on"); el("drawer").setAttribute("aria-hidden", "false");
+  el("scrim").classList.add("on");
+}
+function closeDrawer() {
+  el("drawer").classList.remove("on"); el("drawer").setAttribute("aria-hidden", "true");
+  el("scrim").classList.remove("on");
+}
+el("scrim").onclick = closeDrawer;
+
+// ---------------------------------------------------------------- outbreak alert
+let sentLog = [];
+try { sentLog = JSON.parse(localStorage.getItem("agrozen_bank_alerts") || "[]"); } catch (_) {}
+const districts = [...new Set(FARMERS.map((f) => f.district))].sort();
+const recipients = (d) => FARMERS.filter((f) => d === "*" || f.district === d).length;
+
+function renderSentLog() {
+  el("sentLog").innerHTML = sentLog.length
+    ? `<ul>${sentLog.slice(-4).reverse().map((a) => `<li><span>${esc(a.d === "*" ? t("allDistricts") : a.d)}</span><span class="caption">${a.n} · ${esc(a.at)}</span></li>`).join("")}</ul>`
+    : `<p class="muted" style="margin:0">${t("noneSent")}</p>`;
+}
+function fillModal() {
+  const sel = el("mDistrict");
+  const keep = sel.value || "Yangiqo'rg'on";
+  sel.innerHTML = `<option value="*">${t("allDistricts")}</option>` + districts.map((d) => `<option>${esc(d)}</option>`).join("");
+  sel.value = keep;
+  el("mText").value = t("preset", { d: sel.value === "*" ? t("regionWide") : sel.value });
+  el("sendAlert").textContent = t("send", { n: recipients(sel.value) });
+}
+el("mDistrict").onchange = fillModal;
+el("openAlert").onclick = () => { fillModal(); el("modal").classList.add("on"); el("modal").setAttribute("aria-hidden", "false"); el("mDistrict").focus(); };
+const closeModal = () => { el("modal").classList.remove("on"); el("modal").setAttribute("aria-hidden", "true"); };
+el("modal").querySelectorAll("[data-close]").forEach((b) => b.onclick = closeModal);
+el("sendAlert").onclick = () => {
+  const d = el("mDistrict").value, n = recipients(d);
+  const now = new Date();
+  sentLog.push({ d, n, at: now.toLocaleDateString("ru-RU") + " " + now.toTimeString().slice(0, 5) });
+  try { localStorage.setItem("agrozen_bank_alerts", JSON.stringify(sentLog.slice(-20))); } catch (_) {}
+  closeModal(); renderSentLog();
+  const toast = el("toast"); toast.textContent = t("sent", { n });
+  toast.classList.add("on"); setTimeout(() => toast.classList.remove("on"), 2600);
+};
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeDrawer(); } });
+
+// ---------------------------------------------------------------- language
+function render() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach((n) => n.textContent = t(n.dataset.t));
+  document.querySelectorAll("[data-lang]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lang === lang));
+  renderKpis(); renderSurvival(); renderRisk(); renderFilters(); renderTable(); renderSentLog();
+  if (el("drawer").classList.contains("on")) closeDrawer();
+}
+document.querySelectorAll("[data-lang]").forEach((b) => b.onclick = () => {
+  lang = b.dataset.lang;
+  try { localStorage.setItem("agrozen_bank_lang", lang); } catch (_) {}
+  render();
+});
+const qs = new URLSearchParams(location.search);
+if (T[qs.get("lang")]) lang = qs.get("lang");
+render();
+if (qs.get("farmer")) openDrawer(+qs.get("farmer"));
+if (qs.get("alert")) el("openAlert").click();
+</script>
+</body>
+</html>
