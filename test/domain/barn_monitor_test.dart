@@ -114,6 +114,27 @@ void main() {
       expect(status.needsVet, isTrue);
     });
 
+    test('a bird moving little needs attention, active birds do not', () {
+      CameraDetection box(CameraFinding f) => CameraDetection(
+        finding: f,
+        left: 0,
+        top: 0,
+        width: 0.1,
+        height: 0.1,
+        confidence: 0.9,
+      );
+      expect(
+        evaluate(onNorm(), [box(CameraFinding.activeBird)]).overall,
+        ReadingStatus.ok,
+      );
+      final watch = evaluate(onNorm(), [
+        box(CameraFinding.activeBird),
+        box(CameraFinding.lowActivity),
+      ]);
+      expect(watch.overall, ReadingStatus.watch);
+      expect(watch.needsVet, isFalse);
+    });
+
     test('huddling on camera alone needs attention', () {
       final status = evaluate(onNorm(), const [
         CameraDetection(

@@ -61,8 +61,16 @@ class SensorCheck {
   bool get isLow => normMin != null && value < normMin!;
 }
 
-/// What the edge-AI camera model reports about one frame.
+/// What the edge-AI camera model reports about one frame. Single birds are
+/// coloured by how much they move: green (active), amber (moves little — an
+/// early sign of illness to watch) and red (not moving, possibly dead).
 enum CameraFinding {
+  /// A bird that moves, eats and drinks normally.
+  activeBird,
+
+  /// A bird that moves much less than the flock — watch it.
+  lowActivity,
+
   /// A bird that has not moved for a long time (possibly dead).
   inactiveBird,
 
@@ -104,8 +112,10 @@ class BarnFrame {
     this.detections = const [],
   });
 
-  int get inactiveBirds =>
-      detections.where((d) => d.finding == CameraFinding.inactiveBird).length;
+  int count(CameraFinding finding) =>
+      detections.where((d) => d.finding == finding).length;
+
+  int get inactiveBirds => count(CameraFinding.inactiveBird);
 
   bool has(CameraFinding finding) =>
       detections.any((d) => d.finding == finding);
@@ -137,7 +147,8 @@ class BarnStatus {
       if (c.status.index > worst.index) worst = c.status;
     }
     if (frame.inactiveBirds > 0) return ReadingStatus.alarm;
-    if ((frame.has(CameraFinding.huddling) ||
+    if ((frame.has(CameraFinding.lowActivity) ||
+            frame.has(CameraFinding.huddling) ||
             frame.has(CameraFinding.heatStress)) &&
         worst == ReadingStatus.ok) {
       return ReadingStatus.watch;

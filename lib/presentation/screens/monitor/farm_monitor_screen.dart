@@ -432,6 +432,12 @@ class _FarmMonitorScreenState extends State<FarmMonitorScreen> {
           'Камера: неподвижных птиц — ${frame.inactiveBirds}.',
           'Camera: ${frame.inactiveBirds} birds not moving.',
         ),
+      if (frame.has(CameraFinding.lowActivity))
+        _t(
+          "Kamera: ${frame.count(CameraFinding.lowActivity)} ta parranda kam harakat qilmoqda — ularni kuzating.",
+          'Камера: мало двигаются птиц — ${frame.count(CameraFinding.lowActivity)}. Понаблюдайте за ними.',
+          'Camera: ${frame.count(CameraFinding.lowActivity)} birds move little — keep an eye on them.',
+        ),
       if (frame.has(CameraFinding.huddling))
         _t(
           "Kamera: parrandalar bir joyga to'planmoqda — ularga sovuq.",
@@ -651,6 +657,8 @@ class _FarmMonitorScreenState extends State<FarmMonitorScreen> {
     final frame = status.frame;
     String boxLabel(CameraDetection d) {
       final name = switch (d.finding) {
+        CameraFinding.activeBird => _t('faol', 'активна', 'active'),
+        CameraFinding.lowActivity => _t('kam harakat', 'мало движется', 'slow'),
         CameraFinding.inactiveBird => _t('harakatsiz', 'неподвижна', 'still'),
         CameraFinding.huddling => _t("to'planish", 'скучивание', 'huddling'),
         CameraFinding.heatStress => _t('issiqlik', 'жара', 'heat'),
@@ -659,12 +667,37 @@ class _FarmMonitorScreenState extends State<FarmMonitorScreen> {
     }
 
     Color boxColor(CameraFinding f) => switch (f) {
+      CameraFinding.activeBird => AppColors.primary,
+      CameraFinding.lowActivity => AppColors.gold,
       CameraFinding.inactiveBird => AppColors.danger,
       CameraFinding.huddling => AppColors.info,
       CameraFinding.heatStress => AppColors.sun,
     };
 
+    final problems = frame.detections.any(
+      (d) => d.finding != CameraFinding.activeBird,
+    );
     final findings = <Widget>[
+      if (frame.has(CameraFinding.activeBird))
+        StatusPill(
+          label: _t(
+            'Faol: ${frame.count(CameraFinding.activeBird)}',
+            'Активные: ${frame.count(CameraFinding.activeBird)}',
+            'Active: ${frame.count(CameraFinding.activeBird)}',
+          ),
+          tone: Tone.primary,
+          icon: Icons.check_circle_rounded,
+        ),
+      if (frame.has(CameraFinding.lowActivity))
+        StatusPill(
+          label: _t(
+            'Kam harakat: ${frame.count(CameraFinding.lowActivity)}',
+            'Мало двигаются: ${frame.count(CameraFinding.lowActivity)}',
+            'Moving little: ${frame.count(CameraFinding.lowActivity)}',
+          ),
+          tone: Tone.warning,
+          icon: Icons.visibility_rounded,
+        ),
       if (frame.inactiveBirds > 0)
         StatusPill(
           label: _t(
@@ -687,7 +720,7 @@ class _FarmMonitorScreenState extends State<FarmMonitorScreen> {
           tone: Tone.warning,
           icon: Icons.local_fire_department_rounded,
         ),
-      if (frame.detections.isEmpty)
+      if (!problems)
         StatusPill(
           label: _t(
             'Bir tekis tarqalgan',
@@ -730,13 +763,16 @@ class _FarmMonitorScreenState extends State<FarmMonitorScreen> {
                         child: _DetectionBox(
                           color: boxColor(d.finding),
                           // Boxes of one kind sit close together: name the
-                          // first, show only the confidence on the rest.
+                          // first, show only the confidence on the rest, and
+                          // leave the rest of the healthy birds unlabelled.
                           label:
                               frame.detections.indexWhere(
                                     (e) => e.finding == d.finding,
                                   ) ==
                                   i
                               ? boxLabel(d)
+                              : d.finding == CameraFinding.activeBird
+                              ? null
                               : '${(d.confidence * 100).round()}%',
                         ),
                       ),
@@ -1052,9 +1088,9 @@ class _SparklinePainter extends CustomPainter {
 /// A detection box with its label, as the edge model draws it on the frame.
 class _DetectionBox extends StatelessWidget {
   final Color color;
-  final String label;
+  final String? label;
 
-  const _DetectionBox({required this.color, required this.label});
+  const _DetectionBox({required this.color, this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -1064,32 +1100,34 @@ class _DetectionBox extends StatelessWidget {
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
+              color: color.withAlpha(40),
               border: Border.all(color: color, width: 2),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
         ),
-        Positioned(
-          left: -1,
-          top: -18,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: Text(
-              label,
-              maxLines: 1,
-              softWrap: false,
-              style: AppText.caption.copyWith(
-                color: Colors.white,
-                fontSize: 10,
-                height: 1.3,
+        if (label != null)
+          Positioned(
+            left: -1,
+            top: -18,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(
+                label!,
+                maxLines: 1,
+                softWrap: false,
+                style: AppText.caption.copyWith(
+                  color: Colors.white,
+                  fontSize: 10,
+                  height: 1.3,
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

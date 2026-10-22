@@ -70,23 +70,33 @@ class SimulatedBarnSource implements BarnDataSource {
 
     switch (scenario) {
       case DemoScenario.normal:
-        break;
+        detections.addAll(_active);
       case DemoScenario.ammonia:
         // Wet litter: humidity up, ammonia climbing past the 20 ppm smell line.
         humidity = spec.humidityMaxPct + 9 * ramp + noise(1.5);
         nh3 = 6 + 17 * ramp + noise(1);
         co2 = 2400 + 900 * ramp + noise(120);
+        // Ammonia irritates eyes and airways: some birds stop moving about.
+        detections.addAll(_active.skip(1));
+        if (ramp >= 0.5) detections.addAll(_lowActivity);
       case DemoScenario.cold:
         temp = spec.targetTempC - 4.6 * ramp + noise(0.3);
-        detections.add(_huddle);
+        detections
+          ..add(_huddle)
+          ..addAll(_active.where((d) => d.top > 0.7));
       case DemoScenario.heat:
         temp = spec.targetTempC + 5.2 * ramp + noise(0.3);
         waterL = water * (1 + 0.38 * ramp + noise(0.03));
-        detections.addAll(_heatStress);
+        detections
+          ..addAll(_heatStress)
+          ..addAll(_active.take(4));
       case DemoScenario.mortality:
         waterL = water * (1 - 0.3 * ramp + noise(0.03));
         weight = spec.targetWeightG * (0.88 + noise(0.01));
-        detections.addAll(_inactive);
+        detections
+          ..addAll(_inactive)
+          ..addAll(_lowActivity)
+          ..addAll(_active.skip(1));
     }
 
     return BarnFrame(
@@ -111,31 +121,102 @@ class SimulatedBarnSource implements BarnDataSource {
     return double.parse(v.toStringAsFixed(decimals));
   }
 
-  // Boxes drawn on `broiler_finisher.jpg` over birds that really are lying
-  // still or packed together in that photo.
+  // Boxes drawn on `broiler_finisher.jpg` over real birds in that photo:
+  // standing and walking ones are "active", sitting or lying ones carry the
+  // problem findings, so every box sits on a bird that looks the part.
+  static const _active = [
+    CameraDetection(
+      finding: CameraFinding.activeBird,
+      left: 0.142,
+      top: 0.671,
+      width: 0.089,
+      height: 0.094,
+      confidence: 0.95,
+    ),
+    CameraDetection(
+      finding: CameraFinding.activeBird,
+      left: 0.381,
+      top: 0.62,
+      width: 0.083,
+      height: 0.125,
+      confidence: 0.97,
+    ),
+    CameraDetection(
+      finding: CameraFinding.activeBird,
+      left: 0.586,
+      top: 0.671,
+      width: 0.058,
+      height: 0.059,
+      confidence: 0.93,
+    ),
+    CameraDetection(
+      finding: CameraFinding.activeBird,
+      left: 0.8,
+      top: 0.662,
+      width: 0.089,
+      height: 0.071,
+      confidence: 0.94,
+    ),
+    CameraDetection(
+      finding: CameraFinding.activeBird,
+      left: 0.919,
+      top: 0.824,
+      width: 0.075,
+      height: 0.168,
+      confidence: 0.96,
+    ),
+    CameraDetection(
+      finding: CameraFinding.activeBird,
+      left: 0.633,
+      top: 0.792,
+      width: 0.128,
+      height: 0.134,
+      confidence: 0.95,
+    ),
+  ];
+
+  static const _lowActivity = [
+    CameraDetection(
+      finding: CameraFinding.lowActivity,
+      left: 0.142,
+      top: 0.765,
+      width: 0.106,
+      height: 0.102,
+      confidence: 0.84,
+    ),
+    CameraDetection(
+      finding: CameraFinding.lowActivity,
+      left: 0.889,
+      top: 0.733,
+      width: 0.094,
+      height: 0.094,
+      confidence: 0.79,
+    ),
+  ];
+
   static const _inactive = [
     CameraDetection(
       finding: CameraFinding.inactiveBird,
-      left: 0.015,
-      top: 0.80,
-      width: 0.12,
-      height: 0.11,
+      left: 0.017,
+      top: 0.808,
+      width: 0.119,
+      height: 0.098,
       confidence: 0.94,
     ),
     CameraDetection(
       finding: CameraFinding.inactiveBird,
-      left: 0.315,
-      top: 0.775,
-      width: 0.075,
-      height: 0.10,
+      left: 0.317,
+      top: 0.78,
+      width: 0.092,
+      height: 0.094,
       confidence: 0.91,
     ),
     CameraDetection(
       finding: CameraFinding.inactiveBird,
-      left: 0.395,
-      top: 0.76,
-      width: 0.09,
-      height: 0.115,
+      left: 0.394,
+      top: 0.761,
+      width: 0.092,
+      height: 0.113,
       confidence: 0.87,
     ),
   ];
@@ -152,18 +233,18 @@ class SimulatedBarnSource implements BarnDataSource {
   static const _heatStress = [
     CameraDetection(
       finding: CameraFinding.heatStress,
-      left: 0.63,
-      top: 0.79,
-      width: 0.13,
-      height: 0.14,
+      left: 0.633,
+      top: 0.792,
+      width: 0.128,
+      height: 0.134,
       confidence: 0.86,
     ),
     CameraDetection(
       finding: CameraFinding.heatStress,
-      left: 0.92,
-      top: 0.82,
-      width: 0.08,
-      height: 0.17,
+      left: 0.889,
+      top: 0.733,
+      width: 0.094,
+      height: 0.094,
       confidence: 0.81,
     ),
   ];
