@@ -140,8 +140,8 @@
   .screens::after { content: ""; position: absolute; right: -120px; top: -140px; width: 420px; height: 420px; border-radius: 50%;
                     background: radial-gradient(circle, rgba(34,197,94,.28), transparent 65%); }
   .phones { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 6px 0; position: relative; z-index: 1; }
-  .phone { width: 168px; text-align: center; display: flex; flex-direction: column; }
-  .phone .frame { order: 2; margin-top: 8px; width: 168px; height: 364px; border-radius: 24px; background: #0B0F14; padding: 5px; box-shadow: 0 14px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12); position: relative; }
+  .phone { width: 160px; text-align: center; display: flex; flex-direction: column; }
+  .phone .frame { order: 2; margin-top: 8px; width: 160px; height: 346px; border-radius: 24px; background: #0B0F14; padding: 5px; box-shadow: 0 14px 30px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12); position: relative; }
   .phone .frame img { width: 100%; height: 100%; border-radius: 17px; display: block; object-fit: cover; object-position: top; }
   .phone:nth-child(even) { margin-top: 0; }
   .phone b { order: 0; display: block; font-size: 13px; font-weight: 800; }
@@ -154,6 +154,17 @@
 
   /* row C */
   .rowC { grid-template-columns: 1fr 720px; height: 172px; }
+  .barn-grid { display: grid; grid-template-columns: 182px 1fr; gap: 14px; height: 116px; }
+  .barn .cam { border-radius: 12px; overflow: hidden; }
+  .barn .cam img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .flow > div { display: grid; grid-template-columns: 30px 1fr; column-gap: 8px; align-items: center; background: var(--surface-muted); border-radius: 12px; padding: 6px 8px; }
+  .flow .disc { grid-row: span 2; }
+  .flow b { font-size: 12px; font-weight: 800; }
+  .flow span { font-size: 10px; font-weight: 600; color: var(--ink-2); line-height: 1.3; }
+  .limits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .limits > span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--primary-dark); background: var(--primary-soft); border-radius: 999px; padding: 4px 10px 4px 7px; }
+  .limits .ms { font-size: 15px; color: var(--primary); }
   .chartcard { display: grid; grid-template-columns: 1fr 270px; grid-template-rows: auto 1fr; gap: 6px 14px; }
   .chartcard .label { grid-column: 1 / -1; margin-bottom: 0; }
   #chart { width: 100%; height: 112px; display: block; overflow: visible; }
@@ -181,6 +192,9 @@
   .tech div { border-left: 3px solid var(--primary); padding: 1px 0 1px 8px; }
   .tech b { display: block; font-size: 12px; font-weight: 800; }
   .tech span { display: block; font-size: 10.5px; color: var(--ink-2); font-weight: 600; }
+  .bank-grid { display: grid; grid-template-columns: 300px 1fr; gap: 12px; align-items: start; }
+  .bank-grid .dash { border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-card); border: 1px solid var(--border); }
+  .bank-grid .dash img { width: 100%; display: block; }
   table.cmp { width: 100%; border-collapse: collapse; font-size: 11.5px; }
   .cmp th { font-size: 10.5px; font-weight: 800; color: var(--ink-2); text-align: center; padding: 6px 4px; background: var(--surface-muted); }
   .cmp th:first-child { text-align: left; border-radius: 10px 0 0 10px; padding-left: 10px; }
@@ -191,7 +205,7 @@
   .cmp td:last-child { background: var(--primary-soft); }
   .cmp .y { color: var(--primary); font-size: 17px; vertical-align: middle; }
   .cmp .p { color: var(--warning); font-size: 10.5px; font-weight: 700; }
-  .why { display: flex; flex-direction: column; gap: 3px; }
+  .why { display: flex; flex-direction: column; gap: 2px; }
   .why div { display: flex; gap: 8px; align-items: flex-start; }
   .why .ms { color: var(--primary); font-size: 18px; flex: none; margin-top: 1px; }
   .why b { display: block; font-size: 12px; font-weight: 800; }
@@ -231,7 +245,7 @@
     <img class="logo" src="../../assets/images/agrozen_logo.png" alt="AgroZen">
     <div>
       <h1><span class="brand">AGRO<b>ZEN</b></span><span class="dash">— BROYLER FERMERI UCHUN AQLLI AI YORDAMCHI</span></h1>
-      <p class="tag">Jo'ja kelgan kundan sotuvgacha — 42 kun davomida har kuni nima qilishni aytadi. Ross-308 / Cobb-500 standartlari asosida.</p>
+      <p class="tag">Jo'ja kelgan kundan sotuvgacha — 42 kun davomida har kuni nima qilishni aytadi (Ross-308 / Cobb-500). Yangi: sensorlar, AI-kamera, bank hisoboti.</p>
       <div class="chips">
         <span class="glass"><span class="ms">translate</span>O'zbekcha · Русский · English</span>
         <span class="glass"><span class="ms">phone_android</span>Android ilova · Veb-ilova</span>
@@ -244,7 +258,7 @@
       <div>
         <div class="t1">NamDTU</div>
         <div class="t2">Sun'iy intellekt yo'nalishi</div>
-        <div class="t3">Milliy AI Xakaton · 2026</div>
+        <div class="t3">STUDEXPO-2026</div>
       </div>
     </div>
   </header>
@@ -300,8 +314,9 @@
         <div class="phone"><div class="frame"><img src="shots/today.png" alt=""></div><b>Bugun</b><span>Kun halqasi va me'yorlar</span></div>
         <div class="phone"><div class="frame"><img src="shots/diary.png" alt=""></div><b>Kundalik</b><span>Bir bosishda yozuv</span></div>
         <div class="phone"><div class="frame"><img src="shots/assistant.png" alt=""></div><b>Yordamchi</b><span>AI chat va rasm tahlili</span></div>
-        <div class="phone"><div class="frame"><img src="shots/plan.png" alt=""></div><b>42 kunlik reja</b><span>Har kun uchun maqsadlar</span></div>
         <div class="phone"><div class="frame"><img src="shots/learn.png" alt=""></div><b>O'rganish</b><span>5 dars va sertifikat</span></div>
+        <div class="phone"><div class="frame"><img src="shots/monitor.png" alt=""></div><b>Aqlli ferma</b><span>Sensorlar, demo rejim</span></div>
+        <div class="phone"><div class="frame"><img src="shots/bank_report.png" alt=""></div><b>Bank hisoboti</b><span>Ball va PDF</span></div>
       </div>
     </div>
 
@@ -314,24 +329,34 @@
         <div class="feat"><div class="disc t-primary"><span class="ms">mic</span></div><div><b>Ovozli AI maslahat</b><span>Gapiring — tushunadi, o'qib beradi</span></div></div>
         <div class="feat"><div class="disc t-info"><span class="ms">photo_camera</span></div><div><b>Rasm tekshirish</b><span>Jo'ja, axlat va to'shama holati</span></div></div>
         <div class="feat"><div class="disc t-sun"><span class="ms">partly_cloudy_day</span></div><div><b>Ob-havo va mikroiqlim</b><span>Tashqarida va bino ichida</span></div></div>
-        <div class="feat"><div class="disc t-warning"><span class="ms">calculate</span></div><div><b>Kalkulyatorlar</b><span>FCR, EPEF, sof foyda</span></div></div>
+        <div class="feat"><div class="disc t-info"><span class="ms">sensors</span></div><div><b>Aqlli ferma</b><span>Sensorlar, AI-kamera, avto-shamollatish</span></div></div>
         <div class="feat"><div class="disc t-danger"><span class="ms">call</span></div><div><b>Tuman veterinari</b><span>13 hudud, bir bosishda qo'ng'iroq</span></div></div>
         <div class="feat"><div class="disc t-warning"><span class="ms">workspace_premium</span></div><div><b>Kurs va sertifikat</b><span>Kredit olishdan oldin 5 dars</span></div></div>
-        <div class="feat"><div class="disc t-violet"><span class="ms">translate</span></div><div><b>Uch tilda</b><span>O'zbekcha · Русский · English</span></div></div>
+        <div class="feat"><div class="disc t-violet"><span class="ms">account_balance</span></div><div><b>Bank uchun hisobot</b><span>Fermer roziligi bilan, PDF</span></div></div>
       </div>
     </div>
   </section>
 
   <!-- ===================== ROW C ===================== -->
   <section class="row rowC">
-    <div class="card chartcard">
-      <div class="label"><span class="n">05</span>42 kunlik o'sish standarti<span class="sub">— Ross-308 maqsadli tirik vazn, gramm (ilovadagi me'yorlar jadvali)</span></div>
-      <svg id="chart" role="img" aria-label="Ross-308 target live weight, days 1 to 42"></svg>
-      <div class="miles">
-        <div class="mile"><div class="d">1-kun</div><div class="w">42 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>32,5°C · <span class="ms fc">grain</span>12 g yem</div></div>
-        <div class="mile"><div class="d">14-kun</div><div class="w">510 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>26,5°C · <span class="ms fc">grain</span>54 g yem</div></div>
-        <div class="mile"><div class="d">28-kun</div><div class="w">1 745 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>20,5°C · <span class="ms fc">grain</span>145 g yem</div></div>
-        <div class="mile"><div class="d">42-kun</div><div class="w">3 125 <small>g</small></div><div class="m"><span class="ms tc">thermostat</span>18°C · <span class="ms fc">grain</span>215 g yem</div></div>
+    <div class="card barn">
+      <div class="label"><span class="n">05</span>Aqlli ferma — sensorlar va AI-kamera<span class="sub">— prototip: ilovada demo rejim, 2027-yilda ikki pilot fermada</span></div>
+      <div class="barn-grid">
+        <div class="cam"><img src="shots/camera.png" alt="AI-kamera kadri"></div>
+        <div>
+          <div class="flow">
+            <div><div class="disc t-primary"><span class="ms">sensors</span></div><b>Sensorlar</b><span>ESP32: harorat, namlik, NH3, CO2, suv, tarozi</span></div>
+            <div><div class="disc t-info"><span class="ms">memory</span></div><b>Edge-AI</b><span>Jetson Orin Nano + IP-kameralar</span></div>
+            <div><div class="disc t-warning"><span class="ms">rule</span></div><b>Me'yorlar</b><span>Ross-308 bo'yicha oddiy kod, AI emas</span></div>
+            <div><div class="disc t-danger"><span class="ms">notifications_active</span></div><b>Harakat</b><span>Ogohlantirish, veterinar, ventilyator</span></div>
+          </div>
+          <div class="limits">
+            <span><span class="ms">science</span>NH3 10 ppm gacha</span>
+            <span><span class="ms">co2</span>CO2 3 000 ppm gacha</span>
+            <span><span class="ms">mode_fan</span>Ventilyator avtomatik yoqiladi</span>
+            <span><span class="ms">videocam</span>Harakatsiz parrandani kamera topadi</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -342,7 +367,7 @@
       <div class="kpi"><div class="v" style="color:var(--info)">5</div><div class="k">dars<span>+ tayyorgarlik sertifikati</span></div></div>
       <div class="kpi"><div class="v" style="color:var(--danger)">13</div><div class="k">hudud<span>veterinarlar ro'yxati</span></div></div>
       <div class="kpi"><div class="v" style="color:var(--primary-dark)">0</div><div class="k">dori nomi<span>xavfsizlik qoidasi</span></div></div>
-      <div class="kpi"><div class="v" style="color:#7C3AED">243</div><div class="k">test<span>avtomatik tekshiruv</span></div></div>
+      <div class="kpi"><div class="v" style="color:#7C3AED">260</div><div class="k">test<span>avtomatik tekshiruv</span></div></div>
     </div>
   </section>
 
@@ -360,17 +385,16 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="label"><span class="n">08</span>Boshqa yo'llardan farqimiz</div>
-      <table class="cmp">
-        <thead><tr><th>Imkoniyat</th><th>Qog'oz daftar</th><th>Telegram guruh</th><th>Umumiy AI chat</th><th>AgroZen</th></tr></thead>
-        <tbody>
-          <tr><td>Har kun uchun Ross-308 reja</td><td>—</td><td>—</td><td><span class="p">qisman</span></td><td><span class="ms y">check_circle</span></td></tr>
-          <tr><td>Nobudlik va vazn bo'yicha ogohlantirish</td><td>—</td><td>—</td><td>—</td><td><span class="ms y">check_circle</span></td></tr>
-          <tr><td>Partiyangiz ma'lumotiga qarab javob</td><td>—</td><td><span class="p">qisman</span></td><td>—</td><td><span class="ms y">check_circle</span></td></tr>
-          <tr><td>Internetsiz ishlaydi</td><td><span class="ms y">check_circle</span></td><td>—</td><td>—</td><td><span class="ms y">check_circle</span></td></tr>
-        </tbody>
-      </table>
+    <div class="card bankcard">
+      <div class="label"><span class="n">08</span>Banklar uchun<span class="sub">— fermer roziligi bilan</span></div>
+      <div class="bank-grid">
+        <div class="dash"><img src="shots/bank_dashboard.png" alt="AgroZen banklar uchun paneli"></div>
+        <div class="why">
+          <div><span class="ms">verified_user</span><p><b>Hisobot — PDF</b><span>Kundalikdan tuziladi, faqat fermer rozi bo'lsa yuboriladi</span></p></div>
+          <div><span class="ms">shield</span><p><b>Ball 0–100</b><span>Saqlanish, kundalik, vazn, o'qish — qat'iy qoidalar</span></p></div>
+          <div><span class="ms">campaign</span><p><b>Kasallik haqida xabar</b><span>Tumandagi barcha fermerlarga bir bosishda</span></p></div>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -378,7 +402,7 @@
       <div class="why">
         <div><span class="ms">check_circle</span><p><b>Yangi fermer yolg'iz emas</b><span>Har kuni aniq ko'rsatma — tajriba bo'lmasa ham</span></p></div>
         <div><span class="ms">check_circle</span><p><b>Muammo erta seziladi</b><span>Nobudlik va vazn har kuni me'yor bilan solishtiriladi</span></p></div>
-        <div><span class="ms">check_circle</span><p><b>Kreditga tayyorgarlik</b><span>Kurs va sertifikat — bank va mikromoliya uchun</span></p></div>
+        <div><span class="ms">check_circle</span><p><b>Bank ishonadi</b><span>Kurs, sertifikat va partiya hisoboti</span></p></div>
       </div>
       <div class="safety"><span class="ms">health_and_safety</span><p>Ilova dori va doza tavsiya qilmaydi. Kasallik belgisida — tuman veterinariga qo'ng'iroq.</p></div>
     </div>
@@ -386,9 +410,9 @@
     <div class="card">
       <div class="label"><span class="n">10</span>Yo'l xaritasi</div>
       <div class="road">
-        <div class="st now"><div class="dot"><span class="ms">check</span></div><div><b>Hozir</b><span>Android ilova (v1.0.3) va veb-ilova, 3 tilda</span></div></div>
-        <div class="st"><div class="dot"></div><div><b>Keyingi qadam <em>(reja)</em></b><span>Fermerlar bilan pilot sinov va fikr-mulohaza</span></div></div>
-        <div class="st"><div class="dot"></div><div><b>Keyin <em>(reja)</em></b><span>Banklar bilan sertifikat hamkorligi, iOS versiya</span></div></div>
+        <div class="st now"><div class="dot"><span class="ms">check</span></div><div><b>Hozir</b><span>Android va veb-ilova, 3 tilda; aqlli ferma demo, bank hisoboti va paneli</span></div></div>
+        <div class="st"><div class="dot"></div><div><b>Keyingi qadam <em>(reja)</em></b><span>Namangan viloyatida 10 fermer va bank bilan pilot; ikki fermada sensor va kameralar</span></div></div>
+        <div class="st"><div class="dot"></div><div><b>Keyin <em>(reja)</em></b><span>Tuxum tovuqlari, qo'y va qoramol, issiqxonalar</span></div></div>
       </div>
     </div>
   </section>
@@ -397,7 +421,7 @@
   <footer class="foot">
     <div>
       <div><b>Muallif:</b> <span id="author"></span></div>
-      <div class="credits">Suratlar — Wikimedia Commons: USDA NRCS Texas; USDA, Bob Nichols (jamoat mulki) · Icem4k; Narek Avetisyan (CC BY-SA 4.0) · Wikideas1 (CC0) · Fred Miller, Arkansas Agricultural Experiment Station (CC BY-SA 2.0). Ilova ekranlari — AgroZen veb-versiyasidan olingan.</div>
+      <div class="credits">Suratlar — Wikimedia Commons: USDA NRCS Texas; USDA, Bob Nichols (jamoat mulki) · Icem4k; Narek Avetisyan (CC BY-SA 4.0) · Wikideas1 (CC0) · Fred Miller, Arkansas Agricultural Experiment Station (CC BY-SA 2.0). Ilova ekranlari — AgroZen veb-versiyasidan olingan; aqlli ferma va bank paneli — demo ma'lumotlar.</div>
     </div>
     <div class="right" id="contacts"></div>
   </footer>
@@ -405,6 +429,7 @@
     <span>Har kuni <b>aniq reja</b></span><i></i>
     <span><b>AI maslahat</b> — 3 tilda, ovozli</span><i></i>
     <span>Xavfli holatda <b>darhol ogohlantirish</b></span><i></i>
+    <span>Sensorlar va <b>AI-kamera</b> — kecha-kunduz</span><i></i>
     <span><b>AgroZen</b> — fermer cho'ntagidagi yordamchi</span>
   </div>
 </main>
@@ -413,7 +438,7 @@
   // ---------------- CONFIG (edit and re-render) ----------------
   const CONFIG = {
     qrUrl: "https://github.com/ZedRubilan/agrozen/releases/latest",
-    author: "Zamalitdinov Salimbek · NamDTU, 4-kurs, 37-ATT guruhi",
+    author: "Zamalitdinov Salimbek (NamDTU, 4-kurs, 37-ATT guruhi) · Kodirov Ulug'bek",
     contacts: [
       ["code", "github.com/ZedRubilan/agrozen"],
     ],
@@ -430,49 +455,6 @@
   document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
   document.querySelector("#qr path").setAttribute("fill", "#052E16");
 
-  // Ross-308 target live weight (g), days 1–42 — knowledge/norms.json → daily_norms[].weight_g
-  const W = [42,55,70,90,115,145,185,215,250,295,340,395,450,510,575,645,720,800,880,965,1055,
-             1145,1240,1335,1435,1535,1640,1745,1850,1955,2060,2165,2270,2375,2480,2580,2680,2775,2870,2960,3045,3125];
-  // Phases — BroilerGrowerLibrary: pre-start 1–4, start 5–10, grower 11–24, finisher-1 25–35, finisher-2 36–42
-  const PH = [
-    { a: 1, b: 4, name: "Pre-start", fill: "#FEF3C7" },
-    { a: 5, b: 10, name: "Start", fill: "#FEF3C7" },
-    { a: 11, b: 24, name: "O'sish", fill: "#E6F4EA" },
-    { a: 25, b: 35, name: "Finish-1", fill: "#FFEDD5" },
-    { a: 36, b: 42, name: "Finish-2", fill: "#FFEDD5" },
-  ];
-  const svg = document.getElementById("chart");
-  const VW = Math.round(svg.getBoundingClientRect().width), VH = 112;
-  svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`);
-  const L = 34, R = 8, T = 16, B = 16;
-  const x = d => L + (d - 1) / 41 * (VW - L - R);
-  const y = g => T + (1 - g / 3500) * (VH - T - B);
-  let s = "";
-  // phase bands (context, not data)
-  PH.forEach((p, i) => {
-    const x0 = i === 0 ? L : (x(p.a - 1) + x(p.a)) / 2, x1 = i === PH.length - 1 ? VW - R : (x(p.b) + x(p.b + 1)) / 2;
-    s += `<rect x="${x0}" y="${T - 14}" width="${x1 - x0 - 1.5}" height="${VH - B - T + 14}" fill="${p.fill}" opacity=".7"/>`;
-    s += `<text x="${(x0 + x1) / 2}" y="${T - 4}" text-anchor="middle" font-size="8.5" font-weight="800" fill="#52665A">${p.name}</text>`;
-  });
-  // hairline grid + ticks
-  [0, 1000, 2000, 3000].forEach(g => {
-    s += `<line x1="${L}" x2="${VW - R}" y1="${y(g)}" y2="${y(g)}" stroke="#D5E0D8" stroke-width=".8"/>`;
-    s += `<text x="${L - 5}" y="${y(g) + 3}" text-anchor="end" font-size="8.5" font-weight="600" fill="#7A8E7E">${g ? (g / 1000) + "K" : "0"}</text>`;
-  });
-  [1, 7, 14, 21, 28, 35, 42].forEach(d => {
-    s += `<text x="${x(d)}" y="${VH - 4}" text-anchor="middle" font-size="8.5" font-weight="600" fill="#7A8E7E">${d}-kun</text>`;
-  });
-  // area wash + 2px line
-  const pts = W.map((g, i) => `${x(i + 1)},${y(g)}`).join(" ");
-  s += `<polygon points="${x(1)},${y(0)} ${pts} ${x(42)},${y(0)}" fill="#15803D" opacity=".10"/>`;
-  s += `<polyline points="${pts}" fill="none" stroke="#15803D" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
-  // end markers with surface ring + selective direct labels
-  [[1, "42 g", "start", -6], [21, "1 055 g", "end", -6], [42, "3 125 g", "end", 14]].forEach(([d, t, anchor, dy]) => {
-    s += `<circle cx="${x(d)}" cy="${y(W[d - 1])}" r="4" fill="#15803D" stroke="#fff" stroke-width="2"/>`;
-    const dx = anchor === "start" ? 7 : -7;
-    s += `<text x="${x(d) + dx}" y="${y(W[d - 1]) + dy}" text-anchor="${anchor}" font-size="9.5" font-weight="800" fill="#0F172A">${t}</text>`;
-  });
-  svg.innerHTML = s;
 </script>
 </body>
 </html>
