@@ -1,0 +1,17 @@
+{
+  "lesson_number": 3,
+  "title": "Ventilation and Microclimate Management",
+  "content": "Ventilation supplies oxygen and exhausts carbon dioxide, ammonia, and excess humidity. Floor drafts must be strictly prevented. Air velocity during the first two weeks must not exceed 0.15–0.2 m/s at bird height. A noticeable ammonia odor is an immediate sign of inadequate ventilation and damp litter, which damages chick respiratory systems.",
+  "video_url": "https://www.youtube.com/results?search_query=ross+308+broiler+minimum+and+tunnel+ventilation",
+  "quiz": {
+    "question": "What does a sharp ammonia smell in the poultry house indicate?",
+    "options": [
+      "Heaters are functioning normally",
+      "Insufficient ventilation and damp litter",
+      "Superior quality feed",
+      "Normal conditions requiring no intervention"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Ammonia smell signals poor air exchange and wet litter, predisposing chicks to respiratory disease."
+  }
+}

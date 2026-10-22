@@ -1,0 +1,17 @@
+{
+  "lesson_number": 5,
+  "title": "Hisob-kitob yuritish va favqulodda ogohlantirish",
+  "content": "Muvaffaqiyatli fermer har kuni yem sarfi, kunlik nobudgarchilik va haftalik vazn hisobini yuritadi. Bir kunda 1% dan ortiq nobudgarchilik yoki vaznda 15% dan ko'p orqada qolish kuzatilsa, darhol nobud bo'lgan qushlarni ajratish va AgroZen orqali tuman veterinariga murojaat qilish zarur.",
+  "video_url": "https://www.youtube.com/results?search_query=broiler+flock+record+keeping+fcr+mortality+management",
+  "quiz": {
+    "question": "Kunlik nobudgarchilik 1% dan oshib ketsa, birinchi navbatda nima qilish kerak?",
+    "options": [
+      "Dorixonadan o'zboshimchalik bilan antibiotik sotib olib berish",
+      "Zudlik bilan veterinar shifokorni chaqirish va issiqlik/zaharlanishni tekshirish",
+      "Xona haroratini 10 darajaga pasaytirish",
+      "Suv berishni to'xtatish"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Favqulodda holatda o'zboshimchalik bilan dori berish xavfli, mutaxassis veterinar ko'rigi zarur."
+  }
+}

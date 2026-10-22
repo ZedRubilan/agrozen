@@ -1,0 +1,93 @@
+[
+  {
+    "district": "Toshkent",
+    "name": "Dr. Rustam Karimov",
+    "phone": "+998901234501",
+    "organization": "Toshkent viloyati Parrandachilik va Veterinariya markazi",
+    "address": "Toshkent viloyati, Zangiota tumani, Qatortol ko'chasi 14"
+  },
+  {
+    "district": "Samarqand",
+    "name": "Dr. Jamshid Ergashev",
+    "phone": "+998933334502",
+    "organization": "Samarqand Davlat Veterinariya Boshqarmasi",
+    "address": "Samarqand sh., Mirzo Ulug'bek ko'chasi 45"
+  },
+  {
+    "district": "Buxoro",
+    "name": "Dr. Alisher Narzullayev",
+    "phone": "+998914004503",
+    "organization": "Buxoro Parrandachilik Diagnostika Markazi",
+    "address": "Buxoro sh., Ibrohim Mo'minov ko'chasi 12"
+  },
+  {
+    "district": "Andijon",
+    "name": "Dr. Nodirbek Usmonov",
+    "phone": "+998902004504",
+    "organization": "Andijon Parranda Salomatligi Xizmati",
+    "address": "Andijon sh., Bobur shoh ko'chasi 78"
+  },
+  {
+    "district": "Farg'ona",
+    "name": "Dr. Mansur Qodirov",
+    "phone": "+998911504505",
+    "organization": "Farg'ona Viloyati Davlat Veterinariya Bo'limi",
+    "address": "Farg'ona sh., Al-Farg'oniy ko'chasi 22"
+  },
+  {
+    "district": "Namangan",
+    "name": "Dr. Salohiddin Mirzayev",
+    "phone": "+998932114506",
+    "organization": "Namangan Parrandachilik Ilmiy-Amaliy Markazi",
+    "address": "Namangan sh., Kosonsoy ko'chasi 5"
+  },
+  {
+    "district": "Qashqadaryo",
+    "name": "Dr. Baxtiyor Normurodov",
+    "phone": "+998973104507",
+    "organization": "Qashqadaryo Veterinariya Diagnostika Laboratoriyasi",
+    "address": "Qarshi sh., Mustaqillik shoh ko'chasi 33"
+  },
+  {
+    "district": "Surxondaryo",
+    "name": "Dr. Ilhom Xoliqov",
+    "phone": "+998994404508",
+    "organization": "Termiz Parrandachilik Xizmati",
+    "address": "Termiz sh., At-Termiziy ko'chasi 19"
+  },
+  {
+    "district": "Jizzax",
+    "name": "Dr. Otabek Sobirov",
+    "phone": "+998905504509",
+    "organization": "Jizzax Viloyati Veterinariya Stansiyasi",
+    "address": "Jizzax sh., Sharof Rashidov ko'chasi 10"
+  },
+  {
+    "district": "Sirdaryo",
+    "name": "Dr. Farrux Yusupov",
+    "phone": "+998916604510",
+    "organization": "Guliston Veterinariya Laboratoriyasi",
+    "address": "Guliston sh., O'zbekiston ko'chasi 6"
+  },
+  {
+    "district": "Xorazm",
+    "name": "Dr. Sherzod Matyoqubov",
+    "phone": "+998937704511",
+    "organization": "Urganch Parrandachilik Maslahat Markazi",
+    "address": "Urganch sh., Al-Xorazmiy ko'chasi 15"
+  },
+  {
+    "district": "Navoiy",
+    "name": "Dr. G'ayrat Hamroyev",
+    "phone": "+998792204512",
+    "organization": "Navoiy Parranda Salomatligi Markazi",
+    "address": "Navoiy sh., G'alaba shoh ko'chasi 8"
+  },
+  {
+    "district": "Qoraqalpog'iston",
+    "name": "Dr. Azamat Seytov",
+    "phone": "+998612204513",
+    "organization": "Qoraqalpog'iston Respublikasi Veterinariya Qo'mitasi",
+    "address": "Nukus sh., Dosliq guzari 52"
+  }
+]

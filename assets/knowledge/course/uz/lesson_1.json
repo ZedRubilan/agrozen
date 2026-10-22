@@ -1,0 +1,17 @@
+{
+  "lesson_number": 1,
+  "title": "Binoni tayyorlash va dezinfeksiya",
+  "content": "Jo'jalar kelishidan oldin bino eski go'ngdan to'liq tozalanadi, yuqori bosimli suv bilan yuviladi va dezinfeksiya qilinadi. Devorlarni 20% li ohak eritmasi bilan oqlash bakteriyalarni kamaytiradi. Jo'jalar kelishidan 24–48 soat oldin isitgichlar yoqilib, pol va to'shak harorati 30–32°C ga, jo'ja balandligidagi havo harorati esa 33–34°C ga yetkaziladi. Quruq to'shak (qipiq) qalinligi yozda 5–7 sm, qishda 7–10 sm bo'lishi kerak.",
+  "video_url": "https://www.youtube.com/results?search_query=ross+308+broiler+barn+preparation+disinfection+preheating",
+  "quiz": {
+    "question": "Bir kunlik jo'jalar qabul qilinishida pol/to'shak va havo harorati necha daraja bo'lishi kerak?",
+    "options": [
+      "18-20°C pol / 22°C havo",
+      "24-26°C pol / 28°C havo",
+      "30-32°C to'shak (pol) va 33-34°C jo'ja balandligidagi havo",
+      "38-40°C pol / 42°C havo"
+    ],
+    "correct_option_index": 2,
+    "explanation": "Jo'jalar sovqotmasligi uchun tushirilayotgan paytda to'shak (pol) harorati 30-32°C, jo'ja bo'yi balandligidagi havo harorati esa 33-34°C bo'lishi shart."
+  }
+}

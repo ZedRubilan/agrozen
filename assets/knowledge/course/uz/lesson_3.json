@@ -1,0 +1,17 @@
+{
+  "lesson_number": 3,
+  "title": "Shamollatish va mikroiqlim",
+  "content": "Shamollatish (ventilyatsiya) parrandalarni kislorod bilan ta'minlaydi va karbonat angidrid, ammiak hamda ortiqcha namlikni chiqarib yuboradi. Pol sathida skvoznyak bo'lishiga yo'l qo'ymaslik kerak. Dastlabki 2 haftada havo harakati tezligi 0.15–0.2 m/s dan oshmasligi lozim. Ammiak hidi kelishi — ventilyatsiya yetarli emasligi va to'shak namligining belgisidir.",
+  "video_url": "https://www.youtube.com/results?search_query=ross+308+broiler+minimum+and+tunnel+ventilation",
+  "quiz": {
+    "question": "Binoda o'tkir ammiak hidi paydo bo'lishi nimani bildiradi?",
+    "options": [
+      "Isitkichlarning yaxshi ishlayotganini",
+      "Ventilyatsiya yetishmovchiligi va to'shak namligini",
+      "Yemning yuqori sifatli ekanini",
+      "Bu tabiiy holat, chora ko'rish shart emas"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Ammiak hidi havo almashinuvi pastligi va nam to'shakdan darak beradi, bu esa nafas yo'llari kasalliklariga sabab bo'ladi."
+  }
+}

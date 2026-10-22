@@ -1,0 +1,17 @@
+{
+  "lesson_number": 2,
+  "title": "First 3 Days: Water, Feed, and Crop Fill Check",
+  "content": "During the first hours after transport, day-old chicks urgently require fresh drinking water at 20-22°C. Adding glucose and electrolytes relieves transport stress. Feed is distributed on paper flats 2 hours after watering. The key health metric of the first 24 hours is the crop fill test: at 24 hours, 95% of chicks must have soft, pliable crops filled with water and feed.",
+  "video_url": "https://www.youtube.com/results?search_query=ross+308+broiler+first+3+days+crop+fill+check",
+  "quiz": {
+    "question": "How long after initial watering should starter crumb feed be offered?",
+    "options": [
+      "Immediately upon arrival",
+      "2 hours after watering",
+      "12 hours after arrival",
+      "On Day 2"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Chicks must rehydrate first; starter feed is provided 2 hours after initial watering."
+  }
+}

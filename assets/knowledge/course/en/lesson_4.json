@@ -1,0 +1,17 @@
+{
+  "lesson_number": 4,
+  "title": "Vaccination Schedule and Biosecurity",
+  "content": "Biosecurity begins at the entrance with disinfection mats and designated footwear. Unauthorized visitors are strictly barred from the barn. Vaccinations must adhere strictly to schedule (Newcastle Disease, Gumboro/IBD, Infectious Bronchitis). When administering live vaccines through drinking water, use solely dechlorinated water with a stabilizer such as skimmed milk powder.",
+  "video_url": "https://www.youtube.com/results?search_query=broiler+drinking+water+vaccination+biosecurity",
+  "quiz": {
+    "question": "Which water source must NEVER be used for live vaccine administration?",
+    "options": [
+      "Cold spring water",
+      "Chlorinated tap water without neutralizer",
+      "Distilled water",
+      "Water mixed with skimmed milk powder"
+    ],
+    "correct_option_index": 1,
+    "explanation": "Chlorine instantaneously kills live vaccine virus particles, rendering the entire vaccination ineffective."
+  }
+}
